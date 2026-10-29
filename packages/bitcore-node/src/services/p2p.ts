@@ -1,3 +1,4 @@
+import { ObjectID } from 'mongodb';
 import logger from '../logger';
 import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
@@ -86,6 +87,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   // when the lease this worker last confirmed as the syncing node runs out
   protected leaseEnds?: number;
   protected writes = new Set<Promise<unknown>>();
+  // the state document holding the heartbeat, as last read
+  protected stateId?: ObjectID;
   protected stopping = false;
   protected chain = '';
   protected network = '';
@@ -119,6 +122,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   async refreshSyncingNode() {
     // the other node's heartbeat this worker is waiting on, and when to take over if it is not renewed
     let takeover: { heartBeat: string; at: number } | undefined;
+    // the node this worker last logged as holding the heartbeat
+    let loggedHolder: string | undefined;
     while (!this.stopping) {
       const wasSyncingNode = this.isSyncingNode;
       this.lastHeartBeat = await this.readHeartBeat(wasSyncingNode);
@@ -138,9 +143,14 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
         this.sync();
       }
       if (!this.lastHeartBeat || this.getIsSyncingNode()) {
+        loggedHolder = undefined;
         this.registerSyncingNode();
       } else {
-        logger.info('Another node is the primary syncing node');
+        const holder = this.lastHeartBeat.split(':').slice(0, 2).join(':');
+        if (holder !== loggedHolder) {
+          logger.info(`${holder} is the syncing node for ${this.chain} ${this.network}`);
+          loggedHolder = holder;
+        }
         if (takeover?.heartBeat !== this.lastHeartBeat) {
           takeover = { heartBeat: this.lastHeartBeat, at: Date.now() + TAKEOVER_MS };
         }
@@ -157,10 +167,16 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   async readHeartBeat(wasSyncingNode: boolean): Promise<string> {
     const lastHeartBeat = this.lastHeartBeat;
     const read = () =>
-      StateStorage.getSyncingNode({ chain: this.chain, network: this.network }).catch(err => {
-        logger.error('Error reading the syncing node heartbeat: %o', err);
-        return lastHeartBeat;
-      });
+      StateStorage.findSyncingNode({ chain: this.chain, network: this.network }).then(
+        found => {
+          this.stateId = found.stateId;
+          return found.heartBeat;
+        },
+        err => {
+          logger.error('Error reading the syncing node heartbeat: %o', err);
+          return lastHeartBeat;
+        }
+      );
     if (!wasSyncingNode) {
       return read();
     }
@@ -174,7 +190,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       this.renewal = StateStorage.selfNominateSyncingNode({
         chain: this.chain,
         network: this.network,
-        lastHeartBeat: this.lastHeartBeat
+        lastHeartBeat: this.lastHeartBeat,
+        stateId: this.stateId
       })
         .catch(err => logger.error('Error in selfNominateSyncingNode:', err))
         .then(() => {
@@ -209,12 +226,14 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       return;
     }
     try {
-      this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      const found = await StateStorage.findSyncingNode({ chain: this.chain, network: this.network });
+      this.lastHeartBeat = found.heartBeat;
       if (this.getIsSyncingNode()) {
         await StateStorage.selfResignSyncingNode({
           chain: this.chain,
           network: this.network,
-          lastHeartBeat: this.lastHeartBeat
+          lastHeartBeat: this.lastHeartBeat,
+          stateId: found.stateId
         });
       }
     } catch (e: any) {

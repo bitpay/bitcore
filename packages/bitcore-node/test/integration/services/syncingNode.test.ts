@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import { Collection } from 'mongodb';
 import * as os from 'os';
 import * as sinon from 'sinon';
+import logger from '../../../src/logger';
 import { BitcoinP2PWorker } from '../../../src/modules/bitcoin/p2p';
 import { MoralisP2PWorker } from '../../../src/modules/moralis/p2p/p2p';
 import { EventStorage } from '../../../src/models/events';
@@ -236,9 +237,9 @@ describe('Syncing node heartbeat', function() {
 
   // stops the worker while its next heartbeat read is pending
   function stopDuringNextRead() {
-    const read = StateStorage.getSyncingNode.bind(StateStorage);
+    const read = StateStorage.findSyncingNode.bind(StateStorage);
     let reads = 0;
-    sandbox.stub(StateStorage, 'getSyncingNode').callsFake(async params => {
+    sandbox.stub(StateStorage, 'findSyncingNode').callsFake(async params => {
       const value = await read(params);
       if (!reads++) {
         await worker.stop();
@@ -336,6 +337,37 @@ describe('Syncing node heartbeat', function() {
       for (const [otherKey, value] of Object.entries(others)) {
         expect(state).to.have.property(otherKey, value);
       }
+    });
+
+    it('findSyncingNode returns the heartbeat and the id of the state document', async () => {
+      await setHeartBeat(otherNode(start));
+      const { _id } = (await direct.findOne({}))!;
+      const found = await StateStorage.findSyncingNode({ chain, network });
+      expect(found.heartBeat).to.equal(otherNode(start));
+      expect(found.stateId.toString()).to.equal(_id.toString());
+    });
+
+    it('selfNominateSyncingNode and selfResignSyncingNode given the state document id do not read it', async () => {
+      await setHeartBeat(otherNode(start));
+      const { _id } = (await direct.findOne({}))!;
+      const readsBefore = calls(['findOne']);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), stateId: _id });
+      const nominated = await heartBeat();
+      await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: thisNode(start), stateId: _id });
+      expect(calls(['findOne']) - readsBefore).to.equal(0);
+      expect(nominated).to.equal(thisNode(start));
+      expect(await heartBeat()).to.equal(undefined);
+    });
+
+    it('selfNominateSyncingNode and selfResignSyncingNode without the id read the state document without writing it', async () => {
+      await setHeartBeat(otherNode(start));
+      const readsBefore = calls(['findOne']);
+      const writesBefore = calls(WRITES);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start) });
+      await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: thisNode(start) });
+      expect(calls(['findOne']) - readsBefore).to.equal(2);
+      expect(calls(WRITES) - writesBefore).to.equal(2);
+      expect(await heartBeat()).to.equal(undefined);
     });
 
     it('selfResignSyncingNode removes only the heartbeat it was given', async () => {
@@ -536,11 +568,11 @@ describe('Syncing node heartbeat', function() {
       const lastRenewal = start;
       let error;
       driver.loop!.catch(e => (error = e));
-      const read = StateStorage.getSyncingNode.bind(StateStorage);
+      const read = StateStorage.findSyncingNode.bind(StateStorage);
       let unstall;
       const stalled = new Promise(resolve => (unstall = resolve));
       let reads = 0;
-      sandbox.stub(StateStorage, 'getSyncingNode').callsFake(params => {
+      sandbox.stub(StateStorage, 'findSyncingNode').callsFake(params => {
         return reads++ ? read(params) : stalled.then(() => read(params));
       });
       try {
@@ -622,6 +654,7 @@ describe('Syncing node heartbeat', function() {
         await Promise.all(stub.returnValues);
         await passing;
         expect(await heartBeat()).to.equal(undefined);
+        expect(pendingLoopTimers()).to.equal(0);
       } finally {
         unstall();
       }
@@ -669,7 +702,7 @@ describe('Syncing node heartbeat', function() {
       await drive(testWorker).start();
       driver.loop!.catch(e => (error = e));
       await driver.pass();
-      const reads = sandbox.stub(StateStorage, 'getSyncingNode').callThrough();
+      const reads = sandbox.stub(StateStorage, 'findSyncingNode').callThrough();
       reads.onFirstCall().rejects(new Error('read failed'));
       await driver.pass();
       expect(error).to.equal(undefined);
@@ -687,7 +720,7 @@ describe('Syncing node heartbeat', function() {
       driver.loop!.catch(e => (error = e));
       await driver.pass();
       const lastRenewal = start;
-      sandbox.stub(StateStorage, 'getSyncingNode').rejects(new Error('read failed'));
+      sandbox.stub(StateStorage, 'findSyncingNode').rejects(new Error('read failed'));
       await driver.passUntil(lastRenewal + LEASE - PASS);
       expect(testWorker.isSyncingNode).to.equal(true);
       await driver.pass();
@@ -701,7 +734,7 @@ describe('Syncing node heartbeat', function() {
       await setHeartBeat(otherNode(start - 60000));
       await drive(testWorker).start();
       driver.loop!.catch(e => (error = e));
-      const reads = sandbox.stub(StateStorage, 'getSyncingNode').callThrough();
+      const reads = sandbox.stub(StateStorage, 'findSyncingNode').callThrough();
       reads.onSecondCall().rejects(new Error('read failed'));
       await driver.passUntil(start + FIVE_MINUTES);
       expect(error).to.equal(undefined);
@@ -720,6 +753,26 @@ describe('Syncing node heartbeat', function() {
       await driver.pass();
       expect(testWorker.isSyncingNode).to.equal(false);
       expect(error).to.be.an('error').with.property('message', 'Syncing Node Renewal Failure');
+    });
+
+    it('logs another node holding the heartbeat only when that node changes', async () => {
+      const info = sandbox.spy(logger, 'info');
+      const standbyLogs = () => info.getCalls().filter(call => /is the syncing node for/.test(call.args[0])).length;
+      await setHeartBeat(otherNode(start));
+      await drive().start();
+      while (Date.now() < start + 2 * FIVE_MINUTES) {
+        await driver.pass();
+        await setHeartBeat(otherNode(Date.now()));
+      }
+      expect(standbyLogs()).to.equal(1);
+      await setHeartBeat(`thirdhost:99:${Date.now()}`);
+      await driver.pass();
+      await driver.pass();
+      expect(standbyLogs()).to.equal(2);
+      // the same host, another process
+      await setHeartBeat(`thirdhost:100:${Date.now()}`);
+      await driver.pass();
+      expect(standbyLogs()).to.equal(3);
     });
 
     it('stops looping once the worker is stopping', async () => {
@@ -757,6 +810,15 @@ describe('Syncing node heartbeat', function() {
       expect(await heartBeat()).to.equal(undefined);
     });
 
+    it('resigns on stop with one read of the state document', async () => {
+      await drive().start();
+      await driver.pass();
+      const readsBefore = calls(['findOne']);
+      await driver.stop();
+      expect(await heartBeat()).to.equal(undefined);
+      expect(calls(['findOne']) - readsBefore).to.equal(1);
+    });
+
     it('leaves another node\'s heartbeat on stop', async () => {
       await setHeartBeat(otherNode(start));
       await drive().start();
@@ -777,7 +839,7 @@ describe('Syncing node heartbeat', function() {
     it('swallows errors while resigning', async () => {
       await drive().start();
       await driver.pass();
-      sandbox.stub(StateStorage, 'getSyncingNode').rejects(new Error('read failed'));
+      sandbox.stub(StateStorage, 'findSyncingNode').rejects(new Error('read failed'));
       await driver.stop();
       expect(await heartBeat()).to.match(new RegExp(`^${os.hostname()}:`));
     });
@@ -1112,6 +1174,16 @@ describe('Syncing node heartbeat', function() {
     });
 
     // a renewal is a single compare-and-set
+    it('reads the state document once per pass as the syncing node', async () => {
+      await drive().start();
+      await driver.pass();
+      const readsBefore = calls(['findOne']);
+      for (let i = 0; i < 100; i++) {
+        await driver.pass();
+      }
+      expect(calls(['findOne']) - readsBefore).to.equal(100);
+    });
+
     it('writes the state document once per pass as the syncing node', async () => {
       await drive().start();
       await driver.pass();
