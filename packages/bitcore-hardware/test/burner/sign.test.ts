@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import sinon from 'sinon';
 import { HwProxy } from '../../src/index.js';
 
 const { PrivateKey, crypto, Transaction, Script } = BitcoreLib;
@@ -9,6 +10,7 @@ describe('Burner Signing', function () {
   const privateKey = new PrivateKey();
   const publicKey = privateKey.toPublicKey();
   const address = publicKey.toAddress();
+  const sandbox = sinon.createSandbox();
 
   before(async function () {
     this.timeout(5_000);
@@ -19,15 +21,25 @@ describe('Burner Signing', function () {
     await HwProxy.disconnect();
   });
 
-  beforeEach(function () {
-    HwProxy.get('burner', 'nfc').responses.clear();
-    HwProxy.get('burner', 'nfc').commandQueue.clear();
+  afterEach(function () {
+    sandbox.restore();
   });
 
-  afterEach(function () {
-    expect(HwProxy.get('burner', 'nfc').responses.size).to.equal(0, 'response queue not cleaning properly');
-    expect(HwProxy.get('burner', 'nfc').commandQueue.size).to.equal(0, 'command queue not cleaning properly');
-  });
+  /**
+   * Stub the burner so the next card scan responds to each sign command
+   * with the response built for it
+   */
+  const stubSign = (buildResponse: (command: Record<string, any>, index: number) => Record<string, any>) => {
+    return sandbox.stub(HwProxy.get('burner', 'nfc'), 'sendManyCommands').callsFake(async commands => {
+      return commands.map((command, i) => {
+        return {
+          input: command.keyNo,
+          digest: command.digest,
+          ...buildResponse(command, i)
+        };
+      });
+    });
+  };
 
   it('should sign a BTC transaction', async function () {
     const utxos = [{
@@ -44,14 +56,6 @@ describe('Burner Signing', function () {
       utxos
     });
 
-    const signRequest: Promise<string> = HwProxy.sign({
-      vendor: 'burner',
-      chain: 'BTC',
-      tx,
-      utxos,
-      password: 'password not relevant to test'
-    });
-
     const hash = CWC.Transactions.getSighash({
       chain: 'BTC',
       tx,
@@ -61,21 +65,27 @@ describe('Burner Signing', function () {
     
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
 
-    const id = 'sign0';
-    HwProxy.get('burner', 'nfc').responses.set(
-      id,
-      {
-        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
-        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
+    const stub = stubSign(command => {
+      expect(command.digest).to.equal(hash);
+      return {
         signature: {
           raw: {},
           der: signature.toString(),
         },
         publicKey: publicKey.toString()
-      }
-    );
+      };
+    });
+
+    const signedTx = await HwProxy.sign({
+      vendor: 'burner',
+      chain: 'BTC',
+      tx,
+      utxos,
+      password: 'password not relevant to test'
+    });
     
-    const signedTransaction = new Transaction(await signRequest);
+    const signedTransaction = new Transaction(signedTx);
+    expect(stub.calledOnce).to.be.true;
     expect(signedTransaction.inputs[0].witnesses[0].length).to.be.greaterThan(5).and.lessThan(100);
     expect(signedTransaction.inputs[0].witnesses[1].length).to.equal(33);
   });
@@ -93,13 +103,6 @@ describe('Burner Signing', function () {
       gasPrice: 20000000000,
       data: '0xb6b4af05000000000000000000000000000000000000000000000000000dd764300b800000000000000000000000000000000000000000000000000000000004a817c8000000000000000000000000000000000000000000000000000000016ada606a26050bb49a5a8228599e0dd48c1368abd36f4f14d2b74a015b2d168dbcab0773ce399393220df874bb22ca961f351e038acd2ba5cc8c764385c9f23707622cc435000000000000000000000000000000000000000000000000000000000000001c7e247d684a635813267b10a63f7f3ba88b28ca2790c909110b28236cf1b9bba03451e83d5834189f28d4c77802fc76b7c760a42bc8bebf8dd15e6ead146805630000000000000000000000000000000000000000000000000000000000000000'
     });
-    
-    const signRequest = HwProxy.sign({
-      vendor: 'burner',
-      chain: 'ETH',
-      tx,
-      password: 'password not relevant to test'
-    });
 
     const signature = CWC.Transactions.getSignature({
       chain: 'ETH',
@@ -107,25 +110,29 @@ describe('Burner Signing', function () {
       key
     });
 
-    const id = 'sign0';
-    HwProxy.get('burner', 'nfc').responses.set(
-      id,
-      {
-        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
-        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
+    const stub = stubSign(command => {
+      expect(command.digest).to.equal(CWC.Transactions.getSighash({ chain: 'ETH', tx }));
+      return {
         signature: {
           raw: {},
           ether: signature,
         }
-      }
-    );
-    const signedTx = await signRequest;
+      };
+    });
+    
+    const signedTx = await HwProxy.sign({
+      vendor: 'burner',
+      chain: 'ETH',
+      tx,
+      password: 'password not relevant to test'
+    });
 
     const expectedSignedTx = CWC.Transactions.sign({
       chain: 'ETH',
       tx,
       key
     });
+    expect(stub.calledOnce).to.be.true;
     expect(signedTx).to.equal(expectedSignedTx);
   });
 
@@ -153,32 +160,24 @@ describe('Burner Signing', function () {
     
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
 
-    const signRequest: Promise<string> = HwProxy.sign({
-      vendor: 'burner',
-      chain: 'BTC',
-      tx,
-      utxos,
-      password: 'password not relevant to test'
-    });
-
-    const id = 'sign0';
-    HwProxy.get('burner', 'nfc').responses.set(
-      id,
-      {
-        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
-        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
-        signature: {
-          raw: {},
-          der: signature.toString(),
-        },
-        // random, incorrect public key
-        publicKey: new PrivateKey().toPublicKey().toString()
-      }
-    );
+    stubSign(() => ({
+      signature: {
+        raw: {},
+        der: signature.toString(),
+      },
+      // random, incorrect public key
+      publicKey: new PrivateKey().toPublicKey().toString()
+    }));
 
     let error = false;
     try {
-      await signRequest;
+      await HwProxy.sign({
+        vendor: 'burner',
+        chain: 'BTC',
+        tx,
+        utxos,
+        password: 'password not relevant to test'
+      });
     } catch {
       error = true;
     }
@@ -198,13 +197,6 @@ describe('Burner Signing', function () {
       .from(utxos)
       .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 1000);
 
-    const signRequest: Promise<string> = HwProxy.sign({
-      vendor: 'burner',
-      chain: 'BTC',
-      tx,
-      password: 'password not relevant to test'
-    });
-
     const hash = CWC.Transactions.getSighash({
       chain: 'BTC',
       tx,
@@ -213,22 +205,27 @@ describe('Burner Signing', function () {
     });
     
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
-    
-    const id = 'sign0';
-    HwProxy.get('burner', 'nfc').responses.set(
-      id,
-      {
-        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
-        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
+
+    const stub = stubSign(command => {
+      expect(command.digest).to.equal(hash);
+      return {
         signature: {
           raw: {},
           der: signature.toString(),
         },
         publicKey: publicKey.toString()
-      }
-    );
+      };
+    });
+
+    const signedTx = await HwProxy.sign({
+      vendor: 'burner',
+      chain: 'BTC',
+      tx,
+      password: 'password not relevant to test'
+    });
     
-    const signedTransaction = new Transaction(await signRequest);
+    const signedTransaction = new Transaction(signedTx);
+    expect(stub.calledOnce).to.be.true;
     expect(signedTransaction.inputs[0].witnesses[0].length).to.be.greaterThan(70).and.lessThan(73);
     expect(signedTransaction.inputs[0].witnesses[1].length).to.equal(33);
   });
@@ -275,40 +272,38 @@ describe('Burner Signing', function () {
       utxos
     });
 
-    const signRequest: Promise<string> = HwProxy.sign({
-      vendor: 'burner',
-      chain: 'BTC',
-      tx,
-      utxos,
-      password: 'password not relevant to test'
-    });
-
-    for (let i = 0; i < utxos.length; i++) {
+    const stub = stubSign((command, i) => {
       const hash = CWC.Transactions.getSighash({
         chain: 'BTC',
         tx,
         utxos,
         index: i
       });
+      expect(command.digest).to.equal(hash);
       const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
+      return {
+        signature: {
+          raw: {},
+          der: signature.toString(),
+        },
+        publicKey: publicKey.toString()
+      };
+    });
 
-      const id = 'sign' + i;
-      HwProxy.get('burner', 'nfc').responses.set(
-        id,
-        {
-          input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
-          digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
-          signature: {
-            raw: {},
-            der: signature.toString(),
-          },
-          publicKey: publicKey.toString()
-        }
-      );
-    }
+    const signedTx = await HwProxy.sign({
+      vendor: 'burner',
+      chain: 'BTC',
+      tx,
+      utxos,
+      password: 'password not relevant to test'
+    });
     
-    const signedTransaction = new Transaction(await signRequest);
-    expect(signedTransaction.inputs[0].witnesses[0].length).to.be.greaterThan(70).and.lessThan(73);
-    expect(signedTransaction.inputs[0].witnesses[1].length).to.equal(33);
+    const signedTransaction = new Transaction(signedTx);
+    expect(stub.calledOnce).to.be.true;
+    expect(stub.firstCall.args[0].length).to.equal(utxos.length);
+    for (let i = 0; i < utxos.length; i++) {
+      expect(signedTransaction.inputs[i].witnesses[0].length).to.be.greaterThan(70).and.lessThan(73);
+      expect(signedTransaction.inputs[i].witnesses[1].length).to.equal(33);
+    }
   });
 });

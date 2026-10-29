@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { describe } from 'mocha';
 import { HwProxy } from '../src/index.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
+import sinon from 'sinon';
 
 describe('HwProxy', function () {
   describe('isValid', function () {
@@ -46,34 +47,22 @@ describe('HwProxy', function () {
         if (HwProxy.isValidChain('burner', chain)) {
           const privateKey = new CWC.BitcoreLib.PrivateKey();
           const publicKey = privateKey.toPublicKey();
-          const addressRequest: Promise<string> = HwProxy.getAddress({
-            vendor: 'burner',
-            chain
-          });
-          if (chain === 'BTC') {
-            HwProxy.get('burner').responses.set(
-              'get_data_struct_v20',
-              {
-                compressedPublicKey: {
-                  9: {
-                    value: publicKey.toString()
-                  }
-                },
+          const dataType = chain === 'BTC' ? 'compressedPublicKey' : 'publicKey';
+          const stub = sinon.stub(HwProxy.get('burner'), 'sendManyCommands').resolves([{
+            [dataType]: {
+              9: {
+                value: publicKey.toString()
               }
-            );
-          } else {
-            HwProxy.get('burner').responses.set(
-              'get_data_struct_v20',
-              {
-                publicKey: {
-                  9: {
-                    value: publicKey.toString()
-                  }
-                },
-              }
-            );
+            }
+          }]);
+          try {
+            addresses.push(await HwProxy.getAddress({
+              vendor: 'burner',
+              chain
+            }));
+          } finally {
+            stub.restore();
           }
-          addresses.push(await addressRequest);
         }
       }
       expect(addresses.length).to.equal(8);

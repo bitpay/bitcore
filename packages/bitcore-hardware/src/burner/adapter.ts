@@ -1,3 +1,4 @@
+import EventEmitter from 'events';
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
@@ -14,42 +15,13 @@ const { Address, PublicKey, crypto } = BitcoreLib;
  * Fetch address, public key and sign transactions using the burner card.
  */
 export default class Burner implements Hardware {
-  nfc?: NFC;
-  // list of commands waiting to be sent to the device
-  commandQueue = new Map<string, Record<string, any>>();
-  // responses to all the commands from commandQueue
-  responses = new Map<string, Record<string, any>>();
-  private QUEUE_CAPACITY = 100;
+  nfc: EventEmitter = new NFC();
   private SLOT = 9;
 
   /**
    * Sends all commands to the device and recieves all responses
    */
-  async connect() {
-    this.nfc = this.nfc ?? new NFC();
-
-    this.nfc.on('reader', (reader) => {
-      reader.autoProcessing = false;
-
-      reader.on('card', async () => {
-        try {
-          for (const id of this.commandQueue.keys()) {
-            this.responses.set(id, await execHaloCmdPCSC(this.commandQueue.get(id), reader));
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      });
-
-      reader.on('error', (err) => {
-        console.log(`${reader.reader.name} an error occurred`, err);
-      });
-    });
-
-    this.nfc.on('error', (err) => {
-      console.log('An error occurred', err);
-    });
-  }
+  async connect() { }
 
   async disconnect() { };
 
@@ -203,12 +175,9 @@ export default class Burner implements Hardware {
   }
 
   /**
-   * Queues a command to be sent off to the device when it is scanned with an NFC reader.
+   * Sends a command to the device when it is scanned with an NFC reader.
    * 
-   * Logic for getting the response is not in this function, but in connect.
-   * This function simply waits for the card listener to add the responses.
-   * 
-   * @param command command to queue
+   * @param command command to send
    * @returns response from the device
    */
   async sendCommand(command: CommandType): Promise<Record<string, any>> {
@@ -216,40 +185,39 @@ export default class Burner implements Hardware {
   }
 
   /**
-   * Queues commands to be sent off to the device when it is scanned with an NFC reader.
+   * Sends commands to the device when it is scanned with an NFC reader.
    * 
-   * Logic for getting the response is not in this function, but in connect.
-   * This function simply waits for the card listener to add the responses.
+   * Waits for a reader and card to be detected, then sends each command in order.
+   * Rejects if the NFC, the reader, or any command fails.
    * 
-   * @param command commands to queue
+   * @param commands commands to send
    * @returns responses from the device
    */
   async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
-    const ids: string[] = [];
-    for (const command of commands) {
-      if (this.commandQueue.size >= this.QUEUE_CAPACITY) {
-        throw new Error('queue filled');
-      }
-      for (let i = 0; i < this.QUEUE_CAPACITY; i++) {
-        const id = command.name + '' + i;
-        if (!this.commandQueue.has(id)) {
-          this.commandQueue.set(id, command);
-          ids.push(id);
-          break;
-        }
-      }
-    }
-    return new Promise(async resolve1 => {
-      const _responses: Record<string, object>[] = [];
-      for (const id of ids) {
-        while (this.responses.get(id) == undefined) {
-          await new Promise(async resolve2 => setTimeout(resolve2, 10));
-        }
-        _responses.push(this.responses.get(id) ?? { error: 'no command' });
-        this.responses.delete(id);
-        this.commandQueue.delete(id);
-      }
-      resolve1(_responses);
+    return new Promise(async (resolve, reject) => {
+      this.nfc.on('reader', (reader) => {
+        reader.autoProcessing = false;
+        // When the user scans the card, send a bunch of commands
+        reader.on('card', async () => {
+          try {
+            const responses: Record<string, any>[] = [];
+            for (const command of commands) {
+              responses.push(await execHaloCmdPCSC(command, reader));
+            }
+            resolve(responses);
+          } catch (e) {
+            reject(e);
+          }
+        });
+  
+        reader.on('error', (e) => {
+          reject(e);
+        });
+      });
+  
+      this.nfc.on('error', (e) => {
+        reject(e);
+      });
     });
   }
 
