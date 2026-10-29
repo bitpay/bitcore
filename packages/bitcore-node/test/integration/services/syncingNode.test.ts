@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { Collection } from 'mongodb';
 import * as os from 'os';
 import * as sinon from 'sinon';
+import logger from '../../../src/logger';
 import { BitcoinP2PWorker } from '../../../src/modules/bitcoin/p2p';
 import { MoralisP2PWorker } from '../../../src/modules/moralis/p2p/p2p';
 import { StateStorage } from '../../../src/models/state';
@@ -18,6 +19,7 @@ const network = 'heartbeattest';
 const key = `syncingNode:${chain}:${network}`;
 const PASS = 500;
 const FIVE_MINUTES = 5 * 60 * 1000;
+const RENEWAL_WAIT = 5000;
 const otherNode = (time: number) => `otherhost:4242:${time}`;
 const thisNode = (time: number) => `${os.hostname()}:${process.pid}:${time}`;
 const WRITES = [
@@ -214,6 +216,12 @@ describe('Syncing node heartbeat', function() {
     });
   }
 
+  async function flush() {
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setImmediate(resolve));
+    }
+  }
+
   // waits in real time; the fake clock only covers Date and the loop's timers
   async function until(condition: () => boolean) {
     const deadline = performance.now() + 5000;
@@ -278,6 +286,26 @@ describe('Syncing node heartbeat', function() {
       for (const [otherKey, value] of Object.entries(others)) {
         expect(state).to.have.property(otherKey, value);
       }
+    });
+
+    it('findSyncingNode returns the heartbeat and the id of the state document', async () => {
+      await setHeartBeat(otherNode(start));
+      const { _id } = (await direct.findOne({}))!;
+      const found = await (StateStorage as any).findSyncingNode({ chain, network });
+      expect(found.heartBeat).to.equal(otherNode(start));
+      expect(found.stateId.toString()).to.equal(_id.toString());
+    });
+
+    it('selfNominateSyncingNode and selfResignSyncingNode given the state document id do not read it', async () => {
+      await setHeartBeat(otherNode(start));
+      const { _id } = (await direct.findOne({}))!;
+      const readsBefore = calls(['findOne']);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), stateId: _id } as any);
+      const nominated = await heartBeat();
+      await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: thisNode(start), stateId: _id } as any);
+      expect(calls(['findOne']) - readsBefore).to.equal(0);
+      expect(nominated).to.equal(thisNode(start));
+      expect(await heartBeat()).to.equal(undefined);
     });
 
     it('selfResignSyncingNode removes only the heartbeat it was given', async () => {
@@ -538,6 +566,48 @@ describe('Syncing node heartbeat', function() {
       }
     });
 
+    it('leaves its heartbeat to expire when a renewal has not settled five seconds after stopping', async () => {
+      await drive().start();
+      await driver.pass();
+      let unstall;
+      const stalled = new Promise(resolve => (unstall = resolve));
+      nominations.restore();
+      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').returns(stalled as any);
+      driver.nominations = sandbox.spy();
+      try {
+        await driver.pass();
+        expect(stub.callCount).to.equal(1);
+        let stopped = false;
+        const stopping = loopContext.run(driver, () => worker.stop()).then(() => (stopped = true));
+        await until(() => pendingLoopTimers() > 0);
+        clock.tick(RENEWAL_WAIT - 1);
+        await flush();
+        expect(stopped).to.equal(false);
+        clock.tick(1);
+        await stopping;
+        // resigning now would let the renewal, once it lands, claim the heartbeat back
+        expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      } finally {
+        unstall();
+      }
+    });
+
+    it('logs another node holding the heartbeat only when that node changes', async () => {
+      const info = sandbox.spy(logger, 'info');
+      const standbyLogs = () => info.getCalls().filter(call => /is the syncing node for/.test(call.args[0])).length;
+      await setHeartBeat(otherNode(start));
+      await drive().start();
+      while (Date.now() < start + 2 * FIVE_MINUTES) {
+        await driver.pass();
+        await setHeartBeat(otherNode(Date.now()));
+      }
+      expect(standbyLogs()).to.equal(1);
+      await setHeartBeat(`thirdhost:99:${Date.now()}`);
+      await driver.pass();
+      await driver.pass();
+      expect(standbyLogs()).to.equal(2);
+    });
+
     it('stops looping once the worker is stopping', async () => {
       await drive().start();
       await driver.pass();
@@ -661,6 +731,16 @@ describe('Syncing node heartbeat', function() {
     });
 
     // a renewal is a single compare-and-set
+    it('reads the state document once per pass as the syncing node', async () => {
+      await drive().start();
+      await driver.pass();
+      const readsBefore = calls(['findOne']);
+      for (let i = 0; i < 100; i++) {
+        await driver.pass();
+      }
+      expect(calls(['findOne']) - readsBefore).to.equal(100);
+    });
+
     it('writes the state document once per pass as the syncing node', async () => {
       await drive().start();
       await driver.pass();
