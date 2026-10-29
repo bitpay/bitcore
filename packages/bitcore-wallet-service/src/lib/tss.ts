@@ -748,7 +748,8 @@ class TssSignClass {
       if (session.isExpired()) {
         throw Errors.TSS_SESSION_EXPIRED;
       }
-      if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
+      // 1-of-N sessions won't have messages for other recipients
+      if (session.m > 1 && !this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }
 
