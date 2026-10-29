@@ -324,7 +324,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   }
 
   async sync() {
-    if (this.isSyncing || this.stopping) {
+    if (this.isSyncing || !this.canWrite()) {
       return false;
     }
 
@@ -357,7 +357,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       }
 
       this.isSyncing = false;
-      if (this.stopping) {
+      if (!this.canWrite()) {
         return false;
       }
       logger.info(`${timestamp()} | Starting multi-thread sync | Chain: ${chain} | Network: ${network}`);
@@ -393,7 +393,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     const prefetchSize = chainConfig.prefetchSize ?? 10;
 
     let headers = await this.getHeadersForSync();
-    while (headers.length > 0 && !this.stopping) {
+    while (headers.length > 0 && this.canWrite()) {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let height = tip?.height ?? (chainConfig.syncStartHeight || 0);
       const startingHeight = height;
@@ -412,7 +412,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
         prefetchMap.set(headers[i].hash, this.getBlock(headers[i].hash));
       }
 
-      for (let i = 0; i < headers.length && !this.stopping; i++) {
+      for (let i = 0; i < headers.length && this.canWrite(); i++) {
         const header = headers[i];
         try {
           const block = await (prefetchMap.get(header.hash) || this.getBlock(header.hash));
@@ -446,7 +446,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       }
       headers = await this.getHeadersForSync();
     }
-    if (this.stopping) {
+    if (!this.canWrite()) {
       this.isSyncing = false;
       return false;
     }

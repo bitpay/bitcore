@@ -49,8 +49,11 @@ export class MoralisP2PWorker extends BaseP2PWorker {
   async stop() {
     this.stopping = true;
     clearInterval(this.syncInterval);
-    // a webhook tail that won't close mustn't hold up resigning
-    await within(Promise.resolve(this.webhookTail?.close()), CLOSE_WAIT_MS, undefined);
+    // a webhook tail that won't close mustn't hold up resigning, or stop it
+    const closing = (async () => this.webhookTail?.close())().catch(err =>
+      logger.warn(`Error closing the ${this.chainNetworkStr} webhook tail: %o`, err)
+    );
+    await within(closing, CLOSE_WAIT_MS, undefined);
     await this.unregisterSyncingNode();
     (this.web3?.currentProvider as any)?.disconnect?.();
   }

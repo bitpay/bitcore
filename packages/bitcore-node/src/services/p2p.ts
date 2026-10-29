@@ -110,6 +110,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected chain = '';
   protected network = '';
   public isSyncingNode = false;
+  // one SIGTERM per process: a second makes the worker processes exit at once
+  private static leaseLossSignalled = false;
 
   constructor(protected params: { chain; network; chainConfig; blockModel?: BaseBlock<T> }) {}
   async start(): Promise<any> {}
@@ -193,7 +195,10 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   // The worker processes stop gracefully on SIGTERM, which ends this worker's writes still in flight before a standby
   // can take over.
   protected onLeaseLost() {
-    process.kill(process.pid, 'SIGTERM');
+    if (!BaseP2PWorker.leaseLossSignalled) {
+      BaseP2PWorker.leaseLossSignalled = true;
+      process.kill(process.pid, 'SIGTERM');
+    }
   }
 
   // A read that fails or doesn't come back before the syncing node's lease ends keeps the last heartbeat read, which
@@ -244,11 +249,16 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     }
   }
 
-  // Runs a sync write unless the worker is stopping or, if it runs the election, doesn't hold the lease. It checks the
-  // lease's time itself rather than wait for the loop to notice. A standby claims a resigned heartbeat on its next
-  // pass, so unregisterSyncingNode resigns only once these finish.
+  // Whether the worker may write: not once it is stopping, and if it runs the election, only while it holds a lease it
+  // has read back, checked against the time rather than waiting for the loop to notice the lease ran out.
+  protected canWrite(): boolean {
+    return !this.stopping && (!this.electing || (this.isSyncingNode && performance.now() < this.leaseEnd));
+  }
+
+  // Runs a sync write if the worker may write. A standby claims a resigned heartbeat on its next pass, so
+  // unregisterSyncingNode resigns only once these finish.
   protected async write<R>(fn: () => Promise<R>): Promise<R | undefined> {
-    if (this.stopping || (this.electing && !(this.isSyncingNode && performance.now() < this.leaseEnd))) {
+    if (!this.canWrite()) {
       return undefined;
     }
     const writing = fn();
@@ -275,12 +285,13 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     }
   }
 
+  // Once the writes have drained, nothing of this worker's can still be writing, so its own heartbeat can go even if the
+  // lease has run out, and a restarted process needn't wait out the takeover.
   private async resign() {
     try {
       const found = await StateStorage.findSyncingNode({ chain: this.chain, network: this.network });
       this.lastHeartBeat = found.heartBeat;
-      this.noteRead(found.heartBeat);
-      if (this.getIsSyncingNode()) {
+      if (this.lastHeartBeat && (this.lastHeartBeat === this.confirmed || this.written.has(this.lastHeartBeat))) {
         await StateStorage.selfResignSyncingNode({
           chain: this.chain,
           network: this.network,
