@@ -40,18 +40,23 @@ export class StateModel extends BaseModel<IState> {
     return state || (await this.getSingletonState()).value!;
   }
 
-  async getSyncingNode(params: { chain: string; network: string }): Promise<string> {
+  // the heartbeat, with the id of the state document that holds it so a renewal or resign needn't read it again
+  async findSyncingNode(params: { chain: string; network: string }): Promise<{ heartBeat: string; stateId: ObjectID }> {
     const { chain, network } = params;
     const state = await this.findSingletonState();
-    return state[`syncingNode:${chain}:${network}`];
+    return { heartBeat: state[`syncingNode:${chain}:${network}`], stateId: state._id! };
   }
 
-  async selfNominateSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
+  async getSyncingNode(params: { chain: string; network: string }): Promise<string> {
+    return (await this.findSyncingNode(params)).heartBeat;
+  }
+
+  async selfNominateSyncingNode(params: { chain: string; network: string; lastHeartBeat: any; stateId?: ObjectID }) {
     const { chain, network, lastHeartBeat } = params;
-    const singleState = await this.findSingletonState();
+    const stateId = params.stateId || (await this.findSingletonState())._id;
     return this.collection.findOneAndUpdate(
       {
-        _id: singleState._id,
+        _id: stateId,
         $or: [
           { [`syncingNode:${chain}:${network}`]: { $exists: false } },
           { [`syncingNode:${chain}:${network}`]: lastHeartBeat }
@@ -61,11 +66,11 @@ export class StateModel extends BaseModel<IState> {
     );
   }
 
-  async selfResignSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
+  async selfResignSyncingNode(params: { chain: string; network: string; lastHeartBeat: any; stateId?: ObjectID }) {
     const { chain, network, lastHeartBeat } = params;
-    const singleState = await this.findSingletonState();
+    const stateId = params.stateId || (await this.findSingletonState())._id;
     return this.collection.findOneAndUpdate(
-      { _id: singleState._id, [`syncingNode:${chain}:${network}`]: lastHeartBeat },
+      { _id: stateId, [`syncingNode:${chain}:${network}`]: lastHeartBeat },
       { $unset: { [`syncingNode:${chain}:${network}`]: true } }
     );
   }

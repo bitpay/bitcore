@@ -1,4 +1,5 @@
 import * as os from 'os';
+import { ObjectID } from 'mongodb';
 import logger from '../logger';
 import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
@@ -6,6 +7,20 @@ import { IBlock } from '../types/Block';
 import { Class } from '../types/Class';
 import { wait } from '../utils';
 import { Config, ConfigService } from './config';
+
+// how long stop() waits for a renewal in flight before it gives up resigning
+const RENEWAL_WAIT_MS = 5000;
+
+// resolves to fallback if promise has not settled within ms
+async function within<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer;
+  const timeout = new Promise<T>(resolve => (timer = setTimeout(() => resolve(fallback), ms)));
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export class P2pManager {
   workerClasses: { [chain: string]: Class<BaseP2PWorker> } = {};
@@ -67,6 +82,8 @@ export class P2pManager {
 export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected lastHeartBeat = '';
   protected renewal?: Promise<void>;
+  // the state document holding the heartbeat, as last read
+  protected stateId?: ObjectID;
   protected stopping = false;
   protected chain = '';
   protected network = '';
@@ -101,9 +118,13 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   async refreshSyncingNode() {
     // the other node's heartbeat this worker is waiting on, and when to take over if it is not renewed
     let takeover: { heartBeat: string; at: number } | undefined;
+    // the node this worker last logged as holding the heartbeat
+    let loggedHolder: string | undefined;
     while (!this.stopping) {
       const wasSyncingNode = this.getIsSyncingNode();
-      this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      const found = await StateStorage.findSyncingNode({ chain: this.chain, network: this.network });
+      this.lastHeartBeat = found.heartBeat;
+      this.stateId = found.stateId;
       if (this.stopping) {
         break;
       }
@@ -117,9 +138,14 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
         this.sync();
       }
       if (!this.lastHeartBeat || this.getIsSyncingNode()) {
+        loggedHolder = undefined;
         this.registerSyncingNode();
       } else {
-        logger.info('Another node is the primary syncing node');
+        const holder = this.lastHeartBeat.split(':').slice(0, 2).join(':');
+        if (holder !== loggedHolder) {
+          logger.info(`${holder} is the syncing node for ${this.chain} ${this.network}`);
+          loggedHolder = holder;
+        }
         if (takeover?.heartBeat !== this.lastHeartBeat) {
           takeover = { heartBeat: this.lastHeartBeat, at: Date.now() + 5 * 60 * 1000 };
         }
@@ -137,7 +163,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       this.renewal = StateStorage.selfNominateSyncingNode({
         chain: this.chain,
         network: this.network,
-        lastHeartBeat: this.lastHeartBeat
+        lastHeartBeat: this.lastHeartBeat,
+        stateId: this.stateId
       })
         .catch(err => logger.error('Error in selfNominateSyncingNode:', err))
         .then(() => {
@@ -148,15 +175,21 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
 
   async unregisterSyncingNode() {
     await wait(1000);
-    // a nomination that lands after resigning would claim the heartbeat again
-    await this.renewal;
+    // A nomination that lands after resigning would claim the heartbeat again. If one hasn't settled in time, leave
+    // the heartbeat to expire rather than hold up stop().
+    if (this.renewal && !(await within(this.renewal.then(() => true), RENEWAL_WAIT_MS, false))) {
+      logger.warn(`Leaving the ${this.chain} ${this.network} syncing node heartbeat to expire: a renewal is still in flight`);
+      return;
+    }
     try {
-      this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      const found = await StateStorage.findSyncingNode({ chain: this.chain, network: this.network });
+      this.lastHeartBeat = found.heartBeat;
       if (this.getIsSyncingNode()) {
         await StateStorage.selfResignSyncingNode({
           chain: this.chain,
           network: this.network,
-          lastHeartBeat: this.lastHeartBeat
+          lastHeartBeat: this.lastHeartBeat,
+          stateId: found.stateId
         });
       }
     } catch (e: any) {
