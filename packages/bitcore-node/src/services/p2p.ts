@@ -93,6 +93,10 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected lastHeartBeat = '';
   // tells this worker's heartbeats apart from any other worker's, in this process or another
   protected readonly instanceId = randomBytes(6).toString('hex');
+  // Numbers each heartbeat this worker writes, so that no two are the same even when the wall clock repeats a time. One
+  // that repeated the heartbeat stored would be taken as read back even if its write failed, and would look to a
+  // standby like no renewal at all.
+  private attempts = 0;
   // The heartbeats this worker has written since the last one it read back, with when it started writing each on the
   // monotonic clock, and that last one, which its lease runs from. A renewal that misses can be followed by one that
   // lands, so the heartbeat read back isn't always the latest written.
@@ -175,8 +179,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
         loggedHolder = undefined;
         this.registerSyncingNode();
       } else {
-        // the heartbeat without its time
-        const holder = this.lastHeartBeat.split(':').filter((_, i) => i !== 2).join(':');
+        // the heartbeat without its time or attempt
+        const holder = this.lastHeartBeat.split(':').filter((_, i) => i !== 2 && i !== 4).join(':');
         if (holder !== loggedHolder) {
           logger.info(`${holder} is the syncing node for ${this.chain} ${this.network}`);
           loggedHolder = holder;
@@ -226,7 +230,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   // one nomination at a time, not awaited: the loop keeps reading, so a stalled renewal still lets the heartbeat expire
   registerSyncingNode() {
     if (!this.renewal) {
-      const heartBeat = `${os.hostname()}:${process.pid}:${Date.now()}:${this.instanceId}`;
+      const heartBeat = `${os.hostname()}:${process.pid}:${Date.now()}:${this.instanceId}:${++this.attempts}`;
       const startedAt = performance.now();
       // one written longer ago than a lease could only be read back after the lease it would give has run out
       for (const [written, writtenAt] of this.written) {
