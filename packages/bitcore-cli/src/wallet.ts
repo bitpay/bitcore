@@ -2,7 +2,6 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import url from 'url';
 import {
   API,
   Utils as BWCUtils,
@@ -104,7 +103,7 @@ export class Wallet implements IWallet {
     const { mustBeNew, mustExist, doNotComplete } = args;
 
     this.client = new Client({
-      baseUrl: url.resolve(this.host, '/bws/api'),
+      baseUrl: new URL('/bws/api', this.host).href,
       supportStaffWalletId: this.walletId
     });
 
