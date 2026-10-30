@@ -874,6 +874,36 @@ describe('ExpressApp', function() {
             done();
           });
         });
+
+        it('looks up only copayer ids that are strings', function(done) {
+          post({
+            copayers: [
+              { copayerId: { id: idB }, signature: sign(idB) },
+              { copayerId: [idB], signature: sign(idB) },
+              { copayerId: 1, signature: sign(idB) },
+              { signature: sign(idB) },
+              { copayerId: idA, signature: sign(idA) }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            storage.fetchCopayerLookup.args.should.deep.equal([[idA]]);
+            done();
+          });
+        });
+
+        it('skips copayers that are not objects', function(done) {
+          post({
+            copayers: [null, idB, { copayerId: idA, signature: sign(idA) }]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            storage.fetchCopayerLookup.args.should.deep.equal([[idA]]);
+            done();
+          });
+        });
       });
 
       describe('Clear cache', function() {
