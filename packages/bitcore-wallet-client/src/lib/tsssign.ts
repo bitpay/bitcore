@@ -219,13 +219,17 @@ export class TssSign extends EventEmitter {
     iterHandler?: () => void;
   } = {}): NodeJS.Timeout {
     const { timeout, iterHandler } = params;
+    const singleSigner = this.#tssKey.metadata.m === 1;
     this.#subscriptionId = setInterval(async () => {
       if (this.#subscriptionRunning) return;
       this.#subscriptionRunning = true;
       try {
         const thisRound = this.#sign.getRound();
         const prevRound = thisRound - 1; // Get previous round's messages
-        const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/${prevRound}`) as RequestResponse;
+        // BWS rejects the empty messages some m=1 rounds produce, so only round 0 reaches the server.
+        const { body } = singleSigner
+          ? { body: { messages: [] } }
+          : await this.#request.get(`/v1/tss/sign/${this.id}/${prevRound}`) as RequestResponse;
 
         if (body.participants?.length) {
           for (const copayerId of body.participants as string[]) {
@@ -248,7 +252,7 @@ export class TssSign extends EventEmitter {
             this.emit('roundprocessed', thisRound);
             // If the signature is ready, there's nothing to send to the server and msg will have empty arrays.
             // If !!body.signature, then we have an outdated state and the session is already done.
-            if (!this.#sign.isSignatureReady() && !body.signature) {
+            if (!singleSigner && !this.#sign.isSignatureReady() && !body.signature) {
               // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
               // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
               await this.#request.post(`/v1/tss/sign/${this.id}`, { message: msg, version: TSS_SIGN_VERSION });
@@ -319,8 +323,9 @@ export class TssSign extends EventEmitter {
   }
 
   async getSignatureFromServer(): Promise<ISignature | null> {
-    // round doesn't matter. It should always include the signature if it exists
-    const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/1`) as RequestResponse;
+    // BWS returns the signature only with a complete stored round; m=1 sessions store only round 0.
+    const round = this.#tssKey.metadata.m === 1 ? 0 : 1;
+    const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/${round}`) as RequestResponse;
     if (body.signature) {
       return body.signature;
     }
