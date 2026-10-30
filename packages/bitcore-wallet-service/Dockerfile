@@ -1,4 +1,4 @@
-FROM node:22
+FROM node:24
 RUN set -x && node -v && npm -v
 WORKDIR /bitcore
 

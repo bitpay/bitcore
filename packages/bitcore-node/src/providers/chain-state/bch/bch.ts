@@ -1,4 +1,5 @@
 import { CacheStorage } from '../../../models/cache';
+import { Event } from '../../../services/event';
 import { GetEstimateSmartFeeParams } from '../../../types/namespaces/ChainStateProvider';
 import { BTCStateProvider } from '../btc/btc';
 
@@ -10,12 +11,13 @@ export class BCHStateProvider extends BTCStateProvider {
   async getFee(params: GetEstimateSmartFeeParams) {
     const { chain, network } = params;
     const cacheKey = `getFee-${chain}-${network}`;
-    return CacheStorage.getGlobalOrRefresh(
+    return CacheStorage.getGlobalAndRefresh(
       cacheKey,
       async () => {
         return { feerate: await this.getRPC(chain, network).getEstimateFee() };
       },
-      30 * CacheStorage.Times.Minute
+      5 * CacheStorage.Times.Minute,
+      Event.lastBlockTime(chain, network)
     );
   }
 }
