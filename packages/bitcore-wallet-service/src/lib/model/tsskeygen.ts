@@ -28,6 +28,12 @@ export interface ITssKeyMessageObject {
   round: number;
 };
 
+export interface ITssJoinSecretRecord {
+  partyId: number;
+  encryptedMessage: string;
+  signature: string;
+}
+
 export interface ITssKeyGenModel {
   /**
    * The ID of the TSS key generation session.
@@ -79,10 +85,12 @@ export interface ITssKeyGenModel {
    * Session expires after this many milliseconds.
    */
   timeLimit?: number;
-  /**
-   * The BWC-generated secret for joining a BWS wallet
-   */
+  /** Legacy plaintext join secret, used only by keygen schemes before encrypted delivery */
   bwsJoinSecret?: string;
+  /**
+   * Per-party encrypted deliveries of the BWC-generated secret for joining a BWS wallet
+   */
+  bwsJoinSecrets?: ITssJoinSecretRecord[];
   /**
    * The mongo doc version
    */
@@ -105,6 +113,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   createdOn: number;
   timeLimit?: number;
   bwsJoinSecret?: string;
+  bwsJoinSecrets?: ITssJoinSecretRecord[];
   __v: number;
 
 
@@ -169,6 +178,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.createdOn = obj.createdOn;
     x.timeLimit = obj.timeLimit;
     x.bwsJoinSecret = obj.bwsJoinSecret;
+    x.bwsJoinSecrets = obj.bwsJoinSecrets;
     x.__v = obj.__v;
     return x;
   }

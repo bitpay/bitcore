@@ -8,7 +8,7 @@ import { TssSigGenModel } from './model/tsssign';
 import { WalletService, checkRequired } from './server';
 import { Storage } from './storage';
 import type { INotification } from './model/notification';
-import type { ITssKeyMessageObject } from './model/tsskeygen';
+import type { ITssJoinSecretRecord, ITssKeyMessageObject } from './model/tsskeygen';
 import type { ITssSigMessageObject } from './model/tsssign';
 
 type SessionHandler = (message: INotification) => Promise<void>;
@@ -553,22 +553,24 @@ class TssKeyGenClass {
     // }
   }
 
-  /** Store the BWS join secret for the TSS keygen session */
+  /**
+   * Store the join secret using the session's contract. Legacy clients use plaintext;
+   * newer clients send encrypted records that BWS cannot decrypt or verify.
+   */
   async storeBwsJoinSecret(params: {
     /** Session ID */
     id: string;
-    /** BWS join secret */
-    secret: string;
+    /** Encrypted join secrets: one record per noncreator party */
+    records?: ITssJoinSecretRecord[];
+    /** Plaintext secret from a legacy client */
+    secret?: string;
     /** Copayer ID of the submitting party (must be the session creator) */
     copayerId: string;
   }) {
-    const { id, secret, copayerId } = params;
-    if (!secret) {
-      throw Errors.TSS_GENERIC_ERROR.withMessage('No BWS join secret provided');
-    }
-    if (typeof secret !== 'string') {
-      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secret provided');
-    }
+    const { id, records, secret, copayerId } = params;
+    const MAX_CIPHERTEXT = 16 * 1024;
+    const MAX_SIGNATURE = 256;
+    const invalid = () => Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join delivery provided');
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssKeyGenSession({ id });
 
@@ -580,33 +582,78 @@ class TssKeyGenClass {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Only the session creator can store the BWS join secret');
     }
 
-    const result = await storage.storeTssKeyBwsJoinSecret({ id, secret });
+    // Handle legacy unencrypted bwsJoinSecret string
+    if (session.schemeVersion < Constants.TSS_KEYGEN_ENCRYPTED_JOIN_VERSION) {
+      if (typeof secret !== 'string' || !secret || session.bwsJoinSecrets || records != null) {
+        throw invalid();
+      }
+      const result = await storage.storeTssKeyBwsJoinSecret({ id, secret });
+      if (!result.result.ok) {
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation BWS join secret');
+      }
+      return;
+    }
+
+    /**
+     * Encrypted join secret records
+     */
+
+    // Never fall back to plaintext for a session using encrypted delivery.
+    if (secret != null || !Array.isArray(records)) {
+      throw invalid();
+    }
+    const seen = new Set<number>();
+    for (const r of records) {
+      const validParty = Number.isInteger(r?.partyId) && r.partyId >= 1 && r.partyId < session.n && !!session.participants[r.partyId];
+      const validData = typeof r?.encryptedMessage === 'string' && r.encryptedMessage.length > 0 && r.encryptedMessage.length <= MAX_CIPHERTEXT
+        && typeof r?.signature === 'string' && r.signature.length > 0 && r.signature.length <= MAX_SIGNATURE;
+      if (!validParty || !validData || seen.has(r.partyId)) {
+        throw invalid();
+      }
+      seen.add(r.partyId);
+    }
+    if (seen.size !== session.n - 1) {
+      throw invalid();
+    }
+
+    const result = await storage.storeTssKeyBwsJoinSecret({
+      id,
+      records: records.map(({ partyId, encryptedMessage, signature }) => ({ partyId, encryptedMessage, signature }))
+    });
     if (!result.result.ok) {
-      logger.error('Failed to store TSS key generation BWS join secret %o %o', id, result);
+      logger.error('Failed to store TSS key generation BWS join delivery %o %o', id, result);
       throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation BWS join secret');
     }
   }
 
-  /** Get the BWS join secret for the TSS keygen session */
+  /** Get a legacy secret or only the caller's encrypted record, according to the session's scheme */
   async getBwsJoinSecret(params: {
     /** Session ID */
     id: string;
     /** Copayer ID of the requesting party */
     copayerId: string;
-  }): Promise<string> {
+  }): Promise<{ secret: string } | Pick<ITssJoinSecretRecord, 'encryptedMessage' | 'signature'>> {
     const { id, copayerId } = params;
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssKeyGenSession({ id });
     if (!session) {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
-    if (session.participants.indexOf(copayerId) === -1) {
+    const partyId = session.participants.indexOf(copayerId);
+    if (partyId === -1) {
       throw Errors.TSS_NON_PARTICIPANT;
     }
-    if (!session.bwsJoinSecret) {
+    if (session.schemeVersion < Constants.TSS_KEYGEN_ENCRYPTED_JOIN_VERSION && !session.bwsJoinSecrets) {
+      if (!session.bwsJoinSecret) {
+        throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
+      }
+      return { secret: session.bwsJoinSecret };
+    }
+    const record = session.bwsJoinSecrets?.find(r => r.partyId === partyId);
+    if (!record) {
       throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
     }
-    return session.bwsJoinSecret;
+    return { encryptedMessage: record.encryptedMessage, signature: record.signature };
   }
 };
 

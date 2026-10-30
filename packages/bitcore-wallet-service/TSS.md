@@ -10,6 +10,23 @@ If the DKG ceremony is executed asynchronously (meaning all parties are not onli
 
 ### API Spec
 
+Key-generation scheme 1.3 introduces encrypted wallet join deliveries. BWS continues to accept
+schemes 1.0–1.2, including clients that omit the version (treated as 1.0). All participants in a
+session must use the same scheme; mismatches are rejected when joining, before DKG proceeds.
+
+The `/v1/tss/keygen/:id/secret` contract is selected by the stored session scheme:
+
+- Schemes 1.0–1.2 retain the legacy POST `{ secret }` and GET `{ secret }` format. These secrets
+  remain plaintext at BWS, including secrets stored before the server upgrade.
+- Scheme 1.3 requires POST `{ records: [{ partyId, encryptedMessage, signature }] }`.
+  GET returns `{ encryptedMessage, signature }` for the authenticated recipient only.
+  Plaintext publication is rejected, and existing plaintext fields are never returned for this scheme.
+
+Only the creator can publish either format. Updated BWC instances always use encrypted delivery
+for new sessions and never fall back to plaintext. Session export and restoration use the same
+TSS protocol version; resuming a session across BWC protocol upgrades is not supported. The legacy
+export format lacks the trusted invitation keys required for automatic wallet enrollment.
+
 <details>
 <summary style="font-size:17px"><span style="font-weight:bold">POST</span> /v1/tss/keygen/:id</summary>
 
@@ -26,7 +43,8 @@ Initialize the `KeyGen` class with a seed that is the derived private key.
 {
   message: object, // Message object from the TSS keygen initJoin() or nextRound() methods
   n?: number, // Number of participants. Only provided by party 0 when initiating the session
-  password?: string // Optional join password set by party 0 when initiating the session
+  password?: string, // Optional join password set by party 0 when initiating the session
+  version?: number // Key-generation scheme version; omitted by legacy clients, defaulting to 1.0
 }
 ```
 

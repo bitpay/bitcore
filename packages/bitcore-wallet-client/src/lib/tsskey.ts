@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { ECDSA, ECIES } from '@bitpay-labs/bitcore-tss';
+import { ECDSA, ECIES, utils as TssUtils } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { API as Client, CreateWalletOpts } from './api';
 import { Constants, Encryption } from './common';
@@ -10,6 +10,10 @@ import { Request, RequestResponse } from './request';
 const $ = BitcoreLib.util.preconditions;
 
 const { TSS_KEYGEN_VERSION } = Constants;
+
+// Identifies a self-encrypted export that carries the invitation keys along with the DKG session.
+const SESSION_EXPORT_PREFIX = 'tsssession.v2.';
+const JOIN_DELIVERY_PURPOSE = 'tss-wallet-join-v1';
 
 export interface ITssKeyGenConstructorParams {
   /**
@@ -194,6 +198,12 @@ export class TssKeyGen extends EventEmitter {
   #requestPrivateKey: BitcoreLib.PrivateKey;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
+  /** partyId -> request public key each party was invited with (creator only) */
+  #recipientKeys = new Map<number, string>();
+  /** Request public key from the invitation that was accepted (joiner only) */
+  #creatorPubKey: string;
+  /** Wallet created at BWS, retained so publication can be retried without creating it again */
+  #createdWallet: { client: Client; wallet: any; secret: string };
   id: string;
   chain: string;
   network: 'livenet' | 'testnet' | 'regtest';
@@ -273,6 +283,7 @@ export class TssKeyGen extends EventEmitter {
     this.m = parseInt(m as string);
     this.n = parseInt(n as string);
     this.partyId = 0;
+    this.#resetDelivery();
 
     const msg = await keygen.initJoin();
     await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n, password, version: TSS_KEYGEN_VERSION });
@@ -335,6 +346,7 @@ export class TssKeyGen extends EventEmitter {
       privateKey: this.#requestPrivateKey,
       opts
     });
+    this.#recipientKeys.set(partyId, this.#normalizePubKey(partyPubKey));
     return code.toString(opts?.encoding || 'hex');
   }
 
@@ -414,6 +426,9 @@ export class TssKeyGen extends EventEmitter {
     this.m = parseInt(m);
     this.n = parseInt(n);
     this.partyId = parseInt(partyId);
+    this.#resetDelivery();
+    // The sender's key is in the invitation header (always present: decrypt() above was given no public key)
+    this.#creatorPubKey = this.#normalizePubKey(BitcoreLib.PublicKey.fromDER(code.subarray(0, code[0] === 4 ? 65 : 33)));
 
     const msg = await keygen.initJoin();
     password = password || extra;
@@ -429,7 +444,14 @@ export class TssKeyGen extends EventEmitter {
     if (this.#keygen.isKeyChainReady()) {
       throw new Error('Cannot export a completed session. Run getKeyChain() instead.');
     }
-    return [this.id, this.partyId, this.m, this.n, this.#keygen.export()].join(':');
+    const session = [this.id, this.partyId, this.m, this.n, this.#keygen.export()].join(':');
+    const wrapped = JSON.stringify({
+      session,
+      recipientKeys: Object.fromEntries(this.#recipientKeys),
+      creatorPubKey: this.#creatorPubKey
+    });
+    const encrypted = TssUtils.encrypt(Buffer.from(wrapped), this.#credentials.requestPubKey, this.#requestPrivateKey);
+    return SESSION_EXPORT_PREFIX + encrypted.toString('base64');
   }
 
   /**
@@ -442,16 +464,36 @@ export class TssKeyGen extends EventEmitter {
      */
     session: string;
   }): Promise<TssKeyGen> {
-    const { session } = params;
+    let { session } = params;
+    // Legacy (unwrapped) exports restore the DKG only; they carry no trusted invitation keys.
+    let bindings: { recipientKeys: Map<number, string>; creatorPubKey: string } = { recipientKeys: new Map(), creatorPubKey: undefined };
+    if (session.startsWith(SESSION_EXPORT_PREFIX)) {
+      const decrypted = TssUtils.decrypt(Buffer.from(session.slice(SESSION_EXPORT_PREFIX.length), 'base64'), this.#credentials.requestPubKey, this.#requestPrivateKey);
+      const wrapped = JSON.parse(decrypted.toString());
+      $.checkArgument(typeof wrapped.session === 'string' && wrapped.recipientKeys && typeof wrapped.recipientKeys === 'object', 'Invalid session export');
+      bindings = {
+        recipientKeys: new Map(Object.entries(wrapped.recipientKeys).map(([k, v]) => [Number(k), this.#normalizePubKey(v as string)])),
+        creatorPubKey: wrapped.creatorPubKey == null ? undefined : this.#normalizePubKey(wrapped.creatorPubKey)
+      };
+      for (const partyId of bindings.recipientKeys.keys()) {
+        $.checkArgument(Number.isInteger(partyId) && partyId > 0, 'Invalid session export');
+      }
+      session = wrapped.session;
+    }
     const parts = session.split(':');
     const id = parts.slice(0, -4).join(':'); // id may contain colons, so we join all parts except the last 4
     const [partyId, m, n, keygenSession] = parts.slice(-4);
+    const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
+    if (id !== this.id) {
+      this.#createdWallet = undefined;
+    }
     this.id = id;
     this.m = parseInt(m);
     this.n = parseInt(n);
     this.partyId = parseInt(partyId);
-    const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
     this.#keygen = keygen;
+    this.#recipientKeys = bindings.recipientKeys;
+    this.#creatorPubKey = bindings.creatorPubKey;
     return this;
   }
 
@@ -522,7 +564,7 @@ export class TssKeyGen extends EventEmitter {
         const { body } = await this.#request.get(`/v1/tss/keygen/${this.id}/${prevRound}`) as RequestResponse;
 
         const hasEveryoneSubmitted = body.messages?.length === this.n - 1; // subtract yourself
-        if (hasEveryoneSubmitted) {
+        if (hasEveryoneSubmitted && !this.#keygen.isKeyChainReady()) {
           this.emit('roundready', thisRound);
           // Snapshot the session in case there's an API failure
           //  since this.#keygen can't re-process the messages
@@ -661,22 +703,47 @@ export class TssKeyGen extends EventEmitter {
     }
     this.#credentials.clientDerivedPublicKey = key.getXPubKey(this.network);
 
-    const client = new Client({ baseUrl: this.#request.baseUrl });
-    client.fromObj(this.#credentials.toObj());
+    // Reuse the wallet from an earlier attempt so that a failed publication never creates a second wallet
+    if (!this.#createdWallet) {
+      const missing = Array.from({ length: this.n - 1 }, (_, i) => i + 1).filter(p => !this.#recipientKeys.has(p));
+      if (missing.length) {
+        throw new Error(`Missing trusted invitation keys for party ${missing.join(', ')}. Wallet join secrets can only be delivered to invited parties.`);
+      }
+      const client = new Client({ baseUrl: this.#request.baseUrl });
+      client.fromObj(this.#credentials.toObj());
 
-    const { wallet, secret } = await client.createWallet(
-      walletName,
-      copayerName,
-      key.metadata.m,
-      key.metadata.n,
-      Object.assign({}, opts, {
-        tssKeyId: this.id,
-        chain: this.chain,
-        network: this.network,
-      })
-    );
+      const { wallet, secret } = await client.createWallet(
+        walletName,
+        copayerName,
+        key.metadata.m,
+        key.metadata.n,
+        Object.assign({}, opts, {
+          tssKeyId: this.id,
+          chain: this.chain,
+          network: this.network,
+        })
+      );
+      this.#createdWallet = { client, wallet, secret };
+    }
+    const { client, wallet, secret } = this.#createdWallet;
 
-    await this.#request.post(`/v1/tss/keygen/${this.id}/secret`, { secret });
+    const records = Array.from({ length: this.n - 1 }, (_, i) => {
+      const partyId = i + 1;
+      const recipientKey = this.#recipientKeys.get(partyId);
+      if (!recipientKey) {
+        throw new Error(`Missing trusted invitation key for party ${partyId}`);
+      }
+
+      const payload = Buffer.from(JSON.stringify({
+        purpose: JOIN_DELIVERY_PURPOSE,
+        sessionId: this.id,
+        partyId,
+        commonKeyChain: key.keychain.commonKeyChain,
+        secret
+      }));
+      return { partyId, ...TssUtils.encryptAndDetachSignData(payload, recipientKey, this.#requestPrivateKey) };
+    });
+    await this.#request.post(`/v1/tss/keygen/${this.id}/secret`, { records });
     const credObj = client.toObj();
     this.#credentials.addWalletInfo(credObj.walletId, walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
@@ -700,7 +767,9 @@ export class TssKeyGen extends EventEmitter {
     }
     this.#credentials.clientDerivedPublicKey = key.getXPubKey(this.network);
 
-    const { body: { secret } } = await this.#request.get(`/v1/tss/keygen/${this.id}/secret`);
+    $.checkState(this.#creatorPubKey, 'Missing the trusted invitation key from the session creator. Cannot accept a wallet join secret for this session.');
+    const { body } = await this.#request.get(`/v1/tss/keygen/${this.id}/secret`);
+    const secret = this.#openJoinDelivery(body, key.keychain.commonKeyChain);
 
     const client = new Client({ baseUrl: this.#request.baseUrl });
     client.fromObj(this.#credentials.toObj());
@@ -724,10 +793,53 @@ export class TssKeyGen extends EventEmitter {
   }
 
   /**
+   * Decrypt and verify the creator's delivery against the invitation key and this session, then return the join secret.
+   * Error messages never include the decrypted contents.
+   */
+  #openJoinDelivery(delivery: { encryptedMessage?: string; signature?: string }, commonKeyChain: string): string {
+    if (typeof delivery?.encryptedMessage !== 'string' || typeof delivery.signature !== 'string') {
+      throw new Error('Unsupported wallet join delivery');
+    }
+    let message;
+    try {
+      const plaintext = TssUtils.decryptAndVerifySignedData(delivery, this.#creatorPubKey, this.#requestPrivateKey);
+      message = JSON.parse(Buffer.from(plaintext, 'base64').toString());
+    } catch {
+      throw new Error('Failed to decrypt and verify the wallet join delivery');
+    }
+    if (
+      message?.purpose !== JOIN_DELIVERY_PURPOSE ||
+      message.sessionId !== this.id ||
+      message.partyId !== this.partyId ||
+      message.commonKeyChain !== commonKeyChain ||
+      typeof message.secret !== 'string'
+    ) {
+      throw new Error('Wallet join delivery does not match this key generation session');
+    }
+    const { coin, network } = Client.parseSecret(message.secret);
+    if (coin !== this.chain || network !== this.network) {
+      throw new Error('Wallet join delivery is for a different chain or network');
+    }
+    return message.secret;
+  }
+
+  #resetDelivery() {
+    this.#recipientKeys = new Map();
+    this.#creatorPubKey = undefined;
+    this.#createdWallet = undefined;
+  }
+
+  #normalizePubKey(key: string | BitcoreLib.PublicKey): string {
+    const pubKey = new BitcoreLib.PublicKey(key);
+    return BitcoreLib.PublicKey.fromPoint(pubKey.point, true).toString();
+  }
+
+  /**
    * Clean up sensitive data from memory.
    * Call this when you are done with the keygen session
    */
   cleanup() {
     this.#keygen?.cleanup();
+    this.#createdWallet = undefined;
   }
 }

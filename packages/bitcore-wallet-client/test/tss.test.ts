@@ -12,7 +12,7 @@ import request from 'supertest';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { ECIES } from '@bitpay-labs/bitcore-tss';
+import { ECIES, utils as TssUtils } from '@bitpay-labs/bitcore-tss';
 import { Request } from '../src/lib/request';
 import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
 import { TssKeyGen, TssKey } from '../src/lib/tsskey';
@@ -652,6 +652,442 @@ describe('TSS', function() {
   });
 
 
+  describe('Wallet join delivery', function() {
+    const WALLET_ID = '7f0e1a2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b';
+    const walletPrivKey = new BitcoreLib.PrivateKey();
+    const secret = Client._buildSecret(WALLET_ID, walletPrivKey, chain.toLowerCase(), network);
+    let keys: Array<InstanceType<typeof Key>>;
+    const credsOf = (key: InstanceType<typeof Key>) => key.createCredentials(null, { chain: chain.toLowerCase(), network, n: 1, account: 0 });
+    const newTss = (key: InstanceType<typeof Key>) => new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key });
+    let createWalletStub: sinon.SinonStub;
+    let joinWalletStub: sinon.SinonStub;
+    let tssKeyGens: TssKeyGen[];
+    const rejects = async (promise: Promise<any>, msg: RegExp) => {
+      const err = await promise.then(() => null, e => e ?? new Error('rejected with nothing'));
+      should.exist(err, 'expected a rejection');
+      (err.name + ' ' + err.message).should.match(msg);
+      return err;
+    };
+
+    beforeEach(function() {
+      // The session id derives from the key, so every test needs its own keys
+      keys = [0, 1, 2].map(() => new Key({ seedType: 'new' }));
+      tssKeyGens = [];
+      // Wallet creation/joining at BWS is the ordinary, unchanged flow; stub it to observe what is handed to it
+      createWalletStub = sandbox.stub(Client.prototype, 'createWallet').resolves({ wallet: { addressType: 'P2PKH' }, secret } as any);
+      joinWalletStub = sandbox.stub(Client.prototype, 'joinWallet').resolves({ addressType: 'P2PKH' } as any);
+    });
+
+    afterEach(function() {
+      for (const t of tssKeyGens) t.unsubscribe();
+    });
+
+    async function invite(tss0: TssKeyGen, joiners: TssKeyGen[]) {
+      await tss0.newKey({ m, n: joiners.length + 1 });
+      for (let i = 0; i < joiners.length; i++) {
+        const code = await tss0.createJoinCode({ partyId: i + 1, partyPubKey: credsOf(keys[i + 1]).requestPubKey });
+        await joiners[i].joinKey({ code });
+      }
+    }
+
+    function complete(list: TssKeyGen[], subscribeOpts: (i: number) => any = () => ({})) {
+      const done = list.map(t => new Promise(r => t.once('complete', r)));
+      for (const [i, t] of list.entries()) t.subscribe({ timeout: 10, ...subscribeOpts(i) });
+      return Promise.all(done);
+    }
+
+    async function dkgOnly() {
+      const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
+      await invite(tss0, [tss1, tss2]);
+      await complete(tssKeyGens);
+      return tssKeyGens;
+    }
+
+    async function storedRecords(id: string) {
+      return (await storage.fetchTssKeyGenSession({ id })).bwsJoinSecrets;
+    }
+
+    async function overwriteRecords(id: string, mutate: (records: any[]) => any[]) {
+      const doc = await storage.db.collection('tss_keygen').findOne({ id });
+      await storage.db.collection('tss_keygen').updateOne({ id }, { $set: { bwsJoinSecrets: mutate(doc.bwsJoinSecrets) } });
+    }
+
+    function rawRequest(key: InstanceType<typeof Key>) {
+      const r = new Request('/bws/api', { r: request(app) });
+      r.setCredentials(credsOf(key));
+      return r;
+    }
+
+    it(happyPath('should complete when publication is unavailable until recipients have polled, then lost once'), async function() {
+      const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
+      await invite(tss0, [tss1, tss2]);
+
+      // Hold publication until both recipients have finished DKG and been told there is nothing to retrieve yet
+      const posted: any[] = [];
+      let release: () => void;
+      const gate = new Promise<void>(r => { release = r; });
+      const store = BwsTssKeyGen.storeBwsJoinSecret;
+      let attempts = 0;
+      sandbox.stub(BwsTssKeyGen, 'storeBwsJoinSecret').callsFake(async function(params) {
+        posted.push(params.records);
+        await gate;
+        await store.call(BwsTssKeyGen, params);
+        if (attempts++ === 0) {
+          throw new Error('response lost'); // stored, but the creator never hears about it
+        }
+      });
+      const pending = new Set<string>();
+      let recipientsPolled: () => void;
+      const polled = new Promise<void>(r => { recipientsPolled = r; });
+      const get = BwsTssKeyGen.getBwsJoinSecret;
+      sandbox.stub(BwsTssKeyGen, 'getBwsJoinSecret').callsFake(async function(params) {
+        try {
+          return await get.call(BwsTssKeyGen, params);
+        } catch (err) {
+          if (/join secret not found/.test(err?.message)) {
+            pending.add(params.copayerId);
+            if (pending.size === 2) recipientsPolled();
+          }
+          throw err;
+        }
+      });
+      const errors: any[] = [];
+      const finished = new Set<number>();
+      for (const [i, t] of tssKeyGens.entries()) {
+        t.on('error', e => errors.push(e));
+        t.once('complete', () => finished.add(i));
+      }
+      const allComplete = complete(tssKeyGens, i => i === 0 ? { walletName: 'w', copayerName: 'c0' } : { copayerName: 'c' + i });
+      try {
+        await polled;
+        // Recipients have a finished DKG, asked for the delivery and got nothing; nobody is done yet
+        tss1.getTssKey().should.not.equal(null);
+        tss2.getTssKey().should.not.equal(null);
+        [...finished].should.deep.equal([]);
+        joinWalletStub.callCount.should.equal(0);
+      } finally {
+        release();
+      }
+      await allComplete;
+
+      createWalletStub.callCount.should.equal(1);
+      joinWalletStub.callCount.should.equal(2);
+      for (const a of joinWalletStub.args) a[0].should.equal(secret);
+      attempts.should.be.greaterThan(1);
+      // The completed DKG is never re-exported or re-processed while waiting
+      for (const e of errors) e.message.should.not.include('Cannot export a completed session');
+
+      const captured = JSON.stringify(posted) + JSON.stringify(await storedRecords(tss0.id));
+      captured.should.not.include(secret);
+      captured.should.not.include(walletPrivKey.toString());
+      captured.should.not.include(walletPrivKey.toWIF());
+      const doc = await storage.db.collection('tss_keygen').findOne({ id: tss0.id });
+      should.not.exist(doc.bwsJoinSecret);
+      (await storedRecords(tss0.id)).map(r => r.partyId).should.deep.equal([1, 2]);
+    });
+
+    describe('ordinary wallet enrollment (not stubbed)', function() {
+      const derivationPath = 'm/0/0';
+
+      beforeEach(function() {
+        createWalletStub.restore();
+        joinWalletStub.restore();
+        // TssKeyGen builds its own API client; point it at the in-process BWS
+        const fromObj = Client.prototype.fromObj;
+        sandbox.stub(Client.prototype, 'fromObj').callsFake(function(this: any, ...args: any[]) {
+          const result = fromObj.apply(this, args);
+          this.request.r = request(app);
+          return result;
+        });
+        sandbox.spy(Client.prototype, 'createWallet');
+        sandbox.spy(Client.prototype, 'joinWallet');
+      });
+
+      for (const parties of [2, 3]) {
+        it(happyPath(`should enroll every party of a 2-of-${parties} key in one wallet, recover it, and sign`), async function() {
+          const list = tssKeyGens = keys.slice(0, parties).map(newTss);
+          await invite(list[0], list.slice(1));
+          const errors: any[] = [];
+          for (const t of list) t.on('error', e => errors.push(e));
+          const walletName = `enroll-${parties}`;
+          await complete(list, i => i === 0 ? { walletName, copayerName: 'c0' } : { copayerName: 'c' + i });
+          errors.should.deep.equal([]);
+
+          (Client.prototype.createWallet as sinon.SinonSpy).callCount.should.equal(1);
+          (Client.prototype.joinWallet as sinon.SinonSpy).callCount.should.equal(parties - 1);
+          const created = await (Client.prototype.createWallet as sinon.SinonSpy).returnValues[0];
+
+          const session = await storage.fetchTssKeyGenSession({ id: list[0].id });
+          const wallets = await storage.db.collection('wallets').find({ tssKeyId: list[0].id }).toArray();
+          wallets.length.should.equal(1);
+          wallets[0].copayers.map(c => c.id).sort().should.deep.equal([...session.participants].sort());
+
+          // Reopen the saved wallet from each party's key: encrypted metadata must be readable and copayers verified
+          const clients = [];
+          for (const [i, t] of list.entries()) {
+            const creds = t.getTssKey().createCredentials(null, {
+              chain: chain.toLowerCase(),
+              coin: chain.toLowerCase(),
+              network,
+              account: 0
+            });
+            should.not.exist(creds.walletPrivKey);
+            const client = helpers.newClient(app);
+            client.fromObj(creds);
+            await client.openWallet();
+            // Recovered from the party's personally encrypted customData, not supplied by the test
+            client.credentials.walletPrivKey.should.equal(Client.parseSecret(created.secret).walletPrivKey.toString());
+            client.credentials.walletId.should.equal(created.wallet.id);
+            client.credentials.walletName.should.equal(walletName);
+            client.credentials.copayerName.should.equal('c' + i);
+            clients.push(client);
+          }
+          const status = await clients[1].getStatus({});
+          status.wallet.copayers.map(c => c.name).sort().should.deep.equal(list.map((_, i) => 'c' + i).sort());
+
+          // Normal threshold signature by the enrolled parties
+          const messageHash = BitcoreLib.crypto.Hash.sha256(Buffer.from('enrollment ' + walletName)); // the sign session id derives from it
+          const sigs = [0, 1].map(i => new TssSign({
+            baseUrl: '/bws/api',
+            request: request(app),
+            credentials: clients[i].credentials,
+            tssKey: list[i].getTssKey()
+          }));
+          for (const sig of sigs) await sig.start({ messageHash, derivationPath });
+          const signed = sigs.map(sig => new Promise(r => sig.once('complete', r)));
+          for (const sig of sigs) {
+            sig.on('error', (e) => { should.not.exist(e?.message ?? e); });
+            sig.subscribe({ timeout: 10 });
+          }
+          await Promise.all(signed);
+          const signature = sigs[0].getSignature();
+          const pubKey = BitcoreLib.HDPublicKey(list[0].getTssKey().getXPubKey(network)).deriveChild(derivationPath).publicKey.toString('hex');
+          signature.pubKey.should.equal(pubKey);
+        });
+      }
+    });
+
+    it('should serve only the caller\'s record, repeatedly, and enforce the existing access boundary', async function() {
+      const [tss0] = await dkgOnly();
+      const get = (key) => rawRequest(key).get(`/v1/tss/keygen/${tss0.id}/secret`);
+
+      // not yet published
+      await rejects(get(keys[1]), /BWS join secret not found|TSS_BWS_JOIN_SECRET_NOT_FOUND/);
+
+      // creator only
+      const body = { records: [1, 2].map(partyId => ({ partyId, encryptedMessage: 'AAAA', signature: 'sig' })) };
+      await rejects(rawRequest(keys[1]).post(`/v1/tss/keygen/${tss0.id}/secret`, body), /Only the session creator can store the BWS join secret/);
+      await rejects(rawRequest(keys[0]).post(`/v1/tss/keygen/${tss0.id}/secret`, { secret: secret }), /Invalid BWS join delivery provided/); // legacy plaintext
+      should.not.exist(await storedRecords(tss0.id));
+
+      // malformed sets
+      const record = (partyId, extra = {}) => ({ partyId, encryptedMessage: 'AAAA', signature: 'sig', ...extra });
+      const bad = [
+        { records: [record(1)] },
+        { records: [record(1), record(1)] },
+        { records: [record(0), record(1)] },
+        { records: [record(1), record(3)] },
+        { records: [record(1), record(2, { signature: 'x'.repeat(257) })] },
+        { records: [record(1), record(2, { encryptedMessage: 'x'.repeat(16 * 1024 + 1) })] },
+        { records: [record(1), record(2, { encryptedMessage: '' })] }
+      ];
+      for (const b of bad) {
+        await rejects(rawRequest(keys[0]).post(`/v1/tss/keygen/${tss0.id}/secret`, b), /Invalid BWS join delivery provided/);
+      }
+      should.not.exist(await storedRecords(tss0.id));
+
+      await rawRequest(keys[0]).post(`/v1/tss/keygen/${tss0.id}/secret`, { ...body, records: body.records.map(r => ({ ...r, encryptedMessage: 'ENC' + r.partyId })) });
+      for (let i = 0; i < 2; i++) { // repeat GET works
+        for (const p of [1, 2]) {
+          const { body: res } = await get(keys[p]);
+          res.should.deep.equal({ encryptedMessage: 'ENC' + p, signature: 'sig' });
+        }
+      }
+      // nonparticipant
+      await rejects(get(new Key({ seedType: 'new' })), /NOT_AUTHORIZED/);
+      // missing session
+      await rejects(rawRequest(keys[1]).get('/v1/tss/keygen/nonexistent/secret'), /Session not found/);
+    });
+
+    it('should never return a legacy plaintext secret', async function() {
+      const [tss0] = await dkgOnly();
+      await storage.db.collection('tss_keygen').updateOne({ id: tss0.id }, { $set: { bwsJoinSecret: secret } });
+      await rejects(rawRequest(keys[1]).get(`/v1/tss/keygen/${tss0.id}/secret`), /BWS join secret not found|TSS_BWS_JOIN_SECRET_NOT_FOUND/);
+    });
+
+    describe('verification of the delivery', function() {
+      let tss0: TssKeyGen;
+      let tss1: TssKeyGen;
+      let tss2: TssKeyGen;
+
+      beforeEach(async function() {
+        [tss0, tss1, tss2] = await dkgOnly();
+        await tss0.createWallet({ walletName: 'w', copayerName: 'c0' });
+        createWalletStub.callCount.should.equal(1);
+      });
+
+      const rejected = async (tss: TssKeyGen, msg: RegExp) => {
+        await rejects(tss.joinWallet({ copayerName: 'c' }), msg);
+        joinWalletStub.callCount.should.equal(0);
+      };
+
+      it(happyPath('should join with a valid delivery'), async function() {
+        await tss1.joinWallet({ copayerName: 'c1' });
+        await tss2.joinWallet({ copayerName: 'c2' });
+        joinWalletStub.args.map(a => a[0]).should.deep.equal([secret, secret]);
+      });
+
+      it('should reject a plaintext response instead of falling back to legacy enrollment', async function() {
+        sandbox.stub(BwsTssKeyGen, 'getBwsJoinSecret').resolves({ secret });
+        await rejected(tss1, /Unsupported wallet join delivery/);
+      });
+
+      it(happyPath('should reuse the created wallet when publication is retried'), async function() {
+        await tss0.createWallet({ walletName: 'w', copayerName: 'c0' });
+        createWalletStub.callCount.should.equal(1);
+      });
+
+      it('should reject a changed ciphertext or signature', async function() {
+        await overwriteRecords(tss0.id, recs => recs.map(r => r.partyId === 1 ? { ...r, encryptedMessage: Buffer.from(r.encryptedMessage, 'base64').fill(1, 40, 45).toString('base64') } : r));
+        await rejected(tss1, /decrypt and verify/);
+        await overwriteRecords(tss0.id, recs => recs.map(r => ({ ...r, signature: recs.find(o => o.partyId !== r.partyId).signature })));
+        await rejected(tss2, /decrypt and verify/);
+      });
+
+      it('should reject a record that was not encrypted to the recipient', async function() {
+        await overwriteRecords(tss0.id, recs => recs.map(r => ({ ...r, partyId: 3 - r.partyId })));
+        await rejected(tss1, /decrypt and verify/);
+      });
+
+      it('should reject a delivery from a key other than the invitation key', async function() {
+        const impostor = new BitcoreLib.PrivateKey();
+        const payload = Buffer.from(JSON.stringify({ purpose: 'tss-wallet-join-v1', sessionId: tss0.id, partyId: 1, commonKeyChain: tss1.getTssKey().keychain.commonKeyChain, secret }));
+        const forged = TssUtils.encryptAndDetachSignData(payload, credsOf(keys[1]).requestPubKey, impostor);
+        await overwriteRecords(tss0.id, recs => recs.map(r => r.partyId === 1 ? { partyId: 1, ...forged } : r));
+        await rejected(tss1, /decrypt and verify/);
+      });
+
+      it('should reject a delivery for a different session, party, keychain, chain or network', async function() {
+        const creator = new BitcoreLib.PrivateKey(credsOf(keys[0]).requestPrivKey);
+        const base = { purpose: 'tss-wallet-join-v1', sessionId: tss0.id, partyId: 1, commonKeyChain: tss1.getTssKey().keychain.commonKeyChain, secret };
+        const otherChain = Client._buildSecret(WALLET_ID, walletPrivKey, 'btc', network);
+        const otherNetwork = Client._buildSecret(WALLET_ID, walletPrivKey, chain.toLowerCase(), 'testnet');
+        const variants = [
+          { changes: { sessionId: 'other' }, error: /Wallet join delivery does not match this key generation session/ },
+          { changes: { partyId: 2 }, error: /Wallet join delivery does not match this key generation session/ },
+          { changes: { commonKeyChain: tss1.getTssKey().keychain.commonKeyChain.replace(/.$/, c => c === 'a' ? 'b' : 'a') }, error: /Wallet join delivery does not match this key generation session/ },
+          { changes: { purpose: 'something-else' }, error: /Wallet join delivery does not match this key generation session/ },
+          { changes: { secret: otherChain }, error: /Wallet join delivery is for a different chain or network/ },
+          { changes: { secret: otherNetwork }, error: /Wallet join delivery is for a different chain or network/ },
+          { changes: { secret: 'not a secret' }, error: /Invalid secret/ }
+        ];
+        for (const { changes, error } of variants) {
+          const forged = TssUtils.encryptAndDetachSignData(Buffer.from(JSON.stringify({ ...base, ...changes })), credsOf(keys[1]).requestPubKey, creator);
+          await overwriteRecords(tss0.id, recs => recs.map(r => r.partyId === 1 ? { partyId: 1, ...forged } : r));
+          await rejected(tss1, error);
+        }
+      });
+
+      it('should not include the plaintext in errors', async function() {
+        const creator = new BitcoreLib.PrivateKey(credsOf(keys[0]).requestPrivKey);
+        const forged = TssUtils.encryptAndDetachSignData(Buffer.from(JSON.stringify({ purpose: 'x', secret })), credsOf(keys[1]).requestPubKey, creator);
+        await overwriteRecords(tss0.id, recs => recs.map(r => r.partyId === 1 ? { partyId: 1, ...forged } : r));
+        const err = await rejects(tss1.joinWallet({ copayerName: 'c' }), /Wallet join delivery does not match this key generation session/);
+        err.message.should.not.include(secret);
+      });
+    });
+
+    describe('session export and restore', function() {
+      const decryptExport = (key, exported: string) => {
+        const c = credsOf(key);
+        return JSON.parse(TssUtils.decrypt(Buffer.from(exported.split('.').pop(), 'base64'), c.requestPubKey, c.requestPrivKey).toString());
+      };
+
+      it(happyPath('should restore the invitation keys of the creator and a recipient into fresh instances'), async function() {
+        const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
+        await invite(tss0, [tss1, tss2]);
+        const e0 = tss0.exportSession();
+        const e1 = tss1.exportSession();
+        e0.should.not.include(keys[0].get().xPrivKey);
+        Object.keys(decryptExport(keys[0], e0).recipientKeys).should.deep.equal(['1', '2']);
+        decryptExport(keys[1], e1).creatorPubKey.should.equal(credsOf(keys[0]).requestPubKey);
+
+        const fresh0 = newTss(keys[0]);
+        const fresh1 = newTss(keys[1]);
+        tssKeyGens = [fresh0, fresh1, tss2];
+        await fresh0.restoreSession({ session: e0 });
+        await fresh1.restoreSession({ session: e1 });
+        await complete(tssKeyGens, i => i === 0 ? { walletName: 'w', copayerName: 'c0' } : { copayerName: 'c' + i });
+        createWalletStub.callCount.should.equal(1);
+        joinWalletStub.callCount.should.equal(2);
+      });
+
+      it(happyPath('should keep the bindings across a same-instance restore (round rollback)'), async function() {
+        const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
+        await invite(tss0, [tss1, tss2]);
+        await tss0.restoreSession({ session: tss0.exportSession() });
+        Object.keys(decryptExport(keys[0], tss0.exportSession()).recipientKeys).should.deep.equal(['1', '2']);
+      });
+
+      it('should restore the legacy export format within the same protocol for DKG only, with no delivery trust', async function() {
+        const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
+        await invite(tss0, [tss1, tss2]);
+        const legacy0 = decryptExport(keys[0], tss0.exportSession()).session;
+        const legacy1 = decryptExport(keys[1], tss1.exportSession()).session;
+        const fresh0 = newTss(keys[0]);
+        const fresh1 = newTss(keys[1]);
+        tssKeyGens = [fresh0, fresh1, tss2];
+        await fresh0.restoreSession({ session: legacy0 });
+        await fresh1.restoreSession({ session: legacy1 });
+        await complete(tssKeyGens);
+        await rejects(fresh0.createWallet({ walletName: 'w', copayerName: 'c0' }), /Missing trusted invitation keys/);
+        createWalletStub.callCount.should.equal(0);
+        await rejects(fresh1.joinWallet({ copayerName: 'c1' }), /Missing the trusted invitation key/);
+        joinWalletStub.callCount.should.equal(0);
+        should.not.exist(await storedRecords(tss0.id));
+      });
+
+      it('should not replace bindings when the session export cannot be decrypted', async function() {
+        const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
+        await invite(tss0, [tss1, tss2]);
+        const original = decryptExport(keys[0], tss0.exportSession());
+        await rejects(tss0.restoreSession({ session: 'tsssession.v2.' + Buffer.from('garbage').toString('base64') }), /Invalid checksum/);
+        decryptExport(keys[0], tss0.exportSession()).recipientKeys.should.deep.equal(original.recipientKeys);
+      });
+
+      it('should preserve the session and bindings when the inner DKG restore fails', async function() {
+        const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
+        await invite(tss0, [tss1, tss2]);
+
+        for (const [i, tss] of [tss0, tss1].entries()) {
+          const original = decryptExport(keys[i], tss.exportSession());
+          const metadata = { id: tss.id, partyId: tss.partyId, m: tss.m, n: tss.n };
+          const credentials = credsOf(keys[i]);
+          // Keep the outer wrapper valid, but give the inner restore invalid DKG bytes
+          // and different metadata/bindings that must not replace the active session.
+          const wrapped = {
+            session: ['other-session', 2, 1, 2, Buffer.from('garbage').toString('base64')].join(':'),
+            recipientKeys: {},
+            creatorPubKey: credsOf(keys[2]).requestPubKey
+          };
+          const encrypted = TssUtils.encrypt(Buffer.from(JSON.stringify(wrapped)), credentials.requestPubKey, credentials.requestPrivKey);
+          await rejects(tss.restoreSession({ session: 'tsssession.v2.' + encrypted.toString('base64') }), /Invalid checksum/);
+
+          ({ id: tss.id, partyId: tss.partyId, m: tss.m, n: tss.n }).should.deep.equal(metadata);
+          const restored = decryptExport(keys[i], tss.exportSession());
+          restored.recipientKeys.should.deep.equal(original.recipientKeys);
+          should.equal(restored.creatorPubKey, original.creatorPubKey);
+        }
+
+        for (const tss of tssKeyGens) tss.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        await complete(tssKeyGens, i => i === 0 ? { walletName: 'w', copayerName: 'c0' } : { copayerName: 'c' + i });
+        createWalletStub.callCount.should.equal(1);
+        joinWalletStub.callCount.should.equal(2);
+      });
+    });
+  });
+
+
   describe('Signing', function() {
     let sig0;
     let sig1;
@@ -1107,7 +1543,7 @@ describe('TSS', function() {
     // Pass `undefined` to omit version entirely (simulates pre-v1.1 legacy clients).
     function stubPostVersion(version: number | undefined) {
       const origPost = Request.prototype.post;
-      sandbox.stub(Request.prototype, 'post').callsFake(function(url, body: any, cb) {
+      return sandbox.stub(Request.prototype, 'post').callsFake(function(url, body: any, cb) {
         if (version !== undefined) {
           return origPost.call(this, url, { ...body, version }, cb);
         } else {
@@ -1118,6 +1554,27 @@ describe('TSS', function() {
     }
 
     describe('Key Generation', function() {
+      for (const [creatorVersion, joinerVersion] of [[1.2, 1.3], [1.3, 1.2]]) {
+        it(`should reject scheme ${joinerVersion} joining scheme ${creatorVersion} before key generation`, async function() {
+          const creatorKey = new Key({ seedType: 'new' });
+          const joinerKey = new Key({ seedType: 'new' });
+          const tss0 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: creatorKey });
+          const tss1 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: joinerKey });
+          const creatorStub = stubPostVersion(creatorVersion);
+          await tss0.newKey({ m, n });
+          const code = await tss0.createJoinCode({
+            partyId: 1,
+            partyPubKey: joinerKey.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+          });
+          creatorStub.restore();
+          stubPostVersion(joinerVersion);
+          const err = await tss1.joinKey({ code }).then(() => null, e => e);
+          should.exist(err);
+          err.message.should.include('TSS_MISMATCH_VERSION');
+          (await storage.fetchTssKeyGenSession({ id: tss0.id })).participants.filter(Boolean).should.have.length(1);
+        });
+      }
+
       it('should reject a too-old client version', async function() {
         stubPostVersion(0.9);
         const key = new Key({ seedType: 'new' });
@@ -1154,11 +1611,11 @@ describe('TSS', function() {
       });
 
       it('should reject a version mismatch when joining a session', async function() {
-        // Party 0 creates with current version (1.1); party 1 tries to join with old version (1.0)
+        // Party 0 creates with the current version; party 1 tries to join with an old version.
         const party0Key = new Key({ seedType: 'new' });
         const party1Key = new Key({ seedType: 'new' });
         const tss0 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: party0Key });
-        await tss0.newKey({ m, n }); // real version, creates session with schemeVersion 1.1
+        await tss0.newKey({ m, n });
 
         const joinCode = await tss0.createJoinCode({
           partyId: 1,
