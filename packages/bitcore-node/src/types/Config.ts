@@ -133,6 +133,20 @@ export interface ConfigType {
     storage: {
       disabled?: boolean;
     };
+    walletStats: {
+      disabled?: boolean;
+      snapshotDayUTC?: number; // 0 (Sun) - 6 (Sat), default 1 (Mon)
+      snapshotHourUTC?: number; // 0-23, default 2
+      sleepMs?: number; // throttle: pause length between batches
+      every?: number; // throttle: pause every N wallets
+      maxRetryMs?: number; // rate-limit retry: give up on one call after this long, default 10min
+      maxErrorRatio?: number; // EVM: share of wallets allowed to fail before the week is held back, default 0.05
+      retryMs?: number; // EVM: wait before retrying a held-back week, default 1h
+      api?: {
+        disabled?: boolean;
+        authKeys?: Array<string>; // hex pubkeys allowed to sign requests
+      };
+    };
   };
   externalProviders?: {
     moralis: {

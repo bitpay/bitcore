@@ -626,6 +626,27 @@ describe('MultiProviderEVMStateProvider: _buildWalletTransactionsStream tokenAdd
     expect(adapter.streamAddressTransactions.callCount).to.equal(1);
     expect(adapter.streamERC20Transfers.callCount).to.equal(0);
   });
+
+  it('asks for wallet-sized pages so the page cap allows a long history', async function() {
+    // 1000 pages of 10 rows would fail any address with more than 10k transactions
+    const { provider, adapter } = buildProviderWithFakeAdapter();
+    const transactionStream: any = { eventPipe: (s: any) => s };
+    await (provider as any)._buildWalletTransactionsStream(
+      { network: 'mainnet', args: {} },
+      { transactionStream, walletAddresses: ['0xaddr1'] }
+    );
+    expect(adapter.streamAddressTransactions.firstCall.args[0].args.pageSize).to.equal(100);
+  });
+
+  it('keeps a caller-supplied page size', async function() {
+    const { provider, adapter } = buildProviderWithFakeAdapter();
+    const transactionStream: any = { eventPipe: (s: any) => s };
+    await (provider as any)._buildWalletTransactionsStream(
+      { network: 'mainnet', args: { pageSize: 25 } },
+      { transactionStream, walletAddresses: ['0xaddr1'] }
+    );
+    expect(adapter.streamAddressTransactions.firstCall.args[0].args.pageSize).to.equal(25);
+  });
 });
 
 describe('MultiProviderEVMStateProvider: _verifyBlockBeforeDate EthDater fallback', function() {
