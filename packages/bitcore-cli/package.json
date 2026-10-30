@@ -13,7 +13,7 @@
     "wallet"
   ],
   "engines": {
-    "node": "^22"
+    "node": ">=22.12.0"
   },
   "repository": {
     "type": "git",
@@ -49,7 +49,7 @@
     "@bitpay-labs/bitcore-wallet-client": "^11.11.1",
     "@bitpay-labs/crypto-wallet-core": "^11.11.1",
     "@clack/prompts": "1.5.1",
-    "commander": "14.0.0",
+    "commander": "15.0.0",
     "external-editor": "3.1.0"
   },
   "devDependencies": {

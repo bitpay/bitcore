@@ -380,8 +380,14 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     let addresses = await this.getWalletAddresses(wallet._id);
     addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
+    // every address is read at the same block, so look it up once
+    const blockNumber = args.time && addresses.length
+      ? await this.getBlockHeightBeforeTime({ chain: this.chain, network, time: args.time })
+      : undefined;
     const addressBalances = await Promise.all<WalletBalanceType>(addresses.map(({ address }) =>
-      this.getBalanceForAddress({ chain: this.chain, network, address, args })
+      blockNumber === undefined
+        ? this.getBalanceForAddress({ chain: this.chain, network, address, args })
+        : this.getBalanceAtBlock({ network, address, args, blockNumber })
     ));
     const balance = addressBalances.reduce(
       (prev, cur) => ({
@@ -400,37 +406,60 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
     const { chain, network, address, args } = params;
-    const { web3 } = await this.getWeb3(network, { type: args?.time ? 'historical' : 'realtime' });
+    if (args?.time) {
+      // only the latest balance is cached
+      const blockNumber = await this.getBlockHeightBeforeTime({ chain, network, time: args.time });
+      return this.getBalanceAtBlock({ network, address, args, blockNumber });
+    }
     const tokenAddress = args?.tokenAddress;
     const addressLower = address.toLowerCase();
-    const hex = args?.hex === 'true' || args?.hex === '1';
-    let blockNumber: number | string = 'latest';
-    if (args?.time) {
-      const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
-      if (!block) {
-        throw new Error(`Balance not found at ${args.time}`);
-      }
-      blockNumber = block.height;
-    }
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
     const balance = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
-      async () => {
-        if (tokenAddress) {
-          const token = new web3.eth.Contract(ERC20Abi, tokenAddress);
-          const balance = await token.methods.balanceOf(address).call<bigint>({}, blockNumber);
-          const numberBalance = '0x' + BigInt(balance).toString(16);
-          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
-        } else {
-          const balance = await web3.eth.getBalance(address, blockNumber);
-          const numberBalance = '0x' + BigInt(balance).toString(16);
-          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
-        }
-      },
-      args?.time ? CacheStorage.Times.None : CacheStorage.Times.Minute
+      () => this.getRawBalance({ network, address, tokenAddress, blockNumber: 'latest' }),
+      CacheStorage.Times.Minute
     );
+    return this.formatBalance(balance, args);
+  }
+
+  async getBlockHeightBeforeTime(params: { chain: string; network: string; time: string }) {
+    const block = await this.getBlockBeforeTime(params);
+    if (!block) {
+      throw new Error(`Balance not found at ${params.time}`);
+    }
+    return block.height;
+  }
+
+  async getBalanceAtBlock(params: { network: string; address: string; args: any; blockNumber: number }) {
+    const { network, address, args, blockNumber } = params;
+    const balance = await this.getRawBalance({ network, address, tokenAddress: args?.tokenAddress, blockNumber });
+    return this.formatBalance(balance, args);
+  }
+
+  async getRawBalance(params: {
+    network: string;
+    address: string;
+    tokenAddress?: string;
+    blockNumber: number | 'latest';
+  }) {
+    const { network, address, tokenAddress, blockNumber } = params;
+    const { web3 } = await this.getWeb3(network, { type: blockNumber === 'latest' ? 'realtime' : 'historical' });
+    if (tokenAddress) {
+      const token = new web3.eth.Contract(ERC20Abi, tokenAddress);
+      const balance = await token.methods.balanceOf(address).call<bigint>({}, blockNumber);
+      const numberBalance = '0x' + BigInt(balance).toString(16);
+      return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
+    } else {
+      const balance = await web3.eth.getBalance(address, blockNumber);
+      const numberBalance = '0x' + BigInt(balance).toString(16);
+      return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
+    }
+  }
+
+  formatBalance(balance: { confirmed: string; unconfirmed: string; balance: string }, args: any): WalletBalanceType {
+    const hex = args?.hex === 'true' || args?.hex === '1';
     return {
       confirmed: hex ? balance.confirmed : Number(balance.confirmed),
       unconfirmed: hex ? balance.unconfirmed : Number(balance.unconfirmed),

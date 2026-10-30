@@ -27,7 +27,7 @@ describe('Chain SOL', function() {
             getRentMinimum: (_space, cb) => cb(null, Defaults.MIN_SOL_BALANCE)
           }),
           getPendingTxs: (_opts, cb) => cb(null, c.txps),
-          storage: { fetchAddresses: (_walletId, cb) => cb(null, []) }
+          storage: { fetchAddressesPage: (_walletId, _opts, cb) => cb(null, []) }
         };
         const wallet = { chain: 'sol', network: 'livenet' };
 

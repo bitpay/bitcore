@@ -4,7 +4,7 @@
   "author": "BitPay Inc",
   "version": "11.10.9",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.22.1"
   },
   "keywords": [
     "bitcore",
