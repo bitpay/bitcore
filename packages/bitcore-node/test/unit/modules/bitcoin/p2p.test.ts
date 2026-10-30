@@ -77,6 +77,76 @@ describe('BitcoinP2PWorker', function() {
   });
 
   describe('sync() with prefetching (single-thread mode)', function() {
+    it('stops processing headers once the worker is stopping', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      const headers = Array.from({ length: 5 }, (_, i) => ({ hash: `block_${i}` }));
+      sandbox.stub(worker as any, 'getBlock').callsFake(async (hash: string) => ({ hash }));
+      const processed: string[] = [];
+      sandbox.stub(worker as any, 'processBlock').callsFake(async (block: any) => {
+        processed.push(block.hash);
+        (worker as any).stopping = true;
+      });
+      setupSyncStubs();
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      getHeaders.onFirstCall().resolves(headers);
+      getHeaders.onSecondCall().resolves(headers);
+
+      const done = sandbox.spy();
+      (worker as any).events.on('SYNCDONE', done);
+
+      expect(await worker.sync()).to.equal(false);
+
+      expect(processed).to.deep.equal(['block_0']);
+      // no more batches after the one that was stopping
+      expect(getHeaders.callCount).to.equal(2);
+      // a stopped sync is not a completed one
+      expect((StateStorage.collection as any).findOneAndUpdate.called).to.equal(false);
+      expect(done.called).to.equal(false);
+      expect((worker as any).isSyncing).to.equal(false);
+    });
+
+    it('does not start without the lease when it runs the election', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      setupSyncStubs();
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      (worker as any).electing = true;
+      (worker as any).isSyncingNode = false;
+
+      expect(await worker.sync()).to.equal(false);
+      expect(getHeaders.called).to.equal(false);
+    });
+
+    it('stops processing headers once its lease is lost', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      const headers = Array.from({ length: 5 }, (_, i) => ({ hash: `block_${i}` }));
+      sandbox.stub(worker as any, 'getBlock').callsFake(async (hash: string) => ({ hash }));
+      const processed: string[] = [];
+      sandbox.stub(worker as any, 'processBlock').callsFake(async (block: any) => {
+        processed.push(block.hash);
+        (worker as any).isSyncingNode = false;
+      });
+      setupSyncStubs();
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      getHeaders.onFirstCall().resolves(headers);
+      getHeaders.onSecondCall().resolves(headers);
+      (worker as any).electing = true;
+      (worker as any).isSyncingNode = true;
+      (worker as any).leaseEnd = performance.now() + 60000;
+
+      expect(await worker.sync()).to.equal(false);
+      expect(processed).to.deep.equal(['block_0']);
+    });
+
+    it('does not start once the worker is stopping', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      setupSyncStubs();
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      (worker as any).stopping = true;
+
+      expect(await worker.sync()).to.equal(false);
+      expect(getHeaders.called).to.equal(false);
+    });
+
     it('should prefetch blocks in parallel during sync', async function() {
       const worker = createWorker({ prefetchSize: 3, threads: 0 });
 
@@ -227,6 +297,25 @@ describe('BitcoinP2PWorker', function() {
   });
 
   describe('sync() dual-mode behavior', function() {
+    it('does not start the multi-thread sync once the worker is stopping', async function() {
+      const worker = createWorker({ threads: 4 });
+      const mtSyncStub = sandbox.stub((worker as any).multiThreadSync, 'sync').resolves(true);
+      sandbox.stub(StateStorage, 'collection').value({
+        findOne: sandbox.stub().resolves({ initialSyncComplete: [] }),
+        findOneAndUpdate: sandbox.stub().resolves()
+      });
+      // stop() lands while sync() looks up the tip
+      sandbox.stub(ChainStateProvider, 'getLocalTip').callsFake(async () => {
+        (worker as any).stopping = true;
+        return { height: 100 } as any;
+      });
+      sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+
+      expect(await worker.sync()).to.equal(false);
+      expect(mtSyncStub.called).to.equal(false);
+      expect((worker as any).isSyncing).to.equal(false);
+    });
+
     it('should delegate to multiThreadSync when initial sync not complete and threads > 0', async function() {
       const worker = createWorker({ threads: 4 });
       const mtSyncStub = sandbox.stub((worker as any).multiThreadSync, 'sync').resolves(true);
