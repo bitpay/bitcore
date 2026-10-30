@@ -11,6 +11,8 @@ import { Common } from '../src/lib/common';
 import { WalletService } from '../src/lib/server';
 import { ExpressApp } from '../src/lib/expressapp';
 import { ClientError } from '../src/lib/errors/clienterror';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import * as TestData from './testdata';
 
 const Defaults = Common.Defaults;
 const should = chai.should();
@@ -758,6 +760,118 @@ describe('ExpressApp', function() {
               res.statusCode.should.equal(400);
               done();
             });
+          });
+        });
+      });
+
+      describe('/v1/wallets/exist', function() {
+        const idA = 'a'.repeat(64);
+        const idB = 'b'.repeat(64);
+        const idC = 'c'.repeat(64);
+        let storage;
+
+        function sign(message) {
+          const hash = Common.Utils.hashMessage(message, false);
+          return BitcoreLib.crypto.ECDSA.sign(hash, new BitcoreLib.PrivateKey(TestData.keyPair.priv), { endian: 'little' }).toString();
+        }
+
+        // posts each body in turn, and calls back with each response's status and body
+        function postEach(bodies, cb) {
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getStorage').returns(storage);
+          start(ExpressApp, function() {
+            const results = [];
+            (function next() {
+              if (results.length === bodies.length) {
+                return cb(null, results);
+              }
+              request({
+                url: testHost + ':' + testPort + config.basePath + '/v1/wallets/exist',
+                method: 'post',
+                json: true,
+                body: bodies[results.length]
+              }, function(err, res, body) {
+                if (err) {
+                  return cb(err);
+                }
+                results.push({ status: res.statusCode, body });
+                next();
+              });
+            })();
+          });
+        }
+
+        function post(body, cb) {
+          postEach([body], (err, results) => (err ? cb(err) : cb(null, { statusCode: results[0].status }, results[0].body)));
+        }
+
+        beforeEach(function() {
+          const copayer = { requestPubKeys: [{ key: TestData.keyPair.pub }] };
+          storage = {
+            fetchCopayerLookup: sinon.stub().callsFake(async id => (id === idA || id === idB ? copayer : undefined))
+          };
+        });
+
+        it('returns the copayers whose signature verifies against their request key', function(done) {
+          post({
+            copayers: [
+              { copayerId: idA, signature: sign(idA) },
+              { copayerId: idB, signature: sign(idA) },
+              { copayerId: idC, signature: sign(idC) }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            storage.fetchCopayerLookup.args.should.deep.equal([[idA], [idB], [idC]]);
+            done();
+          });
+        });
+
+        it('returns no copayers when given none to check', function(done) {
+          postEach([
+            {},
+            { copayers: null },
+            { copayers: idA },
+            { copayers: { copayerId: idA, signature: sign(idA) } },
+            { copayers: [] }
+          ], function(err, results) {
+            should.not.exist(err);
+            results.should.deep.equal(Array(5).fill({ status: 200, body: [] }));
+            storage.fetchCopayerLookup.callCount.should.equal(0);
+            done();
+          });
+        });
+
+        it('does not verify a copayer whose signature is not a string', function(done) {
+          post({
+            copayers: [
+              { copayerId: idA, signature: 1 },
+              { copayerId: idA, signature: [sign(idA)] },
+              { copayerId: idB, signature: {} },
+              { copayerId: idB }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([]);
+            storage.fetchCopayerLookup.callCount.should.equal(4);
+            done();
+          });
+        });
+
+        it('treats a copayer that fails to load as not found', function(done) {
+          storage.fetchCopayerLookup.withArgs(idB).rejects(new Error('lookup failed'));
+          post({
+            copayers: [
+              { copayerId: idA, signature: sign(idA) },
+              { copayerId: idB, signature: sign(idB) }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            done();
           });
         });
       });
