@@ -34,6 +34,16 @@ export const Services = {
       url: 'https://www.sushi.com/swap'
     },
     {
+      // Rango v2 routes every EVM swap and bridge through its own EIP-2535
+      // diamond, deployed at the same deterministic address on Ethereum,
+      // Polygon, Arbitrum, Optimism, Base and the other EVM chains we support.
+      // Audited and open source: github.com/rango-exchange/rango-contracts-v2
+      address: '0x69460570c93f9DE5E2edbC3052bf10125f0Ca22d',
+      contractName: 'Rango: RangoDiamond',
+      name: 'Rango',
+      url: 'https://rango.exchange'
+    },
+    {
       address: '0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146', // THORChain: THORChain Router v4.1.1 Contract address
       contractName: 'THORChain: THORChain Router v4.1.1',
       name: 'THORChain',
