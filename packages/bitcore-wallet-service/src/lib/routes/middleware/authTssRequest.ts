@@ -152,10 +152,12 @@ export function authTssSignRequest(): express.RequestHandler {
           throw Errors.TSS_SESSION_EXPIRED;
         }
         const party = session.participants.find(p => p.copayerId === copayerId);
-        if (!party) {
+        // A copayer joins an existing session by sending its round 0 message (participant is added in TssSign.processMessage)
+        const isJoining = !party && body?.message?.round === 0;
+        if (!party && !isJoining) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
-        if (verifyMsg && party.partyId !== body?.message?.partyId) {
+        if (verifyMsg && party && party.partyId !== body?.message?.partyId) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
 
