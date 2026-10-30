@@ -14,7 +14,7 @@
     },
     "externalProviders": {
       "alchemy": {
-        "apiKey": ""
+        "apiKey": "YOUR_ALCHEMY_API_KEY"
       }
     },
     "chains": {
@@ -106,14 +106,20 @@
       "ARC": {
         "testnet": {
           "chainSource": "external",
-          "module": "./moralis",
+          "module": "./multiProvider",
           "trustedPeers": [],
           "providers": [
             {
-              "host": "rpc.testnet.arc.network",
+              "host": "rpc.testnet.arc.io",
               "protocol": "https",
               "port": "",
               "dataType": "combined"
+            }
+          ],
+          "indexedProviderRouting": [
+            {
+              "name": "alchemy",
+              "priority": 0
             }
           ],
           "threads": 0

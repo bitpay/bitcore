@@ -64,6 +64,7 @@ const DEFAULT_COINS: Record<string, string> = {
   pol: 'polygon-ecosystem-token',
   sol: 'solana',
   xrp: 'ripple',
+  arc: 'usd-coin',
 };
 
 const DEFAULT_COIN_ENTRIES = Object.entries(DEFAULT_COINS);
@@ -79,6 +80,7 @@ const CHAIN_ALIASES = {
 } as const satisfies Record<string, BitPayTokenChain>;
 
 const COINGECKO_PLATFORM_ID_BY_CHAIN = {
+  [Constants.EVM_CHAINS.ARC]: 'arc',
   [Constants.EVM_CHAINS.ARB]: 'arbitrum-one',
   [Constants.EVM_CHAINS.BASE]: 'base',
   [Constants.EVM_CHAINS.ETH]: 'ethereum',
@@ -527,7 +529,7 @@ export class CoinGeckoService {
 
     const cacheKey = `cgTokenList:${platformId}`;
 
-    return this.withGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, async () => {
+    const tokenList = await this.withGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, async () => {
       const { API_KEY } = this.coinGeckoGetCredentials();
       const headers = this.coinGeckoGetHeaders(API_KEY);
 
@@ -543,5 +545,8 @@ export class CoinGeckoService {
         return { ...t, logoURI };
       });
     });
+    return platformId === 'arc'
+      ? tokenList.filter(token => token?.address?.toLowerCase() !== Constants.ARC.USDC_CONTRACT_ADDRESS)
+      : tokenList;
   }
 }

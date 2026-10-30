@@ -224,6 +224,37 @@ describe('CoinGecko integration', function() {
       should.exist(data);
     });
 
+    it('should use the Arc platform for token lists and contract lookups', async () => {
+      forceGlobalCacheMisses();
+      const tokenAddress = '0x3600000000000000000000000000000000000000';
+      const otherToken = { chainId: 5042, address: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        name: 'Arc Test Token', symbol: 'TEST', decimals: 6, logoURI: '' };
+      const tokenList = [{ chainId: 5042, address: tokenAddress, symbol: 'USDC', decimals: 6 }, otherToken];
+      fakeRequest = createCoinGeckoRequestStub({
+        onTokenList: platformId => {
+          platformId.should.equal('arc');
+          return { tokens: tokenList };
+        },
+        onCoinContract: (platformId, address) => {
+          platformId.should.equal('arc');
+          address.should.equal(tokenAddress);
+          return { id: 'usd-coin', symbol: 'usdc', asset_platform_id: 'arc' };
+        },
+        onMarketChart: id => {
+          id.should.equal('usd-coin');
+          return { prices: [[1, 1]] };
+        }
+      });
+      cg().request = fakeRequest;
+
+      const tokens = await getTokens({ params: { chain: 'arc' } });
+      tokens.should.deep.equal([otherToken]);
+      cg().storage.checkAndUseGlobalCache.onSecondCall().callsFake((_key, _duration, cb) => cb(null, tokenList, null));
+      (await getTokens({ params: { chain: 'arc' } })).should.deep.equal([otherToken]);
+      const rates = await getFiatRates({ coin: 'USDC', chain: 'arc', tokenAddress });
+      rates.should.deep.equal([{ ts: 1, rate: 1 }]);
+    });
+
     it('should map chain aliases to the correct token list platform', async () => {
       forceGlobalCacheMisses();
 
@@ -313,6 +344,15 @@ describe('CoinGecko integration', function() {
       data.should.have.length(1);
       data[0].about.should.equal('About BTC');
       data[0].low52w.should.equal(90);
+    });
+
+    it('should resolve native Arc market stats and fiat rates to USDC', async () => {
+      const getSpy = sandbox.spy(fakeRequest, 'get');
+      await getMarketStats({ coin: 'arc' });
+      parseRequestedIdsFromMarketsUrl(getSpy.firstCall.args[0]).should.deep.equal(['usd-coin']);
+
+      await getFiatRates({ coin: 'arc' });
+      matchCoinIdFromMarketChartUrl(getSpy.lastCall.args[0]).should.equal('usd-coin');
     });
 
     it('should reject non-default coin symbols without tokenAddress', async () => {
@@ -829,7 +869,7 @@ describe('CoinGecko integration', function() {
       should.exist(data);
       Object.keys(data)
         .sort()
-        .should.deep.equal(['bch', 'btc', 'doge', 'eth', 'ltc', 'pol', 'sol', 'xrp']);
+        .should.deep.equal(['arc', 'bch', 'btc', 'doge', 'eth', 'ltc', 'pol', 'sol', 'xrp']);
     });
 
     it('should reject overly long coin symbols', async () => {
@@ -922,7 +962,7 @@ describe('CoinGecko integration', function() {
       should.exist(data);
       Object.keys(data)
         .sort()
-        .should.deep.equal(['bch', 'btc', 'doge', 'eth', 'ltc', 'pol', 'sol', 'xrp']);
+        .should.deep.equal(['arc', 'bch', 'btc', 'doge', 'eth', 'ltc', 'pol', 'sol', 'xrp']);
 
       data.btc.should.deep.equal([
         { ts: 1, rate: 100 },

@@ -39,6 +39,13 @@ describe('BlockChain explorer', function() {
       exp2.should.respondTo('initSocket');
       exp2.should.respondTo('register');
       exp2.should.respondTo('addAddresses');
+
+      for (const [network, apiNetwork] of [['livenet', 'mainnet'], ['testnet', 'testnet']]) {
+        const opts = { coin: 'arc', network };
+        BlockChainExplorer(opts).baseUrl.should.equal(`https://api-eth.bitcore.io/api/ARC/${apiNetwork}`);
+        BlockChainExplorer({ ...opts, url: 'http://localhost:3000' })
+          .baseUrl.should.equal(`http://localhost:3000/api/ARC/${apiNetwork}`);
+      }
     });
     it('should fail on unsupported provider', function() {
       try {

@@ -87,6 +87,14 @@ export const errorSpec: IErrorSpec[] = [
     message: 'Your linked SOL wallet does not have enough SOL for fee.'
   },
   {
+    name: 'INSUFFICIENT_ARC_FEE',
+    message: 'Your linked ARC wallet does not have enough USDC for fee.'
+  },
+  {
+    name: 'LOCKED_ARC_FEE',
+    message: 'Your linked ARC wallet USDC is locked by pending spend proposals.'
+  },
+  {
     name: 'LOCKED_FUNDS',
     message: 'Locked funds.'
   },

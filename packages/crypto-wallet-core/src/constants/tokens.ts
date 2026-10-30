@@ -199,6 +199,8 @@ export const OP_TOKEN_OPTS = {
   }
 };
 
+export const ARC_TOKEN_OPTS = {};
+
 export const SOL_TOKEN_OPTS = {
   'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': {
     name: 'USD Coin',
@@ -220,5 +222,6 @@ export const TOKEN_OPTS = {
   ARB_TOKEN_OPTS,
   BASE_TOKEN_OPTS,
   OP_TOKEN_OPTS,
+  ARC_TOKEN_OPTS,
   SOL_TOKEN_OPTS
 };

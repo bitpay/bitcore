@@ -578,6 +578,8 @@ export class Key {
       coinCode = '60';
     } else if (chain == 'base') {
       coinCode = '60';
+    } else if (chain == 'arc') {
+      coinCode = '60';
     } else if (chain == 'xrp') {
       coinCode = '144';
     } else if (chain == 'doge') {

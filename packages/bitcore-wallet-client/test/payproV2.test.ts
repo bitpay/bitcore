@@ -1,6 +1,7 @@
 'use strict';
 
 import { ethers } from '@bitpay-labs/crypto-wallet-core';
+import { expect } from 'chai';
 import { PayProV2 } from '../src/lib/payproV2';
 import * as TestData from './data/testdata';
 
@@ -270,6 +271,15 @@ describe('PayProV2', () => {
 
   });
   describe('selectPaymentOption', () => {
+
+    it('should enforce the standard EVM payment-request fee cap for Arc', () => {
+      const response = { chain: 'ARC', currency: 'USDC_arc', instructions: [{
+        to: '0x0000000000000000000000000000000000000001', value: 1e18, gasPrice: 1000 * 1e9
+      }] };
+      expect(PayProV2.processResponse(response).requiredFeeRate).to.equal(1000 * 1e9);
+      response.instructions[0].gasPrice++;
+      expect(() => PayProV2.processResponse(response)).to.throw('Fee rate too high');
+    });
 
     it('should work if the params passed are correct', (done) => {
       mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);

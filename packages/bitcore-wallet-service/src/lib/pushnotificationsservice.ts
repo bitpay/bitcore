@@ -474,6 +474,7 @@ export class PushNotificationsService {
       bch: 'BCH',
       eth: 'ETH',
       matic: 'MATIC',
+      arc: 'USDC',
       xrp: 'XRP',
       doge: 'DOGE',
       ltc: 'LTC',
@@ -748,6 +749,7 @@ export class PushNotificationsService {
           arb: 'arbitrum-one',
           base: 'base',
           op: 'optimistic-ethereum',
+          arc: 'arc',
           sol: 'solana',
         };
 
