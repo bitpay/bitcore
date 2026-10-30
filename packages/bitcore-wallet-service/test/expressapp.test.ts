@@ -13,6 +13,7 @@ import { ExpressApp } from '../src/lib/expressapp';
 import { ClientError } from '../src/lib/errors/clienterror';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import * as TestData from './testdata';
+import { Stats } from '../src/lib/stats';
 
 const Defaults = Common.Defaults;
 const should = chai.should();
@@ -63,6 +64,104 @@ describe('ExpressApp', function() {
 
       afterEach(function() {
         httpServer.close();
+      });
+
+      describe('Public query validation', function() {
+        let runStats, getFiatRate;
+
+        beforeEach(function() {
+          runStats = sandbox.stub(Stats.prototype, 'run').callsArgWith(0, null, {});
+          getFiatRate = sinon.stub().callsArgWith(1, null, {});
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns({ getFiatRate } as any);
+        });
+
+        const targets = [
+          { path: '/v1/stats/', parameter: 'network' },
+          { path: '/v1/stats/', parameter: 'coin' },
+          { path: '/v1/fiatrates/USD/', parameter: 'coin' }
+        ];
+
+        for (const { path, parameter } of targets) {
+          const value = parameter === 'network' ? 'livenet' : 'btc';
+          // Cover operator objects, bracket arrays, and duplicate parameters.
+          const invalidQueries = [
+            `${parameter}[$regex]=.*`,
+            `${parameter}[]=${value}`,
+            `${parameter}=${value}&${parameter}=${value}`
+          ];
+          for (const query of invalidQueries) {
+            it(`should reject ${path}?${query} before accessing data`, function(done) {
+              start(ExpressApp, function() {
+                request({ url: testHost + ':' + testPort + config.basePath + path + '?' + query, json: true }, function(err, res, body) {
+                  should.not.exist(err);
+                  res.statusCode.should.equal(400);
+                  body.code.should.equal('BADREQUEST');
+                  runStats.called.should.equal(false);
+                  getFiatRate.called.should.equal(false);
+                  done();
+                });
+              });
+            });
+          }
+        }
+
+        for (const query of ['', '?coin=&network=']) {
+          it(`should preserve stats defaults for ${query || 'omitted parameters'}`, function(done) {
+            start(ExpressApp, function() {
+              request({ url: testHost + ':' + testPort + config.basePath + '/v1/stats/' + query, json: true }, function(err, res) {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+                runStats.calledOnce.should.equal(true);
+                runStats.firstCall.thisValue.coin.should.equal('btc');
+                runStats.firstCall.thisValue.network.should.equal('livenet');
+                done();
+              });
+            });
+          });
+        }
+
+        it('should pass valid stats filters through unchanged', function(done) {
+          start(ExpressApp, function() {
+            const query = '?coin=eth&network=testnet&from=2026-01-01&to=2026-02-01';
+            request({ url: testHost + ':' + testPort + config.basePath + '/v1/stats/' + query, json: true }, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              runStats.calledOnce.should.equal(true);
+              const stats = runStats.firstCall.thisValue;
+              stats.coin.should.equal('eth');
+              stats.network.should.equal('testnet');
+              stats.from.should.equal('2026-01-01');
+              stats.to.should.equal('2026-02-01');
+              done();
+            });
+          });
+        });
+
+        for (const query of ['', '?coin=']) {
+          it(`should preserve the fiat coin default for ${query || 'omitted parameters'}`, function(done) {
+            start(ExpressApp, function() {
+              request({ url: testHost + ':' + testPort + config.basePath + '/v1/fiatrates/USD/' + query, json: true }, function(err, res) {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+                getFiatRate.calledOnceWithExactly({ code: 'USD', coin: 'btc', ts: null }, sinon.match.func).should.equal(true);
+                done();
+              });
+            });
+          });
+        }
+
+        it('should pass a valid fiat coin and numeric timestamp through unchanged', function(done) {
+          start(ExpressApp, function() {
+            const query = '?coin=eth&ts=1700000000000';
+            request({ url: testHost + ':' + testPort + config.basePath + '/v1/fiatrates/EUR/' + query, json: true }, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              getFiatRate.calledOnceWithExactly({ code: 'EUR', coin: 'eth', ts: 1700000000000 }, sinon.match.func).should.equal(true);
+              done();
+            });
+          });
+        });
       });
 
       it('/v2/wallets', function(done) {

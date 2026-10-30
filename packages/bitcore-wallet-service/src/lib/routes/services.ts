@@ -3,6 +3,7 @@ import express from 'express';
 import rp from 'request-promise-native';
 import config from '../../config';
 import { Common } from '../common';
+import { ClientError } from '../errors/clienterror';
 import type * as Types from '../../types/expressapp';
 import type { WalletService } from '../server';
 
@@ -125,13 +126,18 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.get('/v1/fiatrates/:code/', (req, res) => {
+    const { coin } = req.query;
+    if (coin !== undefined && typeof coin !== 'string') {
+      return context.returnError(new ClientError('Invalid coin'), res, req);
+    }
+
     setPublicCache(res, 5 * ONE_MINUTE);
     respondWithPublicServer(req, res, context, server =>
       callbackResult(resolve => {
         server.getFiatRate(
           {
             code: req.params['code'],
-            coin: req.query.coin || 'btc',
+            coin: coin || 'btc',
             ts: req.query.ts ? +req.query.ts : null
           },
           resolve
