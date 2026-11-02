@@ -7,8 +7,9 @@
 // `npm ci`, and by the compile runner as a second check.
 
 const { spawnSync } = require('child_process');
+const { SUPPORTED_NODE_VERSION } = require('./lib/constants.cjs');
 
-const EXPECTED_NODE_MAJOR = 22;
+const EXPECTED_NODE_MAJOR = 24;
 const EXPECTED_NPM_VERSION = '10.9.2';
 
 function getNodeMajor(nodeVersion) {
@@ -16,7 +17,7 @@ function getNodeMajor(nodeVersion) {
   return match ? Number(match[1]) : null;
 }
 
-// npm sets `npm_config_user_agent` (e.g. "npm/10.9.2 node/v22.16.0 darwin
+// npm sets `npm_config_user_agent` (e.g. "npm/10.9.2 node/v24.22.1 darwin
 // x64 workspaces/false") in every lifecycle script's environment. Outside a
 // lifecycle script (a developer or CI running this directly) we fall back to
 // asking the `npm` on PATH.
@@ -38,6 +39,7 @@ function evaluateRuntime({
   npmVersion,
   expectedNodeMajor = EXPECTED_NODE_MAJOR,
   expectedNpmVersion = EXPECTED_NPM_VERSION,
+  minimumNodeVersion = SUPPORTED_NODE_VERSION,
 }) {
   const problems = [];
   const nodeMajor = getNodeMajor(nodeVersion);
@@ -45,6 +47,15 @@ function evaluateRuntime({
     problems.push(`Unable to parse Node version "${nodeVersion}".`);
   } else if (nodeMajor !== expectedNodeMajor) {
     problems.push(`Expected Node ${expectedNodeMajor}.x, observed ${nodeVersion} (major ${nodeMajor}).`);
+  }
+  if (nodeMajor === expectedNodeMajor) {
+    const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(nodeVersion);
+    const minimum = minimumNodeVersion.split('.').map(Number);
+    const parts = match && match.slice(1).map(Number);
+    const firstDifference = parts && parts.findIndex((part, index) => part !== minimum[index]);
+    if (!parts || (firstDifference !== -1 && parts[firstDifference] < minimum[firstDifference])) {
+      problems.push(`Expected Node >=${minimumNodeVersion}, observed ${nodeVersion}.`);
+    }
   }
   if (!npmVersion) {
     problems.push('Unable to determine an installed npm version (npm is absent or unidentified).');
@@ -70,7 +81,7 @@ function enforceRuntime({
   if (!result.ok) {
     logError('[check-runtime] Unsupported toolchain:');
     for (const problem of result.problems) logError(`  - ${problem}`);
-    logError(`  Required: Node ${EXPECTED_NODE_MAJOR}.x and npm ${EXPECTED_NPM_VERSION} exactly.`);
+    logError(`  Required: Node >=${SUPPORTED_NODE_VERSION} <${EXPECTED_NODE_MAJOR + 1} and npm ${EXPECTED_NPM_VERSION} exactly.`);
   }
   return result;
 }

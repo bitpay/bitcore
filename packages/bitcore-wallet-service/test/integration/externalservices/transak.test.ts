@@ -1,20 +1,24 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import 'chai/register-should';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 
 describe('Transak integration', () => {
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
 
   before(async () => {
     await helpers.before();
@@ -66,6 +70,12 @@ describe('Transak integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async () => {
@@ -118,7 +128,23 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakGetAccessToken(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Transak request failed with error (');
+        err.message.should.equal('Failed to get Transak access token');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.transak.request = fakeRequest2;
+      try {
+        await server.externalServices.transak.transakGetAccessToken(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak did not return an access token');
       }
     });
 
@@ -166,7 +192,23 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakGetCryptoCurrencies(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Transak request failed with error (');
+        err.message.should.equal('Failed to get Transak supported currencies');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.transak.request = fakeRequest2;
+      try {
+        await server.externalServices.transak.transakGetCryptoCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak did not return supported currencies');
       }
     });
 
@@ -214,7 +256,23 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakGetFiatCurrencies(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Transak request failed with error (');
+        err.message.should.equal('Failed to get Transak supported fiat currencies');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.transak.request = fakeRequest2;
+      try {
+        await server.externalServices.transak.transakGetFiatCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak did not return supported fiat currencies');
       }
     });
 
@@ -266,7 +324,23 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakGetQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Transak request failed with error (');
+        err.message.should.equal('Failed to get Transak quote');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.transak.request = fakeRequest2;
+      try {
+        await server.externalServices.transak.transakGetQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak did not return a quote');
       }
     });
 
@@ -427,7 +501,9 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakGetSignedPaymentUrl(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Transak request failed with error (');
+        err.message.should.equal('Failed to get Transak signed payment URL');
       }
     });
 
@@ -477,7 +553,23 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakGetOrderDetails(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Transak request failed with error (');
+        err.message.should.equal('Failed to get Transak order details');
+      };
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.transak.request = fakeRequest2;
+      try {
+        await server.externalServices.transak.transakGetOrderDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak did not return order details');
       };
     });
 

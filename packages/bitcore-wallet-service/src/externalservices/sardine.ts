@@ -1,6 +1,7 @@
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class SardineService {
@@ -68,9 +69,17 @@ export class SardineService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Sardine request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Sardine quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Sardine request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Sardine did not return a quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -102,9 +111,17 @@ export class SardineService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Sardine request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Sardine currency limits'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Sardine request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Sardine did not return currency limits'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -141,9 +158,17 @@ export class SardineService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Sardine request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Sardine token'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Sardine request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Sardine did not return a token'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -175,9 +200,17 @@ export class SardineService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Sardine request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Sardine supported tokens'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Sardine request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Sardine did not return supported tokens'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -226,9 +259,17 @@ export class SardineService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Sardine request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Sardine order details'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Sardine request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Sardine did not return order details'));
+            }
+            return resolve(data.body);
           }
         }
       );

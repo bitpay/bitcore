@@ -98,7 +98,7 @@ describe('Ethereum API', function() {
     const network = 'mainnet';
     const rpc = {
       estimateMaxPriorityFee: () => { return 2; },
-      estimateFee: () => { return 4; }
+      estimateFee: () => { return 4n; }
     };
     let err;
 

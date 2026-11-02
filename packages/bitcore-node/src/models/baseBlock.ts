@@ -1,3 +1,4 @@
+import { FilterQuery } from 'mongodb';
 import { StorageService } from '../services/storage';
 import { IBlock } from '../types/Block';
 import { ChainNetwork } from '../types/ChainNetwork';
@@ -30,7 +31,7 @@ export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
   }
 
   async getLocalTip({ chain, network }) {
-    const tip = await this.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
+    const tip = await this.collection.findOne({ chain, network, processed: true } as FilterQuery<MongoBound<T>>, { sort: { height: -1 } });
     return tip as IBlock;
   }
 
@@ -42,7 +43,7 @@ export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
         processed: true,
         chain,
         network
-      })
+      } as FilterQuery<MongoBound<T>>)
       .sort({ height: -1 })
       .limit(100)
       .project({ hash: 1, previousBlockHash: 1, nextBlockHash: 1 })

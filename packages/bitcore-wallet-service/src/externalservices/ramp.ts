@@ -3,6 +3,7 @@ import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class RampService {
@@ -59,9 +60,17 @@ export class RampService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Ramp request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Ramp quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Ramp request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Ramp did not return quote data'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -99,9 +108,17 @@ export class RampService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Ramp request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Ramp sell quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Ramp request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Ramp did not return sell quote data'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -232,9 +249,17 @@ export class RampService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Ramp request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Ramp assets'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Ramp request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Ramp did not return assets data'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -258,6 +283,7 @@ export class RampService {
       qs.push('secret=' + req.body.saleViewToken);
 
       const URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
+      const safeURL = URL.replace('secret=' + req.body.saleViewToken, 'secret=***');
 
       this.request.get(
         URL,
@@ -267,9 +293,17 @@ export class RampService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Ramp request failed with error (${safeURL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Ramp sell transaction details'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Ramp request failed with status code ${data.statusCode}: ${safeURL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Ramp did not return sell transaction details'));
+            }
+            return resolve(data.body);
           }
         }
       );

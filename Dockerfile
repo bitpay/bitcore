@@ -1,4 +1,4 @@
-FROM node:22.16.0-bookworm
+FROM node:24.22.1-bookworm
 
 # Install Chrome
 

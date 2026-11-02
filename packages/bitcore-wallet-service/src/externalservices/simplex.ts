@@ -3,6 +3,7 @@ import Uuid from 'uuid';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class SimplexService {
@@ -64,9 +65,17 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex supported currencies'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return supported currencies'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -94,8 +103,10 @@ export class SimplexService {
         req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
       }
 
+      const URL: string = API + '/wallet/merchant/v2/quote';
+
       this.request.post(
-        API + '/wallet/merchant/v2/quote',
+        URL,
         {
           headers,
           body: req.body,
@@ -103,9 +114,17 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex quote'));
           } else {
-            return resolve(data.body ? data.body : null);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return a quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -148,9 +167,17 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex sell quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return a sell quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -196,8 +223,10 @@ export class SimplexService {
         Authorization: 'ApiKey ' + API_KEY
       };
 
+      const URL: string = API + '/wallet/merchant/v2/payments/partner/data';
+
       this.request.post(
-        API + '/wallet/merchant/v2/payments/partner/data',
+        URL,
         {
           headers,
           body: req.body,
@@ -205,8 +234,16 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex payment data'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return payment data'));
+            }
             data.body.payment_id = paymentId;
             data.body.order_id = orderId;
             data.body.app_provider_id = appProviderId;
@@ -242,8 +279,10 @@ export class SimplexService {
         headers['x-country-code'] = req.body.userCountry.toUpperCase();
       }
 
+      const URL: string = API + '/v3/initiate-sell/widget';
+
       this.request.post(
-        API + '/v3/initiate-sell/widget',
+        URL,
         {
           headers,
           body: req.body,
@@ -251,8 +290,16 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to initiate Simplex sell payment'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return sell data'));
+            }
             data.body.app_sell_ref_id = appSellRefId;
             return resolve(data.body);
           }

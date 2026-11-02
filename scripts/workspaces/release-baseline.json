@@ -17,21 +17,21 @@
     {
       "directory": "packages/bitcore-build",
       "name": "@bitpay-labs/bitcore-build",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     },
     {
       "directory": "packages/bitcore-client",
       "name": "@bitpay-labs/bitcore-client",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     },
     {
       "directory": "packages/bitcore-lib",
       "name": "@bitpay-labs/bitcore-lib",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -40,7 +40,7 @@
     {
       "directory": "packages/bitcore-lib-cash",
       "name": "@bitpay-labs/bitcore-lib-cash",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -49,7 +49,7 @@
     {
       "directory": "packages/bitcore-lib-doge",
       "name": "@bitpay-labs/bitcore-lib-doge",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -58,7 +58,7 @@
     {
       "directory": "packages/bitcore-lib-ltc",
       "name": "@bitpay-labs/bitcore-lib-ltc",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -67,14 +67,14 @@
     {
       "directory": "packages/bitcore-logging",
       "name": "@bitpay-labs/bitcore-logging",
-      "version": "11.10.9",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     },
     {
       "directory": "packages/bitcore-mnemonic",
       "name": "@bitpay-labs/bitcore-mnemonic",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -83,14 +83,14 @@
     {
       "directory": "packages/bitcore-node",
       "name": "@bitpay-labs/bitcore-node",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     },
     {
       "directory": "packages/bitcore-p2p",
       "name": "@bitpay-labs/bitcore-p2p",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -99,7 +99,7 @@
     {
       "directory": "packages/bitcore-p2p-cash",
       "name": "@bitpay-labs/bitcore-p2p-cash",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -108,7 +108,7 @@
     {
       "directory": "packages/bitcore-p2p-doge",
       "name": "@bitpay-labs/bitcore-p2p-doge",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -117,14 +117,14 @@
     {
       "directory": "packages/bitcore-tss",
       "name": "@bitpay-labs/bitcore-tss",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     },
     {
       "directory": "packages/bitcore-wallet-client",
       "name": "@bitpay-labs/bitcore-wallet-client",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": [
         "build"
@@ -133,21 +133,21 @@
     {
       "directory": "packages/bitcore-wallet-service",
       "name": "@bitpay-labs/bitcore-wallet-service",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     },
     {
       "directory": "packages/crypto-rpc",
       "name": "@bitpay-labs/crypto-rpc",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     },
     {
       "directory": "packages/crypto-wallet-core",
       "name": "@bitpay-labs/crypto-wallet-core",
-      "version": "11.10.12",
+      "version": "11.11.2",
       "publishConfig": null,
       "prepare": []
     }

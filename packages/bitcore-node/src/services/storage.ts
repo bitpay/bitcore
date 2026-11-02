@@ -159,7 +159,7 @@ export class StorageService {
     if (options.sort) {
       cursor = cursor.sort(options.sort);
     }
-    return cursor;
+    return cursor as unknown as Readable & { close?: () => void };
   }
 }
 

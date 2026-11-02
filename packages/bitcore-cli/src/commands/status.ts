@@ -1,33 +1,21 @@
 import os from 'os';
 import { Status } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { Utils } from '../utils';
 import { displayBalance } from './balance';
 import type { CommonArgs } from '../../types/cli';
 import type { ITokenObj } from '../../types/wallet';
 
-export async function command(args: CommonArgs) {
-  const { program } = args;
-  program
+export function command() {
+  return new Command('status')
     .description('Show wallet status')
-    .usage('<walletName> --command status [options]')
     .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
-    .option('--tokenAddress <address>', 'Token contract address to get the balance for')
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-
-  return opts;
+    .option('--tokenAddress <address>', 'Token contract address to get the balance for');
 }
 
 export async function walletStatus(args: CommonArgs) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
   
   let tokenObj: ITokenObj;
   if (opts.token || opts.tokenAddress) {

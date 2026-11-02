@@ -20,7 +20,7 @@ describe('Chain XRP', function() {
           getReserve: cb => cb(null, 1000000)
         }),
         getPendingTxs: (_opts, cb) => cb(null, [{ amount: '3000000', fee: '12' }]),
-        storage: { fetchAddresses: (_walletId, cb) => cb(null, []) }
+        storage: { fetchAddressesPage: (_walletId, _opts, cb) => cb(null, []) }
       };
       const wallet = { chain: 'xrp', network: 'livenet' };
 

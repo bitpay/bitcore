@@ -27,10 +27,10 @@ commands:
     description: Pin the executor machine to the exact Node/npm pair recorded in root package.json (engines.node / packageManager)
     steps:
       - run:
-          name: Use Node 22.16.0 / npm 10.9.2
+          name: Use Node 24.22.1 / npm 10.9.2
           command: |
-            nvm install 22.16.0
-            nvm alias default 22.16.0
+            nvm install 24.22.1
+            nvm alias default 24.22.1
             nvm use default
             npm install -g npm@10.9.2
   npm_cache_restore:
@@ -38,12 +38,12 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - npm-dl-cache-v1-{{ arch }}-node22.16.0-npm10.9.2-{{ checksum "package-lock.json" }}-{{ checksum ".npmrc" }}
-            - npm-dl-cache-v1-{{ arch }}-node22.16.0-npm10.9.2-
+            - npm-dl-cache-v1-{{ arch }}-node24.22.1-npm10.9.2-{{ checksum "package-lock.json" }}-{{ checksum ".npmrc" }}
+            - npm-dl-cache-v1-{{ arch }}-node24.22.1-npm10.9.2-
   npm_cache_save:
     steps:
       - save_cache:
-          key: npm-dl-cache-v1-{{ arch }}-node22.16.0-npm10.9.2-{{ checksum "package-lock.json" }}-{{ checksum ".npmrc" }}
+          key: npm-dl-cache-v1-{{ arch }}-node24.22.1-npm10.9.2-{{ checksum "package-lock.json" }}-{{ checksum ".npmrc" }}
           paths:
             - ~/.npm
   run_test:

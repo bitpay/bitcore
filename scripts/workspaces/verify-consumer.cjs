@@ -43,7 +43,7 @@ console.log('[verify-consumer] wallet-client types resolve and construct: id=' +
 
 // Exercises a representative public API (Key: local key/mnemonic generation,
 // no network) and an ESM import of crypto-rpc's named export, at runtime,
-// on Node 22 -- as opposed to the TypeScript check above, which only proves
+// on Node 24 -- as opposed to the TypeScript check above, which only proves
 // the *types* resolve.
 const CHECK_MJS = `
 import assert from 'node:assert/strict';
@@ -76,8 +76,8 @@ function writeConsumerProject(consumerDir, artifacts) {
           // uses the ES2022-only `ErrorOptions` type, and an artificially
           // older target here would fail on that real third-party
           // declaration rather than on anything one of our own packages
-          // did -- Node 22 supports ES2022 natively, matching "a
-          // representative external TypeScript consumer on Node 22".
+          // did -- Node 24 supports ES2022 natively, matching "a
+          // representative external TypeScript consumer on Node 24".
           target: 'ES2022',
           module: 'commonjs',
           moduleResolution: 'node',

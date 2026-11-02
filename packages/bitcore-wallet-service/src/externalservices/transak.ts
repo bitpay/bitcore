@@ -2,6 +2,7 @@ import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class TransakService {
@@ -89,9 +90,17 @@ export class TransakService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Transak access token'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Transak did not return an access token'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -126,9 +135,17 @@ export class TransakService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Transak supported currencies'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Transak did not return supported currencies'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -163,9 +180,17 @@ export class TransakService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Transak supported fiat currencies'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Transak did not return supported fiat currencies'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -214,9 +239,17 @@ export class TransakService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Transak quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Transak did not return a quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -282,7 +315,8 @@ export class TransakService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Transak signed payment URL'));
           } else {
             return resolve({ urlWithSignature: data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl });
           }
@@ -323,9 +357,17 @@ export class TransakService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Transak order details'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Transak did not return order details'));
+            }
+            return resolve(data.body);
           }
         }
       );

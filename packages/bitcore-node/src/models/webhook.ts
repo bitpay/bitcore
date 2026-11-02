@@ -43,7 +43,7 @@ export class WebhookModel extends BaseModel<IWebhook> {
 
   setProcessed(params: { webhook?: IWebhook; webhookId?: ObjectId | string }) {
     const { webhook, webhookId } = params;
-    const id = webhook?._id || webhookId;
+    const id = webhook?._id || (typeof webhookId === 'string' ? new ObjectId(webhookId) : webhookId);
     if (!id) {
       throw new Error('No webhook id given to clear');
     }

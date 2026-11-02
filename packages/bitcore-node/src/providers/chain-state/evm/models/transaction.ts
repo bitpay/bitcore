@@ -293,7 +293,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       return;
     }
     for (const tx of txs) {
-      await this.collection.update(
+      await this.collection.updateMany(
         {
           chain,
           network,
@@ -303,7 +303,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           blockHeight: SpentHeightIndicators.pending
         },
         { $set: { blockHeight: SpentHeightIndicators.conflicting, replacedByTxid: tx.txid } },
-        { w: 0, j: false, multi: true }
+        { writeConcern: { w: 0, j: false } }
       );
     }
     return;

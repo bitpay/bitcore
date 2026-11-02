@@ -3,6 +3,7 @@ import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class MoonpayService {
@@ -58,9 +59,17 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Moonpay currencies'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return currencies'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -100,9 +109,17 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Moonpay buy quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return buy quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -141,9 +158,17 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Moonpay sell quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return sell quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -180,9 +205,17 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Moonpay currency limits'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return currency limits'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -366,9 +399,17 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Moonpay transaction details'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return transaction details'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -406,9 +447,17 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Moonpay sell transaction details'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return sell transaction details'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -445,9 +494,14 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to cancel Moonpay sell transaction'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            return resolve(data.body || { success });
           }
         }
       );
@@ -477,9 +531,17 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Moonpay account details'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return account details'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -524,9 +586,13 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to create Moonpay session'));
           } else {
-            return resolve(data.body ?? data);
+            if (!data.body) {
+              return reject(new ClientError('Moonpay did not return a session'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -558,9 +624,14 @@ export class MoonpayService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Moonpay request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to revoke Moonpay session'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Moonpay request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            return resolve(data.body || { success });
           }
         }
       );

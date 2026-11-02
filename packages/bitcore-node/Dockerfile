@@ -1,4 +1,4 @@
-FROM node:22.16.0-bookworm
+FROM node:24.22.1-bookworm
 
 # Pin npm to the exact version recorded in root package.json's
 # packageManager field, the same way CI's use_node step does.

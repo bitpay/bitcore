@@ -1,20 +1,24 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import 'chai/register-should';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 
 describe('Thorswap integration', () => {
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
 
   before(async () => {
     await helpers.before();
@@ -50,7 +54,7 @@ describe('Thorswap integration', () => {
     };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }); },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
       post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
@@ -67,6 +71,12 @@ describe('Thorswap integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async () => {
@@ -112,7 +122,23 @@ describe('Thorswap integration', () => {
         await server.externalServices.thorswap.thorswapGetSupportedChains(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Thorswap request failed with error (');
+        err.message.should.equal('Failed to get Thorswap supported chains');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.thorswap.request = fakeRequest2;
+      try {
+        await server.externalServices.thorswap.thorswapGetSupportedChains(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Thorswap did not return supported chains');
       }
     });
 
@@ -173,7 +199,23 @@ describe('Thorswap integration', () => {
         await server.externalServices.thorswap.thorswapGetCryptoCurrencies(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Thorswap request failed with error (');
+        err.message.should.equal('Failed to get Thorswap supported currencies');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.thorswap.request = fakeRequest2;
+      try {
+        await server.externalServices.thorswap.thorswapGetCryptoCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Thorswap did not return supported currencies');
       }
     });
 
@@ -230,7 +272,24 @@ describe('Thorswap integration', () => {
         await server.externalServices.thorswap.thorswapGetSwapQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Thorswap request failed with error (');
+        err.message.should.equal('Failed to get Thorswap swap quote');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      req.body.sellAmount = '1.123';
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.thorswap.request = fakeRequest2;
+      try {
+        await server.externalServices.thorswap.thorswapGetSwapQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Thorswap did not return a swap quote');
       }
     });
 
@@ -292,7 +351,24 @@ describe('Thorswap integration', () => {
         await server.externalServices.thorswap.thorswapGetSwapTx(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Thorswap request failed with error (');
+        err.message.should.equal('Failed to get Thorswap swap transaction');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async() => {
+      req.body.txn = 'txn1';
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.thorswap.request = fakeRequest2;
+      try {
+        await server.externalServices.thorswap.thorswapGetSwapTx(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Thorswap did not return a swap transaction');
       }
     });
 

@@ -7,7 +7,7 @@ const test = require('node:test');
 const { evaluateEngineEntry, collectInstalledEngineDeclarations, run } = require('../../scripts/workspaces/lib/engines.cjs');
 const { makeTempDir, writeJson } = require('./helpers.cjs');
 
-test('evaluateEngineEntry accepts a range Node 22 satisfies', () => {
+test('evaluateEngineEntry accepts a range Node 24 satisfies', () => {
   const result = evaluateEngineEntry('some-pkg', '1.0.0', '>=10');
   assert.equal(result.status, 'ok');
 });

@@ -1,5 +1,6 @@
 'use strict';
 
+import { ethers } from '@bitpay-labs/crypto-wallet-core';
 import { PayProV2 } from '../src/lib/payproV2';
 import * as TestData from './data/testdata';
 
@@ -312,5 +313,113 @@ describe('PayProV2', () => {
         done();
       });
     });
+  });
+
+  // `payProJsonV2.eth`/`.erc20`/`.xrp`/`.sol` are signed with a test-only
+  // keypair rather than a real BitPay key, so `PayProV2.trustedKeys` must
+  // trust that key for the duration of these cases (mirrors the `domains`
+  // stub already used for the real keys in api.test.ts).
+  describe('account-chain fixtures (test-signed)', () => {
+    let savedTrustedKeys;
+
+    beforeEach(() => {
+      savedTrustedKeys = PayProV2.trustedKeys;
+      PayProV2.trustedKeys = {
+        ...savedTrustedKeys,
+        [TestData.payProJsonV2TestKey.identity]: TestData.payProJsonV2TestKey.keyData
+      };
+    });
+
+    afterEach(() => {
+      PayProV2.trustedKeys = savedTrustedKeys;
+    });
+
+    const approveIface = new ethers.Interface(['function approve(address spender, uint256 amount)']);
+    const payIface = new ethers.Interface([
+      'function pay(uint256 value, uint256 gasPrice, uint256 expiration, bytes32 payload, bytes32 hash, uint8 v, bytes32 r, bytes32 s, address tokenContract)'
+    ]);
+
+    const cases = [
+      {
+        description: 'a native ETH transfer',
+        fixture: 'eth',
+        assert: res => {
+          res.currency.should.equal('ETH');
+          res.instructions.should.have.lengthOf(1);
+          const [ix] = res.instructions;
+          ix.toAddress.should.equal('0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12');
+          ix.amount.should.equal(5214000000000000);
+          // This fixture is a real, unmodified 2019 BitPay invoice response
+          // (see bodyV2.eth) -
+          // Invoice.pay(...)'s decoded `value` matching the instruction's
+          // own `amount`/`value` fields confirms the calldata genuinely
+          // encodes this same payment, not just a matching selector.
+          const decoded = payIface.decodeFunctionData('pay', ix.data);
+          decoded.value.should.equal(5214000000000000n);
+          decoded.tokenContract.should.equal(ethers.ZeroAddress); // native ETH, not a token
+        }
+      },
+      {
+        description: 'two ordered ERC-20 approve/pay instructions',
+        fixture: 'erc20',
+        assert: res => {
+          res.currency.should.equal('USDC');
+          res.instructions.should.have.lengthOf(2);
+          const [approveIx, payIx] = res.instructions;
+
+          // Mainnet USDC's real contract address
+          approveIx.toAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
+          approveIx.amount.should.equal(0);
+          const [spender, approveAmount] = approveIface.decodeFunctionData('approve', approveIx.data);
+          spender.should.equal('0x1BA1E35A29E2A52a1b1A1e2c8dbB28B9B5B6f7C1');
+          approveAmount.should.equal(10000000n);
+
+          payIx.toAddress.should.equal('0x1BA1E35A29E2A52a1b1A1e2c8dbB28B9B5B6f7C1');
+          payIx.amount.should.equal(0);
+          const decodedPay = payIface.decodeFunctionData('pay', payIx.data);
+          decodedPay.value.should.equal(10000000n);
+          decodedPay.tokenContract.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
+        }
+      },
+      {
+        description: 'an XRP destination tag and invoice ID',
+        fixture: 'xrp',
+        assert: res => {
+          res.currency.should.equal('XRP');
+          res.instructions.should.have.lengthOf(1);
+          res.instructions[0].toAddress.should.equal('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
+          res.instructions[0].amount.should.equal(10000);
+          res.instructions[0].outputs[0].destinationTag.should.equal(12345);
+          res.instructions[0].outputs[0].invoiceID.should.equal(
+            '0000000000000000000000000000000000000000000000000000000000000001'
+          );
+        }
+      },
+      {
+        description: 'a SOL invoice memo',
+        fixture: 'sol',
+        assert: res => {
+          res.currency.should.equal('SOL');
+          res.instructions.should.have.lengthOf(1);
+          res.instructions[0].toAddress.should.equal('5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d');
+          res.instructions[0].amount.should.equal(10000);
+          res.instructions[0].outputs[0].invoiceID.should.equal('SolInvoiceFixture1');
+        }
+      }
+    ];
+    for (const testCase of cases) {
+      it(`resolves a genuinely signed PayPro V2 response for ${testCase.description}`, (done) => {
+        const fixture = TestData.payProJsonV2[testCase.fixture];
+        mockRequest(fixture.body, fixture.headers);
+        PayProV2.selectPaymentOption({
+          paymentUrl: `https://bitpay.com/i/${testCase.fixture}Fixture`
+        }).then((res) => {
+          testCase.assert(res);
+          done();
+        }).catch(err => {
+          done(err);
+        });
+      });
+    }
   });
 });

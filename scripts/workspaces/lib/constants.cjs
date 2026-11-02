@@ -53,7 +53,7 @@ const COMPILE_ORDER = [
 const EXPECTED_ROOT_IDENTITY = {
   name: 'bitcore-monorepo',
   private: true,
-  engines: { node: '>=22 <23' },
+  engines: { node: '>=24.22.1 <25' },
   packageManager: 'npm@10.9.2',
 };
 
@@ -123,14 +123,14 @@ const FORBIDDEN_LOCAL_PROTOCOLS = [/^workspace:/, /^file:/, /^\*$/];
 
 // The single permitted Node-engine exception (acceptance-spec §3). Any other
 // mismatch between an installed dependency's declared `engines.node` and the
-// supported Node 22 runtime is a failure.
+// supported Node 24 runtime is a failure.
 const ENGINE_EXCEPTION = {
   name: 'socks5-client',
   version: '0.3.6',
   range: '0.x',
 };
 
-const SUPPORTED_NODE_VERSION = '22.16.0';
+const SUPPORTED_NODE_VERSION = '24.22.1';
 
 module.exports = {
   EXPECTED_WORKSPACES,

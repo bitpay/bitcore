@@ -367,7 +367,7 @@ test('compile entry point rejects an unsupported Node major before dispatching a
     nodeOptions: `--require ${preloadPath}`,
   });
   assert.notEqual(result.status, 0, `expected nonzero exit; stdout=${result.stdout} stderr=${result.stderr}`);
-  assert.match(result.stderr, /Expected Node 22\.x, observed v20\.11\.0/);
+  assert.match(result.stderr, /Expected Node 24\.x, observed v20\.11\.0/);
   assert.deepEqual(dispatchedCompiles(invocations()), []);
 });
 
