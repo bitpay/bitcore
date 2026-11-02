@@ -17,6 +17,8 @@ const QUOTE_PARAMS = [
   'returnDepositAddress'
 ];
 
+const SWAP_DIRECTIONS = ['exact-amount-in', 'exact-amount-out'];
+
 const ACTION_PARAMS = [
   'actionType',
   'sender',
@@ -28,6 +30,10 @@ export class MoonpaySwapService {
   request: any = request;
 
   private moonpaySwapGetKeys(req) {
+    const swapCryptoConfig = config.services?.swapCrypto;
+    if (swapCryptoConfig?.disabled || swapCryptoConfig?.moonpay?.disabled) {
+      throw new ClientError('Moonpay Swap is disabled');
+    }
     if (!config.moonpaySwap) throw new Error('Moonpay Swap missing credentials');
 
     let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
@@ -50,6 +56,15 @@ export class MoonpaySwapService {
     };
 
     return keys;
+  }
+
+  // amount is in base units and slippage in basis points
+  private hasValidSwapParams(body): boolean {
+    if (!/^[1-9]\d*$/.test(String(body.amount))) return false;
+    if (!SWAP_DIRECTIONS.includes(body.swapDirection)) return false;
+    if (body.slippage !== undefined && !/^\d+$/.test(String(body.slippage))) return false;
+    if (body.slippage !== undefined && Number(body.slippage) > 10000) return false;
+    return true;
   }
 
   private getQueryString(body, allowedParams: string[]): string {
@@ -78,14 +93,21 @@ export class MoonpaySwapService {
       const URL: string = keys.API + uriPath;
       // Log the path only: the query string carries wallet addresses
       const logURL: string = keys.API + uriPath.split('?')[0];
-      const requestOpts: any = { headers, json: true, timeout: 30000 };
+      // A redirect would re-send x-api-key to another host
+      const requestOpts: any = { headers, json: true, timeout: 30000, followRedirect: false };
       if (opts.body) requestOpts.body = opts.body;
 
       this.request[method](URL, requestOpts, (err, data) => {
         if (err) {
-          logger.error(`Moonpay Swap request failed with error (${logURL}): ${err.stack || err}`);
+          // Some request errors quote the full URL, query string included
+          const errMsg = String(err.message || err).replace(/\?[^\s"']*/g, '');
+          logger.error(`Moonpay Swap request failed with error (${logURL}): ${err.code || ''} ${errMsg}`);
           return reject(new ClientError(opts.failedMsg));
         } else {
+          if (data.statusCode >= 300 && data.statusCode < 400) {
+            logger.warn(`Moonpay Swap request redirected with status code ${data.statusCode}: ${logURL}`);
+            return reject(new ClientError(opts.failedMsg));
+          }
           const success = data.statusCode >= 200 && data.statusCode < 300;
           if (!success) {
             logger.warn(`Moonpay Swap request failed with status code ${data.statusCode}: ${logURL}`);
@@ -158,6 +180,9 @@ export class MoonpaySwapService {
     if (!checkRequired(req.body, ['srcChainId', 'srcToken', 'dstChainId', 'dstToken', 'amount', 'swapDirection'])) {
       return Promise.reject(new ClientError("Moonpay Swap's request missing arguments"));
     }
+    if (!this.hasValidSwapParams(req.body)) {
+      return Promise.reject(new ClientError("Moonpay Swap's request has invalid arguments"));
+    }
 
     const qs = this.getQueryString(req.body, QUOTE_PARAMS);
     return this.moonpaySwapRequest('get', keys, `/getQuote?${qs}`, {
@@ -187,6 +212,9 @@ export class MoonpaySwapService {
       ])
     ) {
       return Promise.reject(new ClientError("Moonpay Swap's request missing arguments"));
+    }
+    if (!this.hasValidSwapParams(req.body)) {
+      return Promise.reject(new ClientError("Moonpay Swap's request has invalid arguments"));
     }
 
     req.body.actionType = 'swap-action';
@@ -228,10 +256,18 @@ export class MoonpaySwapService {
       return Promise.reject(new ClientError("Moonpay Swap's request missing arguments"));
     }
 
+    const failedMsg = 'Failed to register Moonpay Swap transaction';
     return this.moonpaySwapRequest('post', keys, '/registerTxs', {
       body: [{ txId: req.body.txId, txHash: req.body.txHash }],
-      failedMsg: 'Failed to register Moonpay Swap transaction',
+      failedMsg,
       emptyMsg: 'Moonpay Swap did not return a registration result'
+    }).then(result => {
+      // swaps.xyz answers 200 with a per-transaction result, so a rejected registration is not an HTTP error
+      if (!Array.isArray(result) || result.some(r => !r?.success)) {
+        logger.warn(`Moonpay Swap registration was not accepted: ${JSON.stringify(result)}`);
+        throw new ClientError(failedMsg);
+      }
+      return result;
     });
   }
 }

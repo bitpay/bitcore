@@ -19,6 +19,8 @@ describe('Moonpay Swap integration', () => {
   let fakeRequest;
   let req;
   let loggerError: sinon.SinonStub;
+  let loggerWarn: sinon.SinonStub;
+  let moonpayDisabled;
 
   before(async () => {
     await helpers.before();
@@ -26,6 +28,8 @@ describe('Moonpay Swap integration', () => {
 
   beforeEach(async () => {
     config.suspendedChains = [];
+    moonpayDisabled = config.services.swapCrypto.moonpay.disabled;
+    config.services.swapCrypto.moonpay.disabled = false;
     config.moonpaySwap = {
       sandbox: {
         api: 'moonpaySwapApi1',
@@ -46,8 +50,8 @@ describe('Moonpay Swap integration', () => {
     };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      get: (_url, _opts, _cb) => { return _cb(null, { statusCode: 200, body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { statusCode: 200, body: [{ success: true }] }); },
     };
 
     await helpers.beforeEach();
@@ -63,11 +67,12 @@ describe('Moonpay Swap integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
-    sandbox.stub(logger, 'warn');
+    loggerWarn = sandbox.stub(logger, 'warn');
     loggerError = sandbox.stub(logger, 'error');
   });
 
   afterEach(() => {
+    config.services.swapCrypto.moonpay.disabled = moonpayDisabled;
     sandbox.restore();
   });
 
@@ -89,6 +94,7 @@ describe('Moonpay Swap integration', () => {
     it('should work properly if req is OK', async () => {
       const data = await server.externalServices.moonpaySwap.moonpaySwapGetChainList(req);
       should.exist(data);
+      loggerWarn.called.should.equal(false);
     });
 
     it('should use the production keys if env is production', async () => {
@@ -157,6 +163,36 @@ describe('Moonpay Swap integration', () => {
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Moonpay Swap missing credentials');
+      }
+    });
+
+    it('should return error and not call Moonpay Swap if it is disabled in config', async () => {
+      config.services.swapCrypto.moonpay.disabled = true;
+      const spy = sandbox.spy(fakeRequest, 'get');
+      try {
+        await server.externalServices.moonpaySwap.moonpaySwapGetChainList(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay Swap is disabled');
+        spy.called.should.equal(false);
+      }
+    });
+
+    it('should not follow redirects', async () => {
+      const spy = sandbox.spy(fakeRequest, 'get');
+      await server.externalServices.moonpaySwap.moonpaySwapGetChainList(req);
+      spy.args[0][1].followRedirect.should.equal(false);
+    });
+
+    it('should return error and not resolve the body of a redirect', async () => {
+      server.externalServices.moonpaySwap.request = {
+        get: (_url, _opts, cb) => { return cb(null, { statusCode: 302, body: { chains: ['attacker'] } }); },
+      };
+      try {
+        await server.externalServices.moonpaySwap.moonpaySwapGetChainList(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Failed to get Moonpay Swap supported chains');
       }
     });
   });
@@ -290,6 +326,28 @@ describe('Moonpay Swap integration', () => {
       }
     });
 
+    for (const [param, value] of [
+      ['amount', '0'],
+      ['amount', '-1'],
+      ['amount', '1.5'],
+      ['amount', '1e18'],
+      ['swapDirection', 'exact-amount-sideways'],
+      ['slippage', '-1'],
+      ['slippage', '10001'],
+    ]) {
+      it(`should return error and not call Moonpay Swap if ${param} is ${value}`, async () => {
+        req.body[param] = value;
+        const spy = sandbox.spy(fakeRequest, 'get');
+        try {
+          await server.externalServices.moonpaySwap.moonpaySwapGetQuote(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Moonpay Swap\'s request has invalid arguments');
+          spy.called.should.equal(false);
+        }
+      });
+    }
+
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
         get: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
@@ -360,6 +418,39 @@ describe('Moonpay Swap integration', () => {
       } catch (err) {
         loggerError.args[0][0].should.contain('moonpaySwapApi1/getAction');
         loggerError.args[0][0].should.not.contain(req.body.sender);
+        loggerError.args[0][0].should.not.contain('moonpaySwapApiKey1');
+      }
+    });
+
+    it('should not log wallet addresses when the error message quotes the URL', async () => {
+      server.externalServices.moonpaySwap.request = {
+        get: (url, _opts, cb) => { return cb(new Error(`Invalid URI "${url}"`)); },
+      };
+      try {
+        await server.externalServices.moonpaySwap.moonpaySwapGetAction(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        loggerError.args[0][0].should.contain('Invalid URI');
+        loggerError.args[0][0].should.not.contain(req.body.sender);
+      }
+    });
+
+    it('should not let the client set appFees', async () => {
+      req.body.appFees = [{ bps: 50, receiverAddress: '0x123' }];
+      const spy = sandbox.spy(fakeRequest, 'get');
+      await server.externalServices.moonpaySwap.moonpaySwapGetAction(req);
+      spy.args[0][0].should.not.contain('appFees');
+    });
+
+    it('should return error and not call Moonpay Swap if the amount is invalid', async () => {
+      req.body.amount = '0.5';
+      const spy = sandbox.spy(fakeRequest, 'get');
+      try {
+        await server.externalServices.moonpaySwap.moonpaySwapGetAction(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay Swap\'s request has invalid arguments');
+        spy.called.should.equal(false);
       }
     });
 
@@ -466,6 +557,19 @@ describe('Moonpay Swap integration', () => {
       should.exist(data);
       spy.args[0][0].should.equal('moonpaySwapApi1/registerTxs');
       spy.args[0][1].body.should.deep.equal([{ txId: '0xdef', txHash: 'abc123' }]);
+      loggerWarn.called.should.equal(false);
+    });
+
+    it('should return error if Moonpay Swap does not accept the registration', async () => {
+      server.externalServices.moonpaySwap.request = {
+        post: (_url, _opts, cb) => { return cb(null, { statusCode: 200, body: [{ success: false, error: 'Transaction not found' }] }); },
+      };
+      try {
+        await server.externalServices.moonpaySwap.moonpaySwapRegisterTxs(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Failed to register Moonpay Swap transaction');
+      }
     });
 
     it('should return error if there is some missing arguments', async () => {
