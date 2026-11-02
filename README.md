@@ -52,6 +52,9 @@ This is a monorepo-development-only change: it does not affect ordinary
 consumers, who continue to `npm install @bitpay-labs/bitcore-node` (or any
 other published package) from the registry exactly as before.
 
+The [workspace maintainer guide](docs/workspaces/README.md) documents the
+verification tooling, acceptance contract, and separately scoped typing debt.
+
 ### Setup
 
 Use Node `24.22.1` and npm exactly `11.19.1` (pinned in root `package.json`'s

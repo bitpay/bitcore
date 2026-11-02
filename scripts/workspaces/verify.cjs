@@ -2,7 +2,7 @@
 'use strict';
 
 // CLI dispatcher for the npm-workspaces migration acceptance checks
-// (.idea/npm-workspaces/bitcore-acceptance-spec.md §4). Each mode's actual
+// (docs/workspaces/acceptance-spec.md §4). Each mode's actual
 // logic lives in ./lib/<mode>.cjs so it can also be exercised directly by
 // the fixtures under test/workspaces/.
 //

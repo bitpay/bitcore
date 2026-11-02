@@ -5,8 +5,8 @@
 // npm project *outside* this monorepo, together, so npm resolves every
 // @bitpay-labs/* dependency edge among them from the local tarball and can
 // never silently substitute a registry-published version for one of the
-// packages under test (acceptance-spec Task 5.1: "install the candidate
-// tarballs for the complete local runtime closure together"). Never invokes
+// packages under test (docs/workspaces/acceptance-spec.md §7 requires
+// installing the complete candidate set together). Never invokes
 // pub/publish/version/tag; this only installs already-built tarballs and
 // exercises them.
 const assert = require('node:assert/strict');

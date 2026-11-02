@@ -4,7 +4,6 @@ node_modules/
 *bitcore.config.*
 .vscode
 .idea/*
-!.idea/npm-workspaces
 .DS_Store
 *.swp
 .zed
@@ -24,8 +23,6 @@ ts_build
 bitcore-lib.js
 bitcore-test.local.config.json
 
-# npm-workspaces migration evidence (untracked; see .idea/npm-workspaces/bitcore-acceptance-spec.md)
+# Local workspace migration evidence; see docs/workspaces/acceptance-spec.md
 /artifacts/workspaces/
-/scripts/workspaces/
-/test/workspaces/
 .worktrees

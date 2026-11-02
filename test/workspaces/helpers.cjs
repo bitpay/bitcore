@@ -2,10 +2,8 @@
 
 // Shared fixture helpers for the workspace-verifier tests. Fixtures are
 // synthetic, minimal directory trees independent of the real repository (see
-// bitcore-migration-plan.md: "Phase 1's workspace-runner tests use
-// independent minimal fixtures, so they do not depend on repository
-// cutover"), so these tests exercise verifier *logic*, not the migrated
-// repository itself.
+// docs/workspaces/README.md), so these tests exercise verifier *logic*, not the
+// migrated repository itself.
 
 const fs = require('fs');
 const os = require('os');

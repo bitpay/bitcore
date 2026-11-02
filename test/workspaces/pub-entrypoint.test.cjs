@@ -3,8 +3,8 @@
 // Verifies the *existing*, unmodified `packages/pub` release-loop entry
 // point still routes into each selected package's own `npm run pub` script,
 // in the recorded order and cwd, using a stub `npm` on PATH -- never the
-// real npm (see bitcore-migration-plan.md Task 5.1: "Do not call existing
-// pub scripts during acceptance: they invoke real publication").
+// real npm (see docs/workspaces/acceptance-spec.md §7: existing pub scripts
+// invoke real publication and are not acceptance commands).
 
 const { execFileSync } = require('child_process');
 const fs = require('fs');
@@ -54,8 +54,8 @@ test('packages/pub routes into `npm run pub` for each selected package, in the r
   const directories = calls.map((call) => path.basename(call.cwd));
   assert.deepEqual(directories, baseline.releaseOrder);
 
-  // The release loop's own pre-existing defect (bitcore-migration-plan.md:
-  // "duplicate P2P Doge entry") -- recorded as baseline metadata, not
+  // The release loop's own pre-existing duplicate P2P Doge entry
+  // (scripts/workspaces/release-baseline.json) -- recorded as baseline metadata, not
   // repaired here, so this stays a fixed regression test for that exact,
   // already-known shape rather than silently normalizing it away.
   assert.equal(directories.at(-1), 'bitcore-p2p-doge');

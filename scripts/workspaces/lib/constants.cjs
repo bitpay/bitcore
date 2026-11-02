@@ -1,9 +1,9 @@
 'use strict';
 
 // Single source of truth for the target npm-workspaces contract described in
-// .idea/npm-workspaces/bitcore-acceptance-spec.md. Every verifier mode reads
+// docs/workspaces/acceptance-spec.md. Every verifier mode reads
 // membership/version/script expectations from here instead of re-deriving
-// them, so the plan's target values only need to change in one place.
+// them, so the contract's target values only need to change in one place.
 
 // Stable discovery order from acceptance-spec §1. The compile runner owns its
 // own build order independently (see COMPILE_ORDER below).
@@ -118,7 +118,7 @@ const EXPECTED_ROOT_SCRIPTS = {
 
 // Forbidden dependency specifier protocols for internal (@bitpay-labs/*)
 // dependency ranges in published manifests. Ordinary semver ranges are the
-// only supported form; see acceptance-spec / plan target-design item 5.
+// only supported form; see acceptance-spec §1 and the workspace development guide.
 const FORBIDDEN_LOCAL_PROTOCOLS = [/^workspace:/, /^file:/, /^\*$/];
 
 // The single permitted Node-engine exception (acceptance-spec §3). Any other

@@ -1,11 +1,8 @@
 'use strict';
 
-// Focused helper tests for bitcore-migration-plan.md Task 1.1.
+// Focused helper tests for shared tool resolution (docs/workspaces/README.md).
 //
-// The historical RED evidence (recorded in
-// .idea/npm-workspaces/bitcore-task-1.1-results.json and
-// .idea/npm-workspaces/evidence-1.1/hoisted-layout.log) reproduced the bug
-// this task fixes: the old index.js located Browserify/Karma/WebdriverIO and
+// The old index.js located Browserify/Karma/WebdriverIO and
 // its own shared karma.conf.js by concatenating fixed-depth, cwd-relative
 // strings ('./node_modules/@bitpay-labs/bitcore-build/node_modules/.bin/<tool>',
 // falling back to './node_modules/.bin/<tool>'), which assumed bitcore-build's

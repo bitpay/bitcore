@@ -1,6 +1,6 @@
-# Bitcore workspace migration: execution contracts
+# Bitcore workspaces: execution and acceptance contracts
 
-Companion to [bitcore-migration-plan.md](bitcore-migration-plan.md). This specifies commands and checks for future implementation. Proposed scripts below have not been added to the repository.
+This specifies the workspace tooling's execution contracts and the checks required for migration acceptance. The referenced scripts are implemented in `scripts/workspaces` and their fixtures in `test/workspaces`. See the [maintainer guide](README.md) for command usage. This document defines requirements; it does not declare that every acceptance gate has passed.
 
 ## 1. Workspace membership and commands
 
@@ -31,7 +31,7 @@ Use this root workspace list. Its order is stable discovery order; the compile r
 }
 ```
 
-Target root script values:
+Required root script values:
 
 | Script | Value |
 | --- | --- |
@@ -48,9 +48,9 @@ Target root script values:
 | `test:bitcore-client` | `npm run compile && npm run test --workspace=@bitpay-labs/bitcore-client --` |
 | Other existing `test:<directory>` aliases | `npm run test --workspace=@bitpay-labs/<directory> --` |
 
-Remove `bootstrap`. Do not change root lint/fix/hook scripts unless their execution demonstrably regresses. Trailing `--` in test wrappers preserves argument forwarding; verify with `npm run test:<directory> -- --grep <known-test>` in a fixture and one actual package. Do not forward test filters into the preparatory root compile.
+There is no `bootstrap` step. Do not change root lint/fix/hook scripts unless their execution demonstrably regresses. Trailing `--` in test wrappers preserves argument forwarding; verify with `npm run test:<directory> -- --grep <known-test>` in a fixture and one actual package. Do not forward test filters into the preparatory root compile.
 
-Root runtime metadata: `private: true`, `name: bitcore-monorepo`, `engines.node: >=22 <23`, `packageManager: npm@10.9.2`. Keep the root version. Use Node 22.16.0 for the initial reproducible baseline and exact npm 10.9.2. Published workspace engine ranges stay unchanged unless a separately demonstrated incompatibility requires correction.
+Root runtime metadata: `private: true`, `name: bitcore-monorepo`, `engines.node: >=24.22.1 <25`, `packageManager: npm@11.19.1`. Keep the root version. Use Node 24.22.1 and exact npm 11.19.1 for reproducible candidate runs. Historical Node 22/npm 10 results do not establish acceptance of this pair. Published workspace engine ranges follow their own manifests and must not be changed merely to satisfy the root verifier.
 
 ## 2. Compile and lifecycle contract
 
@@ -68,12 +68,12 @@ Sequential compile order:
 
 Invoke each package through `npm run compile --workspace=<name>` with inherited environment and streamed output. Do not invoke `tsc` centrally; each package selects its compiler and lifecycle. Stop before the next package after any nonzero exit. Propagate interruption to the running child and wait for it to terminate. Keep a fixture that records invocation order, has one prerequisite fail, and asserts later packages never start. Discovery must reject a new compile-bearing workspace until the explicit order is updated.
 
-Client changes:
+Client compilation contract:
 
-- Delete `precompile`.
+- There is no client `precompile` hook that builds node.
 - Use `compile: npm run clean && npm run build:prod`.
 - Keep `build:prod: tsc -p tsconfig.prod.json`, with explicit `rootDir: "."` so source emits to `ts_build/src`.
-- Add `test:types: tsc --noEmit -p tsconfig.json` and execute it in the package test script after production compilation, before the existing `nyc mocha -r tsx` command.
+- Run `test:types: tsc --noEmit -p tsconfig.json` in the package test script after production compilation and before its test runner.
 - Leave test imports of node output intact initially. Root preparation creates that output before tests. Production compile must not read or clean node output.
 
 Proof of the cycle fix: with dependencies available and node build output absent, client production compilation succeeds and creates its declared main/types. Then a clean root compile builds node including its tests using the newly compiled local client. Client tests and their type check execute after node output exists.
@@ -82,7 +82,7 @@ Normal `npm ci` is the supported development/image install and includes compilat
 
 ## 3. Runtime and dependency-engine checks
 
-`check-runtime.cjs` uses only Node built-ins. It checks the running Node major and actual npm version, obtained from npm's lifecycle environment or an explicit `npm --version` subprocess when called directly. It fails if npm is absent, unidentified, or differs from the chosen exact version. It prints a useful expected/observed diagnostic and exits nonzero. Test the comparison logic with supplied fixture values for Node 20, 22 and 24; execute the real script only on the supported Node 22 environment.
+`check-runtime.cjs` uses only Node built-ins. It checks the running Node major, the minimum Node version, and actual npm version, obtained from npm's lifecycle environment or an explicit `npm --version` subprocess when called directly. It requires stable Node >=24.22.1 <25 and npm exactly 11.19.1, and fails if npm is absent or unidentified. It prints a useful expected/observed diagnostic and exits nonzero. Fixtures cover rejection of Node 20, 22, 25, below-minimum Node 24, and unsupported npm, plus acceptance of supported Node 24 releases. Execute the real script under the supported pair for candidate validation.
 
 CI and Docker run preflight before installation. Root preinstall is a second check, not a substitute for preflight. The compile runner also calls it. Documentation lists the command before initial install.
 
@@ -124,7 +124,7 @@ For wallet-client fixture stage, compare hashes of top-level `test/data/*.json` 
 
 Each failure includes mode, consumer/workspace, expected versus observed path/version, and exits nonzero. Do not count a missing verifier script or absent browser as the intended RED. Keep fixtures for wrong local resolution, absent artifact, unexpected engine mismatch, and runtime rejection; simple manifest fields can use one-shot assertions.
 
-## 5. Baseline/candidate command mapping
+## 5. Historical baseline/current command mapping
 
 | Behavior | Existing Lerna baseline | Workspace candidate |
 | --- | --- | --- |
@@ -136,10 +136,10 @@ Each failure includes mode, consumer/workspace, expected versus observed path/ve
 | TSS browser | `npm --prefix packages/bitcore-tss run test:web` | `npm run test:web --workspace=@bitpay-labs/bitcore-tss` |
 | Node script tests | `npm --prefix packages/bitcore-node run test:scripts` | `npm run test:scripts --workspace=@bitpay-labs/bitcore-node` |
 | Insight | `npm run insight:build` | Same public command, now with a locked independent install. |
-| Shared helper own test | Existing `gulp test` has no own gulpfile; record as a baseline defect. Consumer suites provide baseline coverage. | New focused helper test plus the same consumer suites. |
-| Runtime/engine checks, runner fixture, artifact verifier | No equivalent repository scripts; capture source facts and use independent behavioral fixtures. | Proposed verifier/fixture commands. |
+| Shared helper own test | Existing `gulp test` has no own gulpfile; record as a baseline defect. Consumer suites provide baseline coverage. | `node --test packages/bitcore-build/test/tool-resolution.test.cjs` plus the same consumer suites. |
+| Runtime/engine checks, runner fixture, artifact verifier | No equivalent repository scripts; capture source facts and use independent behavioral fixtures. | The implemented verifier/fixture commands in section 6. |
 
-Do not run every proposed command blindly against the baseline. Treat new-script absence as inventory, not behavioral RED. Keep deliberate expected-failure commands separate from shell sequences that expect zero throughout.
+Do not run current workspace-only commands blindly against the historical baseline. Treat new-script absence as inventory, not behavioral RED. Keep deliberate expected-failure commands separate from shell sequences that expect zero throughout.
 
 ## 6. Cold acceptance sequence
 
@@ -165,7 +165,7 @@ Then execute the application/browser/container matrix with its prerequisites. Ru
 
 For an inconsistent-lock negative case, change a single external dependency version in a scratch manifest without changing the lock; `npm ci` must reject the mismatch. For an internal-range negative case, run the full manifest verifier on a fixture whose consumer range excludes the local version; it must fail without needing the registry. Do not require npm to reject every incompatible internal range: npm may legitimately resolve a registry version, which is why this repository adds its own local-link contract.
 
-The optional LavaMoat topology probe described in bitcore-migration-plan.md Task 2.2 is intentionally outside this binary npm-workspaces migration gate; do not add it to the required command sequence above. If it is executed, record its evidence separately: command, tested commit, resolved package paths involved in the previous duplicate-instance case, whether duplicate identity occurred, and whether the result differs from the previous Lerna/bootstrap behavior. Classify this result as informational evidence, not as one of the required `PASS` / `FAIL` workspace migration gates.
+An optional LavaMoat duplicate-instance/topology probe is outside the required npm-workspaces migration gates; do not add it to the required command sequence above. If executed, record its command, tested commit, resolved package paths, whether duplicate identity occurred, and whether the result differs from the historical Lerna/bootstrap behavior. Classify it as informational evidence.
 
 ## 7. Containers, readiness, and publication boundaries
 
@@ -177,10 +177,12 @@ Pass the actual host DB port to client tests. Root CI maps MongoDB to 7357 while
 
 Migrate RPC Docker build contexts before considering its test job GREEN. Keep the separate missing-`migrate` start-service defect outside that gate. Likewise, validate packed consumers without invoking existing `pub` scripts; those scripts publish to npm. Use explicit `npm pack --workspace=<name> --pack-destination=<absolute-temp-directory> --json` after required builds and inspect the returned tarball paths. Pack only explicit non-private candidates. Do not run `npm publish`, `lerna publish`, `npm version`, or tag mutation as acceptance.
 
-`npm run artifacts:check [-- --destination=<absolute-temp-directory>]` (`scripts/workspaces/pack.cjs`) implements the paragraph above for all 17 non-private packages: it re-asserts `packages/pub`'s recorded selection/order and each candidate's manifest against `scripts/workspaces/release-baseline.json`, runs each candidate's own build/lint prerequisite the recorded release scripts actually need (`npm pack` alone does not run a package's `build`/`compile`), packs, and checks the extracted tarball's manifest and file contents. It also runs `scripts/workspaces/audit-packed.cjs` per package -- a static scan of that package's own implementation tree for non-relative imports missing from its own declared dependencies, independent of whatever the eventual validation consumer happens to hoist -- against a small, explicitly named set of documented pre-existing baseline exceptions (mirroring the engines verifier's `socks5-client` exception), not a general suppression mechanism. It writes `artifacts.json` (name/version/tarball path per package) into the destination directory. `npm run artifacts:consumer -- --artifacts=<destination>/artifacts.json [--destination=<absolute-temp-directory>]` (`scripts/workspaces/verify-consumer.cjs`) then installs every one of those tarballs together into one disposable npm project outside the checkout, confirms each installed package is the real extracted tarball at its candidate version (not a registry substitute or a symlink back into the checkout), type-checks a small consumer against wallet-client's shipped declarations with the repository's own `tsc`, and exercises a representative public API (`Key`) plus an ESM import of crypto-rpc's named export on Node 22. Neither command ever calls `npm publish`, `npm version`, or a package's own `pub` script.
+`npm run artifacts:check [-- --destination=<absolute-temp-directory>]` (`scripts/workspaces/pack.cjs`) implements the paragraph above for all 17 non-private packages: it re-asserts `packages/pub`'s recorded selection/order and each candidate's manifest against `scripts/workspaces/release-baseline.json`, runs each candidate's own build/lint prerequisite the recorded release scripts actually need (`npm pack` alone does not run a package's `build`/`compile`), packs, and checks the extracted tarball's manifest and file contents. It also runs `scripts/workspaces/audit-packed.cjs` per package -- a static scan of that package's own implementation tree for non-relative imports missing from its own declared dependencies, independent of whatever the eventual validation consumer happens to hoist -- against a small, explicitly named set of documented pre-existing baseline exceptions (mirroring the engines verifier's `socks5-client` exception), not a general suppression mechanism. It writes `artifacts.json` (name/version/tarball path per package) into the destination directory. `npm run artifacts:consumer -- --artifacts=<destination>/artifacts.json [--destination=<absolute-temp-directory>]` (`scripts/workspaces/verify-consumer.cjs`) then installs every one of those tarballs together into one disposable npm project outside the checkout, confirms each installed package is the real extracted tarball at its candidate version (not a registry substitute or a symlink back into the checkout), type-checks a small consumer against wallet-client's shipped declarations with the repository's own `tsc` and `skipLibCheck: false`, and exercises a representative public API (`Key`) plus an ESM import of crypto-rpc's named export on the supported Node 24 toolchain. Neither command ever calls `npm publish`, `npm version`, or a package's own `pub` script.
+
+The own-dependency auditor's only declaration exceptions are `@bitpay-labs/bitcore-wallet-service::ts_build/src/lib/chain/eth/index.d.ts::src` and `@bitpay-labs/bitcore-wallet-service::ts_build/src/lib/chain/xrp/index.d.ts::src`: inherited bare `src/lib/...` aliases emitted into those declarations. They do not waive consumer declaration checking or permit other undeclared imports. The recorded release selection preserves the inherited duplicate P2P Doge entry and omissions; changing release policy is separate work. Release-loop fixtures use a stub npm and must never invoke real publication.
 
 ## 8. Evidence and completion
 
 Each evidence record contains task/check ID, source commit, cwd, OS/architecture, Node/npm, argv, prerequisite state, exit code, outcome, and log path. Use `PASS`, `EXPECTED_RED`, `FAIL`, or `BLOCKED`; list out-of-scope baseline defects separately rather than treating them as passes.
 
-The plan's task table defines the dependencies. Before cutover, package preparation is judged by existing-layout tests and independent fixtures. After cutover, the real install/link/build checks become required. Task completion requires its own criteria; migration completion additionally requires all integrated gates. Preserve logs for the exact final candidate, not only an earlier intermediate checkout.
+Validate runtime/manifest/lock structure before installing; validate engines, local resolution, and build outputs after installation; run application/browser/container and distribution checks with their prerequisites afterward. Synthetic orchestration fixtures supplement the real install/link/build gates. Migration completion requires all integrated gates, with logs for the exact final candidate rather than only an earlier intermediate checkout. Historical plans, task records, and local logs are not prerequisites for using the tracked implementation; keep execution evidence in ignored local artifacts.

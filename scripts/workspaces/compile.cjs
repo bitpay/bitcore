@@ -7,17 +7,16 @@
 // package keeps selecting its own compiler and lifecycle (CLI's postbuild
 // launcher generation, wallet-service's template copying, ...). Stops
 // before the next package after the first nonzero exit or signal; this is
-// how bitcore-migration-plan.md's Task 1.3 keeps the seven-package build
+// how docs/workspaces/acceptance-spec.md §2 keeps the seven-package build
 // order explicit instead of relying on a workspace tool's own topological
-// sort (see target-design item 8).
+// sort.
 //
 // This module is intentionally usable against any npm-workspaces root, not
 // only this repository: `runSequentialCompile`/`runWorkspaceCompile` take an
-// explicit `order` and `root`, so Phase 1 fixtures can exercise the real
+// explicit `order` and `root`, so fixtures can exercise the real
 // ordering/failure/signal-handling behavior against a disposable synthetic
-// workspace tree without depending on this repository's own cutover to npm
-// workspaces (not yet done -- see Task 2.1). Only `main()` below binds the
-// real COMPILE_ORDER and this repository's root.
+// workspace tree without depending on this repository's installation.
+// Only `main()` below binds the real COMPILE_ORDER and this repository's root.
 
 const { spawn, execFileSync } = require('child_process');
 const path = require('path');
@@ -46,7 +45,7 @@ function listChildPids(pid) {
 // Signals only the *leaf* live descendants of `pid` (processes with no
 // children of their own at the moment of the walk) -- deliberately not every
 // descendant. Needed alongside signaling npm itself directly: confirmed
-// empirically (see artifacts/workspaces/task2.2/evidence.md) that npm's own
+// in the signal fixtures under test/workspaces/compile.test.cjs that npm's own
 // lifecycle code already relays a signal it receives to its immediate child
 // correctly on both platforms, but that immediate child is
 // `/bin/sh -c '<script>'` (npm always runs a package's own script through a

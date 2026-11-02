@@ -1,10 +1,9 @@
 'use strict';
 
 // Focused tests for the sequential compile runner (scripts/workspaces/compile.cjs).
-// Per bitcore-migration-plan.md ("Phase 1's workspace-runner tests use
-// independent minimal fixtures, so they do not depend on repository
-// cutover"), the ordering/failure/signal fixtures below are synthetic,
-// disposable npm-workspaces projects -- real `npm run <script> --workspace=<name>`
+// Per docs/workspaces/README.md, the ordering/failure/signal fixtures below
+// are independent, synthetic, disposable npm-workspaces projects -- real
+// `npm run <script> --workspace=<name>`
 // invocations against them, not this repository, and not a stubbed
 // child_process. npm resolves `--workspace` purely from a root `workspaces`
 // field plus on-disk package.json files; no `npm install`/`npm ci` is needed
@@ -123,8 +122,7 @@ test('runWorkspaceCompile forwards a received SIGTERM to the real npm child and 
   // directly by the marker assertion below, which is what this test is
   // actually for. What npm itself reports for *its own* exit is a separate,
   // platform-dependent fact this project's tooling cannot control from
-  // outside: confirmed empirically (see artifacts/workspaces/task2.2/
-  // evidence.md), npm always runs a package's own script through
+  // outside: npm runs a package's own script through
   // `/bin/sh -c '<script>'`, and macOS's `/bin/sh` execve-replaces itself
   // for a simple trailing command like `node compile.js` -- so there is no
   // distinct shell process, npm's own child IS the leaf, and npm reports
