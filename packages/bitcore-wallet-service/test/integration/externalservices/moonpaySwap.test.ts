@@ -344,6 +344,25 @@ describe('Moonpay Swap integration', () => {
       spy.args[0][0].should.contain('&slippage=100');
     });
 
+    it('should set a request timeout', async () => {
+      const spy = sandbox.spy(fakeRequest, 'get');
+      await server.externalServices.moonpaySwap.moonpaySwapGetAction(req);
+      spy.args[0][1].timeout.should.equal(30000);
+    });
+
+    it('should not log wallet addresses when the request fails', async () => {
+      server.externalServices.moonpaySwap.request = {
+        get: (_url, _opts, cb) => { return cb(new Error('Error')); },
+      };
+      try {
+        await server.externalServices.moonpaySwap.moonpaySwapGetAction(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        loggerError.args[0][0].should.contain('moonpaySwapApi1/getAction');
+        loggerError.args[0][0].should.not.contain(req.body.sender);
+      }
+    });
+
     it('should always request a swap action', async () => {
       req.body.actionType = 'evm-calldata-tx';
       const spy = sandbox.spy(fakeRequest, 'get');

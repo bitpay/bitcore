@@ -76,17 +76,19 @@ export class MoonpaySwapService {
       };
 
       const URL: string = keys.API + uriPath;
-      const requestOpts: any = { headers, json: true };
+      // Log the path only: the query string carries wallet addresses
+      const logURL: string = keys.API + uriPath.split('?')[0];
+      const requestOpts: any = { headers, json: true, timeout: 30000 };
       if (opts.body) requestOpts.body = opts.body;
 
       this.request[method](URL, requestOpts, (err, data) => {
         if (err) {
-          logger.error(`Moonpay Swap request failed with error (${URL}): ${err.stack || err}`);
+          logger.error(`Moonpay Swap request failed with error (${logURL}): ${err.stack || err}`);
           return reject(new ClientError(opts.failedMsg));
         } else {
           const success = data.statusCode >= 200 && data.statusCode < 300;
           if (!success) {
-            logger.warn(`Moonpay Swap request failed with status code ${data.statusCode}: ${URL}`);
+            logger.warn(`Moonpay Swap request failed with status code ${data.statusCode}: ${logURL}`);
           }
           if (!data.body) {
             return reject(new ClientError(opts.emptyMsg));
