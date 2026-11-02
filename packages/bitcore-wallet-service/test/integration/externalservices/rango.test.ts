@@ -387,6 +387,57 @@ describe('Rango integration', () => {
     });
   });
 
+  describe('upstream responses', () => {
+    beforeEach(() => {
+      req = { headers: {}, body: { env: 'sandbox' } };
+    });
+
+    it('should not follow redirects', async () => {
+      let getOpts;
+      let postOpts;
+      server.externalServices.rango.request = {
+        get: (_url, _opts, _cb) => { getOpts = _opts; return _cb(null, { statusCode: 200, body: {} }); },
+        post: (_url, _opts, _cb) => { postOpts = _opts; return _cb(null, { statusCode: 200, body: {} }); }
+      };
+
+      await server.externalServices.rango.rangoGetSupportedChains(req);
+      await server.externalServices.rango.rangoReportFailure({
+        headers: {},
+        body: { env: 'sandbox', requestId: 'req-1', eventType: 'SEND_TX_FAILED' }
+      });
+      getOpts.followRedirect.should.equal(false);
+      postOpts.followRedirect.should.equal(false);
+    });
+
+    it('should reject a redirect instead of returning its body', async () => {
+      server.externalServices.rango.request = {
+        get: (_url, _opts, _cb) => _cb(null, { statusCode: 302, body: { blockchains: ['attacker'] } })
+      };
+
+      try {
+        await server.externalServices.rango.rangoGetSupportedChains(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Rango request was redirected');
+      }
+    });
+
+    it('should not return the raw response when the body is empty', async () => {
+      // The raw response carries the request URL, api key included
+      server.externalServices.rango.request = {
+        get: (url, _opts, _cb) => _cb(null, { statusCode: 200, body: undefined, request: { href: url } })
+      };
+
+      try {
+        await server.externalServices.rango.rangoGetSupportedChains(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Rango did not return data');
+        JSON.stringify(err).should.not.contain('rangoApiKey');
+      }
+    });
+  });
+
   describe('request timeouts', () => {
     /**
      * A Rango endpoint that accepts the connection but never answers holds the

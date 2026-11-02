@@ -155,6 +155,25 @@ export class RangoService {
   }
 
   /**
+   * Only the parsed body goes back to the app. The raw response object
+   * carries the request, and with it the URL holding the api key.
+   */
+  private handleRangoResponse(resolve: (value: any) => void, reject: (reason: any) => void) {
+    return (err, data) => {
+      if (err) {
+        return reject(err.body ? err.body : err);
+      }
+      if (data.statusCode >= 300 && data.statusCode < 400) {
+        return reject(new ClientError('Rango request was redirected'));
+      }
+      if (data.body === undefined || data.body === null || data.body === '') {
+        return reject(new ClientError('Rango did not return data'));
+      }
+      return resolve(data.body);
+    };
+  }
+
+  /**
    * Shared GET helper. Rango returns 200 with an `error` field for business
    * failures, so callers must inspect the body as well as the status.
    */
@@ -174,15 +193,12 @@ export class RangoService {
           // never answers holds the socket open indefinitely. The app's own
           // pollers check their deadline only between requests, so one hung
           // call strands the swap and the sockets accumulate here.
-          timeout: RANGO_REQUEST_TIMEOUT_MS
+          timeout: RANGO_REQUEST_TIMEOUT_MS,
+          // The api key is in the URL, so a followed redirect would carry it
+          // (and a referer with it) to wherever the redirect points
+          followRedirect: false
         },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
+        this.handleRangoResponse(resolve, reject)
       );
     });
   }
@@ -342,15 +358,12 @@ export class RangoService {
           // Same reason as rangoGet: without this a Rango endpoint that
           // accepts the connection but never answers holds the socket open
           // indefinitely, and they accumulate during an upstream incident.
-          timeout: RANGO_REQUEST_TIMEOUT_MS
+          timeout: RANGO_REQUEST_TIMEOUT_MS,
+          // The api key is in the URL, so a followed redirect would carry it
+          // (and a referer with it) to wherever the redirect points
+          followRedirect: false
         },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
+        this.handleRangoResponse(resolve, reject)
       );
     });
   }
