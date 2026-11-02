@@ -294,7 +294,7 @@ test('checkDiscovery finds no mismatch against the real repository as it stands 
 const COMPILE_CJS = path.resolve(__dirname, '..', '..', 'scripts', 'workspaces', 'compile.cjs');
 const REAL_NODE_USER_AGENT = `node/${process.version}`;
 
-function makeNpmShim({ versionOutput = '10.9.2\n', versionExit = 0, runExit = 0 } = {}) {
+function makeNpmShim({ versionOutput = '11.19.1\n', versionExit = 0, runExit = 0 } = {}) {
   const shimDir = makeTempDir('compile-runner-npm-shim');
   const logPath = path.join(shimDir, 'invocations.log');
   const shimPath = path.join(shimDir, 'npm');
@@ -331,7 +331,7 @@ test('compile entry point rejects unsupported npm (npm/0.0.0 user agent) with no
   const { shimDir, invocations } = makeNpmShim();
   const result = runCompileEntryPoint({ shimDir, userAgent: `npm/0.0.0 ${REAL_NODE_USER_AGENT}` });
   assert.notEqual(result.status, 0, `expected nonzero exit; stdout=${result.stdout} stderr=${result.stderr}`);
-  assert.match(result.stderr, /Expected npm 10\.9\.2 exactly, observed 0\.0\.0/);
+  assert.match(result.stderr, /Expected npm 11\.19\.1 exactly, observed 0\.0\.0/);
   assert.deepEqual(dispatchedCompiles(invocations()), [], 'no workspace compile may start under an unsupported npm');
   assert.doesNotMatch(result.stdout, /\[compile\]/, 'the runner must not report starting any package');
 });
@@ -340,7 +340,7 @@ test('compile entry point rejects unsupported npm resolved via the PATH fallback
   const { shimDir, invocations } = makeNpmShim({ versionOutput: '0.0.0\n' });
   const result = runCompileEntryPoint({ shimDir });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Expected npm 10\.9\.2 exactly, observed 0\.0\.0/);
+  assert.match(result.stderr, /Expected npm 11\.19\.1 exactly, observed 0\.0\.0/);
   // The preflight itself asked the PATH npm for its version, and nothing more.
   assert.deepEqual(invocations(), ['--version']);
 });
@@ -363,7 +363,7 @@ test('compile entry point rejects an unsupported Node major before dispatching a
   );
   const result = runCompileEntryPoint({
     shimDir,
-    userAgent: `npm/10.9.2 ${REAL_NODE_USER_AGENT}`,
+    userAgent: `npm/11.19.1 ${REAL_NODE_USER_AGENT}`,
     nodeOptions: `--require ${preloadPath}`,
   });
   assert.notEqual(result.status, 0, `expected nonzero exit; stdout=${result.stdout} stderr=${result.stderr}`);
@@ -372,7 +372,7 @@ test('compile entry point rejects an unsupported Node major before dispatching a
 });
 
 test('compile entry point under the supported toolchain still dispatches all seven workspaces sequentially, in order', () => {
-  for (const userAgent of [`npm/10.9.2 ${REAL_NODE_USER_AGENT}`, null]) {
+  for (const userAgent of [`npm/11.19.1 ${REAL_NODE_USER_AGENT}`, null]) {
     const { shimDir, invocations } = makeNpmShim();
     const result = runCompileEntryPoint({ shimDir, userAgent });
     assert.equal(result.status, 0, `userAgent=${userAgent} stdout=${result.stdout} stderr=${result.stderr}`);
@@ -385,7 +385,7 @@ test('compile entry point under the supported toolchain still dispatches all sev
 
 test('compile entry point under the supported toolchain still propagates a workspace failure and stops before dependents', () => {
   const { shimDir, invocations } = makeNpmShim({ runExit: 3 });
-  const result = runCompileEntryPoint({ shimDir, userAgent: `npm/10.9.2 ${REAL_NODE_USER_AGENT}` });
+  const result = runCompileEntryPoint({ shimDir, userAgent: `npm/11.19.1 ${REAL_NODE_USER_AGENT}` });
   assert.equal(result.status, 3);
   assert.deepEqual(dispatchedCompiles(invocations()), [`run compile --workspace=${COMPILE_ORDER[0]}`]);
 });

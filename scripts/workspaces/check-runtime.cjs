@@ -10,14 +10,14 @@ const { spawnSync } = require('child_process');
 const { SUPPORTED_NODE_VERSION } = require('./lib/constants.cjs');
 
 const EXPECTED_NODE_MAJOR = 24;
-const EXPECTED_NPM_VERSION = '10.9.2';
+const EXPECTED_NPM_VERSION = '11.19.1';
 
 function getNodeMajor(nodeVersion) {
   const match = /^v?(\d+)\./.exec(nodeVersion);
   return match ? Number(match[1]) : null;
 }
 
-// npm sets `npm_config_user_agent` (e.g. "npm/10.9.2 node/v24.22.1 darwin
+// npm sets `npm_config_user_agent` (e.g. "npm/11.19.1 node/v24.22.1 darwin
 // x64 workspaces/false") in every lifecycle script's environment. Outside a
 // lifecycle script (a developer or CI running this directly) we fall back to
 // asking the `npm` on PATH.

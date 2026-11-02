@@ -2,7 +2,7 @@ FROM node:24.22.1-bookworm
 
 # Pin npm to the exact version recorded in root package.json's
 # packageManager field, the same way CI's use_node step does.
-RUN npm install -g npm@10.9.2
+RUN npm install -g npm@11.19.1
 
 RUN set -x && node -v && npm -v
 

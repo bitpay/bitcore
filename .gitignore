@@ -26,4 +26,6 @@ bitcore-test.local.config.json
 
 # npm-workspaces migration evidence (untracked; see .idea/npm-workspaces/bitcore-acceptance-spec.md)
 /artifacts/workspaces/
+/scripts/workspaces/
+/test/workspaces/
 .worktrees

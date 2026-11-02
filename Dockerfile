@@ -15,7 +15,7 @@ ENV CHROME_BIN /usr/bin/google-chrome
 
 # Pin npm to the exact version recorded in package.json's packageManager
 # field, the same way CI's use_node step does.
-RUN npm install -g npm@10.9.2
+RUN npm install -g npm@11.19.1
 
 # Log versions
 

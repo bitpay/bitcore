@@ -54,7 +54,7 @@ other published package) from the registry exactly as before.
 
 ### Setup
 
-Use Node `22.x` and npm exactly `10.9.2` (pinned in root `package.json`'s
+Use Node `24.22.1` and npm exactly `11.19.1` (pinned in root `package.json`'s
 `packageManager` field and enforced by a preflight check that runs before
 install). Then, from the repo root:
 

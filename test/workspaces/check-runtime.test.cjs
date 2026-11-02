@@ -4,33 +4,33 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { evaluateRuntime, enforceRuntime } = require('../../scripts/workspaces/check-runtime.cjs');
 
-test('accepts the exact supported Node 24 / npm 10.9.2 pair', () => {
-  const result = evaluateRuntime({ nodeVersion: 'v24.22.1', npmVersion: '10.9.2' });
+test('accepts the exact supported Node 24 / npm 11.19.1 pair', () => {
+  const result = evaluateRuntime({ nodeVersion: 'v24.22.1', npmVersion: '11.19.1' });
   assert.equal(result.ok, true);
   assert.deepEqual(result.problems, []);
 });
 
 test('rejects Node 20', () => {
-  const result = evaluateRuntime({ nodeVersion: 'v20.11.0', npmVersion: '10.9.2' });
+  const result = evaluateRuntime({ nodeVersion: 'v20.11.0', npmVersion: '11.19.1' });
   assert.equal(result.ok, false);
   assert.match(result.problems.join('\n'), /Expected Node 24\.x, observed v20\.11\.0/);
 });
 
 test('rejects Node 25', () => {
-  const result = evaluateRuntime({ nodeVersion: 'v25.0.0', npmVersion: '10.9.2' });
+  const result = evaluateRuntime({ nodeVersion: 'v25.0.0', npmVersion: '11.19.1' });
   assert.equal(result.ok, false);
   assert.match(result.problems.join('\n'), /Expected Node 24\.x, observed v25\.0\.0/);
 });
 
 test('rejects Node 22', () => {
-  const result = evaluateRuntime({ nodeVersion: 'v22.16.0', npmVersion: '10.9.2' });
+  const result = evaluateRuntime({ nodeVersion: 'v22.16.0', npmVersion: '11.19.1' });
   assert.equal(result.ok, false);
   assert.match(result.problems.join('\n'), /Expected Node 24\.x, observed v22\.16\.0/);
 });
 
 test('rejects Node 24 releases below the upstream minimum', () => {
   for (const nodeVersion of ['v24.0.0', 'v24.21.9', 'v24.22.0']) {
-    const result = evaluateRuntime({ nodeVersion, npmVersion: '10.9.2' });
+    const result = evaluateRuntime({ nodeVersion, npmVersion: '11.19.1' });
     assert.equal(result.ok, false, nodeVersion);
     assert.match(result.problems.join('\n'), /Expected Node >=24\.22\.1/);
   }
@@ -38,7 +38,7 @@ test('rejects Node 24 releases below the upstream minimum', () => {
 
 test('accepts later stable Node 24 releases', () => {
   for (const nodeVersion of ['v24.22.2', 'v24.23.0']) {
-    const result = evaluateRuntime({ nodeVersion, npmVersion: '10.9.2' });
+    const result = evaluateRuntime({ nodeVersion, npmVersion: '11.19.1' });
     assert.equal(result.ok, true, nodeVersion);
   }
 });
@@ -46,7 +46,7 @@ test('accepts later stable Node 24 releases', () => {
 test('rejects a mismatched npm version on Node 24', () => {
   const result = evaluateRuntime({ nodeVersion: 'v24.22.1', npmVersion: '10.8.0' });
   assert.equal(result.ok, false);
-  assert.match(result.problems.join('\n'), /Expected npm 10\.9\.2 exactly, observed 10\.8\.0/);
+  assert.match(result.problems.join('\n'), /Expected npm 11\.19\.1 exactly, observed 10\.8\.0/);
 });
 
 test('rejects a missing/unidentified npm version', () => {
@@ -56,7 +56,7 @@ test('rejects a missing/unidentified npm version', () => {
 });
 
 test('rejects an unparseable Node version string', () => {
-  const result = evaluateRuntime({ nodeVersion: 'not-a-version', npmVersion: '10.9.2' });
+  const result = evaluateRuntime({ nodeVersion: 'not-a-version', npmVersion: '11.19.1' });
   assert.equal(result.ok, false);
   assert.match(result.problems.join('\n'), /Unable to parse Node version/);
 });
@@ -79,7 +79,7 @@ test('enforceRuntime falls back to `npm --version` and is silent when supported'
   const result = enforceRuntime({
     env: {},
     nodeVersion: 'v24.22.1',
-    spawn: () => ({ status: 0, stdout: '10.9.2\n' }),
+    spawn: () => ({ status: 0, stdout: '11.19.1\n' }),
     logError: (line) => errors.push(line),
   });
   assert.equal(result.ok, true);

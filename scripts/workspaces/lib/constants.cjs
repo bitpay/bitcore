@@ -54,7 +54,7 @@ const EXPECTED_ROOT_IDENTITY = {
   name: 'bitcore-monorepo',
   private: true,
   engines: { node: '>=24.22.1 <25' },
-  packageManager: 'npm@10.9.2',
+  packageManager: 'npm@11.19.1',
 };
 
 // Directory names (relative to packages/) whose root `test:<dir>` alias

@@ -39,7 +39,7 @@ export class TssRouter {
     router.post('/v1/tss/keygen/:id/register', authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         const data = req.body;
 
         await TssKeyGen.registerParty({ id, copayerId, data });
