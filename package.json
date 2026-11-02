@@ -53,6 +53,7 @@
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
     "precommit": "eslint --pass-on-no-patterns --no-warn-ignored $(git diff --name-only --cached --diff-filter=AM)",
+    "test:bitcore-build": "npm run test --workspace=@bitpay-labs/bitcore-build --",
     "test:bitcore-client": "npm run compile && npm run test --workspace=@bitpay-labs/bitcore-client --",
     "test:bitcore-cli": "npm run test --workspace=@bitpay-labs/bitcore-cli --",
     "test:bitcore-lib": "npm run test --workspace=@bitpay-labs/bitcore-lib --",

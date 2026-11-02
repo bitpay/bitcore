@@ -80,6 +80,11 @@ jobs:
           command: |
             nvm use default
             npm ci --foreground-scripts
+      - run:
+          name: Verify shared build tools
+          command: |
+            nvm use default
+            npm run test:bitcore-build
       - npm_cache_save
       - persist_to_workspace:
           root: ~/bitcore

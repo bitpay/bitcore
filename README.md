@@ -49,9 +49,10 @@ and linked from one root install and one root lockfile. Run installs from the
 root and use `--workspace` to edit a package's dependencies. npm may place
 conflicting dependency versions in nested `node_modules` directories; these
 are still managed by the root lockfile.
-This is a monorepo-development-only change: it does not affect ordinary
-consumers, who continue to `npm install @bitpay-labs/bitcore-node` (or any
-other published package) from the registry exactly as before.
+Workspaces govern development inside this checkout. Published packages
+remain independently installable with `npm install @bitpay-labs/bitcore-node`
+(or any other published package); release commands still build and package
+each module's distributable files.
 
 ### Setup
 

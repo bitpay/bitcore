@@ -9,6 +9,7 @@
     "bitcore-client": "./bin/wallet"
   },
   "files": [
+    "bin",
     "ts_build"
   ],
   "engines": {
