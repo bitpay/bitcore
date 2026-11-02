@@ -120,7 +120,6 @@ export default defineConfig([
     // override above.
     files: [
       'scripts/workspaces/**/*.cjs',
-      'test/workspaces/**/*.cjs',
       'packages/bitcore-build/test/**/*.cjs',
     ],
     languageOptions: { sourceType: 'commonjs' },

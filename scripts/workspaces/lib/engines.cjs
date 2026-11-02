@@ -17,8 +17,8 @@ function deriveNameFromKey(key) {
 }
 
 // Pure evaluation of one declared engines.node range against the supported
-// Node runtime, requiring `semver` (declared as a direct dependency; see
-// acceptance-spec §1). Returns a status rather than throwing so callers can
+// Node runtime, requiring `semver` (declared as a direct dependency).
+// Returns a status rather than throwing so callers can
 // aggregate many results before deciding overall pass/fail.
 function evaluateEngineEntry(name, version, range) {
   if (range === undefined || range === null) {
@@ -51,9 +51,8 @@ function evaluateEngineEntry(name, version, range) {
 // failure rather than silently evaluated against stale lock metadata.
 //
 // Workspace link entries are resolved to the real workspace package they
-// point at (acceptance-spec §3: "Resolve workspace links to their real
-// packages") and its own installed manifest is evaluated the same as any
-// other dependency -- a workspace's own `engines.node` is not otherwise
+// point at, and that package's own installed manifest is evaluated the same
+// as any other dependency -- a workspace's own `engines.node` is not otherwise
 // checked anywhere else, so skipping links here would let every backend
 // workspace declare an arbitrary, unenforced engine range.
 function pushDeclarationFor(rootDir, key, record, realPath, seenRealPaths, declarations, installFailures) {

@@ -1,11 +1,10 @@
 'use strict';
 
-// Single source of truth for the target npm-workspaces contract described in
-// docs/workspaces/acceptance-spec.md. Every verifier mode reads
+// Single source of truth for the target npm-workspaces contract. Every verifier mode reads
 // membership/version/script expectations from here instead of re-deriving
 // them, so the contract's target values only need to change in one place.
 
-// Stable discovery order from acceptance-spec §1. The compile runner owns its
+// Stable workspace discovery order. The compile runner owns its
 // own build order independently (see COMPILE_ORDER below).
 const EXPECTED_WORKSPACES = [
   'packages/bitcore-build',
@@ -37,7 +36,7 @@ const EXCLUDED_PROJECT_LOCKS = [
 
 const EXCLUDED_WORKSPACE_PATHS = ['packages/insight'];
 
-// Sequential compile order from acceptance-spec §2. Scoped package names, not
+// Sequential compile order. Scoped package names, not
 // directory names, because the compile runner invokes
 // `npm run compile --workspace=<name>`.
 const COMPILE_ORDER = [
@@ -87,7 +86,7 @@ function genericTestAliasScript(dir) {
   return `npm run test --workspace=${scopedName(dir)} --`;
 }
 
-// Required root script values from acceptance-spec §1. `build` is preserved
+// Required root script values. `build` is preserved
 // verbatim from the pre-migration root manifest -- it builds the root
 // Dockerfile and must keep that distinct meaning from `build:docker`.
 const EXPECTED_ROOT_SCRIPTS = {
@@ -104,7 +103,7 @@ const EXPECTED_ROOT_SCRIPTS = {
   'insight:build':
     'npm run insight:install && npm --prefix packages/insight run build --workspaces=false',
   // Unlike the generic aliases below, client's tests import bitcore-node's
-  // build output directly (see Task 1.3), and client's own `compile` no
+  // build output directly, and client's own `compile` no
   // longer builds node (it only builds client). A root compile first is
   // what actually prepares that node output; running client's test script
   // on its own would silently use whatever node build happens to already
@@ -118,10 +117,10 @@ const EXPECTED_ROOT_SCRIPTS = {
 
 // Forbidden dependency specifier protocols for internal (@bitpay-labs/*)
 // dependency ranges in published manifests. Ordinary semver ranges are the
-// only supported form; see acceptance-spec §1 and the workspace development guide.
+// only supported form.
 const FORBIDDEN_LOCAL_PROTOCOLS = [/^workspace:/, /^file:/, /^\*$/];
 
-// The single permitted Node-engine exception (acceptance-spec §3). Any other
+// The single permitted Node-engine exception. Any other
 // mismatch between an installed dependency's declared `engines.node` and the
 // supported Node 24 runtime is a failure.
 const ENGINE_EXCEPTION = {

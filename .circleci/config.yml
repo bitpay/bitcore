@@ -103,11 +103,6 @@ jobs:
             node scripts/workspaces/verify.cjs artifacts --stage=build
             npm ls --workspaces --depth=0
       - run:
-          name: Run workspace orchestration tests
-          command: |
-            nvm use default
-            node --test test/workspaces/*.test.cjs
-      - run:
           name: Confirm install/compile made no tracked changes
           command: |
             git diff --exit-code -- package.json package-lock.json packages

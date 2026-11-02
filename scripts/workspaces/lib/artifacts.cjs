@@ -7,8 +7,7 @@ const path = require('path');
 const { EXPECTED_WORKSPACES } = require('./constants.cjs');
 const { loadWorkspaceManifests, formatFailure } = require('./util.cjs');
 
-// Required build outputs relative to each package directory (acceptance-spec
-// §4 table). Only the packages with a `compile`/`build` step need explicit
+// Required build outputs relative to each package directory. Only the packages with a `compile`/`build` step need explicit
 // entries; every other backend workspace is checked generically below via
 // its manifest `main` field ("existing declared entry files resolve
 // locally; no compile output is invented for them").

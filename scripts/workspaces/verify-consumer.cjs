@@ -5,8 +5,8 @@
 // npm project *outside* this monorepo, together, so npm resolves every
 // @bitpay-labs/* dependency edge among them from the local tarball and can
 // never silently substitute a registry-published version for one of the
-// packages under test (docs/workspaces/acceptance-spec.md §7 requires
-// installing the complete candidate set together). Never invokes
+// packages under test (the complete candidate set must be
+// installed together). Never invokes
 // pub/publish/version/tag; this only installs already-built tarballs and
 // exercises them.
 const assert = require('node:assert/strict');
@@ -30,7 +30,7 @@ function run(command, args, options = {}) {
 
 // A TypeScript consumer, using the repository's own local tsc so this needs
 // no network access beyond the tarball installs themselves: type-checks
-// against wallet-client's corrected `types` entry (Task 1.4) using its real
+// against wallet-client's corrected `types` entry using its real
 // shipped declarations, not the monorepo's source tree.
 const WALLET_CLIENT_CHECK_TS = `
 import { API, Key } from '@bitpay-labs/bitcore-wallet-client';

@@ -16,8 +16,7 @@ const builtins = new Set(builtinModules.map(n => n.replace(/^node:/, '')));
 // tsc emits that same literal specifier into the shipped .d.ts, where it
 // cannot resolve for an external consumer type-checking against the
 // published declarations. The real fix means editing that TypeScript
-// source, which is outside this migration's packaging-only scope (see
-// docs/workspaces/acceptance-spec.md §7); it is named explicitly here, the same as
+// source, which is outside this migration's packaging-only scope; it is named explicitly here, the same as
 // the engines verifier's socks5-client exception, so a real regression
 // elsewhere is never silently masked by broadening this list.
 const DOCUMENTED_BASELINE_EXCEPTIONS = new Set([

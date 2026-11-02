@@ -1,6 +1,6 @@
 'use strict';
 
-// Focused helper tests for shared tool resolution (docs/workspaces/README.md).
+// Focused helper tests for shared tool resolution.
 //
 // The old index.js located Browserify/Karma/WebdriverIO and
 // its own shared karma.conf.js by concatenating fixed-depth, cwd-relative

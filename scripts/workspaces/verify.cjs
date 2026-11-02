@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
-// CLI dispatcher for the npm-workspaces migration acceptance checks
-// (docs/workspaces/acceptance-spec.md §4). Each mode's actual
-// logic lives in ./lib/<mode>.cjs so it can also be exercised directly by
-// the fixtures under test/workspaces/.
+// CLI dispatcher for the npm-workspaces migration acceptance checks.
+// Each mode's actual logic lives in ./lib/<mode>.cjs so it can also be
+// exercised directly by fixtures.
 //
 // Usage:
 //   node scripts/workspaces/verify.cjs manifests [--structure-only]
@@ -73,9 +72,9 @@ function main() {
     return;
   }
 
-  // acceptance-spec §4: link resolution "records both [the lexical resolved
-  // path and the canonical real path] for every internal edge" -- required
-  // evidence, not opt-in verbosity, so it is printed regardless of pass/fail.
+  // Link resolution records both the lexical resolved path and the canonical
+  // real path for every internal edge -- required evidence, not opt-in
+  // verbosity, so it is printed regardless of pass/fail.
   if (result.report) {
     console.log(`[verify:${mode}] resolution report (${result.report.length} internal edge(s)):`);
     for (const entry of result.report) {

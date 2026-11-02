@@ -3,7 +3,7 @@ node_modules/
 .env
 *bitcore.config.*
 .vscode
-.idea/*
+.idea
 .DS_Store
 *.swp
 .zed
@@ -22,7 +22,4 @@ Session.vim
 ts_build
 bitcore-lib.js
 bitcore-test.local.config.json
-
-# Local workspace migration evidence; see docs/workspaces/acceptance-spec.md
-/artifacts/workspaces/
 .worktrees

@@ -1,9 +1,8 @@
 'use strict';
 
-// Shared fixture builders for Task 1.1's tool-resolution tests. Fixtures are
+// Shared fixture builders for the tool-resolution tests. Fixtures are
 // disposable temp directories independent of the real repository's install
-// state (see test/workspaces/helpers.cjs's own rationale for the same
-// pattern), so these tests exercise the helper's tool-resolution *logic*
+// state, so these tests exercise the helper's tool-resolution *logic*
 // against synthetic layouts, not the migrated repository itself.
 //
 // The helper under test is always a byte-for-byte copy of the real
@@ -63,7 +62,7 @@ function symlinkDependency(name, intoNodeModulesDir) {
   // resolvePackageDir walks up from BITCORE_BUILD_DIR the same way index.js
   // itself resolves tools, so this finds the real installed copy whether
   // it's nested under bitcore-build (today) or hoisted to the repo root
-  // (after Task 2.1's cutover), rather than assuming today's nesting depth.
+  // (after the workspace cutover), rather than assuming today's nesting depth.
   fs.symlinkSync(resolvePackageDir(name, BITCORE_BUILD_DIR), linkPath, 'dir');
 }
 

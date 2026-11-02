@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// Dependency-free runtime preflight (acceptance-spec §3). Uses only Node
+// Dependency-free runtime preflight. Uses only Node
 // built-ins so it can run before `npm install` ever executes -- it is wired
 // as root `preinstall` and is also called explicitly by CI/Docker before
 // `npm ci`, and by the compile runner as a second check.

@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 
-// Sequential compile runner (acceptance-spec §2). Invokes each compile-
+// Sequential compile runner. Invokes each compile-
 // bearing workspace's own `compile` script, in the configured order, through
 // `npm run compile --workspace=<name>` -- never `tsc` directly -- so each
 // package keeps selecting its own compiler and lifecycle (CLI's postbuild
 // launcher generation, wallet-service's template copying, ...). Stops
-// before the next package after the first nonzero exit or signal; this is
-// how docs/workspaces/acceptance-spec.md §2 keeps the seven-package build
-// order explicit instead of relying on a workspace tool's own topological
-// sort.
+// before the next package after the first nonzero exit or signal; this keeps
+// the seven-package build order explicit instead of relying on a workspace
+// tool's own topological sort.
 //
 // This module is intentionally usable against any npm-workspaces root, not
 // only this repository: `runSequentialCompile`/`runWorkspaceCompile` take an
@@ -45,7 +44,7 @@ function listChildPids(pid) {
 // Signals only the *leaf* live descendants of `pid` (processes with no
 // children of their own at the moment of the walk) -- deliberately not every
 // descendant. Needed alongside signaling npm itself directly: confirmed
-// in the signal fixtures under test/workspaces/compile.test.cjs that npm's own
+// empirically (with signal fixtures against a synthetic workspace) that npm's own
 // lifecycle code already relays a signal it receives to its immediate child
 // correctly on both platforms, but that immediate child is
 // `/bin/sh -c '<script>'` (npm always runs a package's own script through a
@@ -121,10 +120,9 @@ function waitForExit(pid, { pollMs = 20, timeoutMs = 10000 } = {}) {
 
 // Confirms exactly COMPILE_ORDER's packages declare a `compile` script,
 // scanning EXPECTED_WORKSPACES's package.json files directly on disk. This
-// works whether or not root workspace cutover (Task 2.1) has happened yet --
-// it does not rely on `npm`'s own workspace discovery. Reuses
-// checkCompileMembership (already exercised by test/workspaces/manifests.test.cjs)
-// instead of re-implementing the same rule: "discovery must reject a new
+// works whether or not the root workspace cutover has happened yet -- it
+// does not rely on `npm`'s own workspace discovery. Reuses
+// checkCompileMembership instead of re-implementing the same rule: "discovery must reject a new
 // compile-bearing workspace until the explicit order is updated."
 function checkDiscovery(rootDir) {
   const workspaceManifests = loadWorkspaceManifests(rootDir, EXPECTED_WORKSPACES);

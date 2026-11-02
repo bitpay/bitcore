@@ -40,9 +40,8 @@ function buildTargetIndex(rootDir, workspaces) {
 
 // Supplements the manual lexical/canonical directory check above with actual
 // Node module resolution of the target's declared entry point, originating
-// from the consumer's own directory (acceptance-spec §4: "resolution
-// originates from each consumer via createRequire or the appropriate ESM
-// mechanism"). `require.resolve(name, { paths })` performs exactly that
+// from the consumer's own directory (via createRequire or the appropriate ESM mechanism).
+// `require.resolve(name, { paths })` performs exactly that
 // consumer-relative resolution without importing (and so without executing)
 // the target module. This only runs once the directory-level check above has
 // already confirmed the dependency resolves to the correct real package, and
@@ -91,9 +90,9 @@ function checkEntryPointResolution(consumerDir, consumerPath, target) {
 function run({ rootDir, workspaces = EXPECTED_WORKSPACES }) {
   const { manifests, byName } = buildTargetIndex(rootDir, workspaces);
   const failures = [];
-  // Every internal edge examined, pass or fail -- acceptance-spec §4:
-  // "it records both [the lexical resolved path and the canonical real path]
-  // for every internal edge", not only failing ones.
+  // Every internal edge examined, pass or fail. Both the lexical resolved
+  // path and the canonical real path are recorded for every internal edge, not
+  // only failing ones.
   const report = [];
   // name -> lexicalPath -> [{ consumer, realPath }]
   const aliasesByTarget = new Map();

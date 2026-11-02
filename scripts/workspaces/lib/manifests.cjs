@@ -217,8 +217,7 @@ function checkForbiddenProtocols(workspaceManifests) {
 }
 
 // Requires `semver` to be resolvable, so this only runs in full (non
-// --structure-only) mode. See acceptance-spec §1 "Declare the semver library
-// directly."
+// --structure-only) mode. `semver` must be declared as a direct dependency.
 function checkInternalRanges(workspaceManifests) {
   const semver = require('semver');
   const failures = [];
