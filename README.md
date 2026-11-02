@@ -106,30 +106,6 @@ the range matches the local version.
 - `npm run build` builds the root Docker image; `npm run build:docker` builds
   the bitcore-node and bitcore-wallet-service images.
 
-### Workspace and package checks
-
-```sh
-npm run workspaces:check
-npm run test:workspaces
-npm test --workspace=@bitpay-labs/bitcore-build
-npm run artifacts:check -- --destination=/tmp/bitcore-artifacts
-npm run artifacts:consumer -- --artifacts=/tmp/bitcore-artifacts/artifacts.json
-```
-
-CI runs these checks in addition to the package test matrix. They verify local
-workspace resolution, installed dependency engines, packed entry points and
-templates, declared runtime imports, and an external TypeScript/JavaScript
-consumer. The engine check permits only the legacy `socks5-client@0.3.6`
-declaration (`node: 0.x`); other incompatible engines fail CI.
-
-Package checks discover public packages and versions from current workspace
-manifests. Browser library packages generate their bundles using `prepack` and
-include them explicitly in `files`, so both `npm pack` and `npm publish` ship
-the generated bundles along with the Node entry point and `lib` tree. `artifacts:check` builds
-and packs packages without publishing or changing versions. The consumer
-check installs those tarballs outside the checkout and needs registry access
-for third-party dependencies. Choose an empty output directory for each run.
-
 ### Insight
 
 Insight (`packages/insight`) is deliberately kept out of the workspace graph

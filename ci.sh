@@ -23,7 +23,7 @@ elif [ "$1" = "run" ]; then
   if [ "$2" = "chains" ]; then
     docker compose -f docker-compose.test.base.yml -f docker-compose.test.ci.yml up -d
   else
-    docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml run --rm test_runner "$2"
+    docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml run --rm test_runner sh -c "$2"
   fi
 elif [ "$1" = "down" ]; then
   docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml down -v

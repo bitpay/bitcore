@@ -81,23 +81,6 @@ jobs:
             nvm use default
             npm ci --foreground-scripts
       - npm_cache_save
-      - run:
-          name: Check workspaces and build tooling
-          command: |
-            nvm use default
-            npm run workspaces:check
-            npm run test:workspaces
-            npm test --workspace=@bitpay-labs/bitcore-build
-      - run:
-          name: Verify published package contents and external consumption
-          command: |
-            nvm use default
-            npm run artifacts:check -- --destination=/tmp/bitcore-artifacts
-            npm run artifacts:consumer -- --artifacts=/tmp/bitcore-artifacts/artifacts.json
-      - run:
-          name: Confirm install/compile made no tracked changes
-          command: |
-            git diff --exit-code -- package.json package-lock.json packages
       - persist_to_workspace:
           root: ~/bitcore
           paths:

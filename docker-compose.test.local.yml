@@ -5,10 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # Runs the real root install/compile against whatever the mounts below
-    # currently hold, then hands off to the actual test command. See the
-    # script's own comments for why this can't just be baked into the image.
-    entrypoint: ["/bitcore/scripts/workspaces/docker-local-entrypoint.sh"]
+    # Install after mounting the live checkout and container-owned dependencies.
+    entrypoint: ["sh", "-ec", 'npm ci --foreground-scripts && exec "$$@"', "--"]
+    command: ["bash"]
     volumes:
       - .:/bitcore
       # Container-owned dependency storage, layered on top of the live

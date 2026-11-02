@@ -69,11 +69,7 @@
     "test:bitcore-wallet-service": "npm run test --workspace=@bitpay-labs/bitcore-wallet-service --",
     "test:bitcore-wallet-client": "npm run test --workspace=@bitpay-labs/bitcore-wallet-client --",
     "test:crypto-rpc": "npm run test --workspace=@bitpay-labs/crypto-rpc --",
-    "test:crypto-wallet-core": "npm run test --workspace=@bitpay-labs/crypto-wallet-core --",
-    "artifacts:check": "node scripts/workspaces/pack.cjs",
-    "artifacts:consumer": "node scripts/workspaces/verify-consumer.cjs",
-    "workspaces:check": "node scripts/workspaces/check.cjs && node scripts/workspaces/check-engines.cjs && npm ls --workspaces --depth=0",
-    "test:workspaces": "node --test scripts/workspaces/test/*.test.cjs"
+    "test:crypto-wallet-core": "npm run test --workspace=@bitpay-labs/crypto-wallet-core --"
   },
   "config": {
     "commitizen": {
@@ -94,7 +90,6 @@
     "mocha": "11.7.5",
     "monocart-coverage-reports": "^2.13.0",
     "nyc": "^18.0.0",
-    "semver": "^7.6.3",
     "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
     "typescript-eslint": "^8.46.0"

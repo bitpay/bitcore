@@ -119,7 +119,6 @@ export default defineConfig([
     // option, not a style choice -- same rationale as the legacy-package
     // override above.
     files: [
-      'scripts/workspaces/**/*.cjs',
       'packages/bitcore-build/test/**/*.cjs',
     ],
     languageOptions: { sourceType: 'commonjs' },
