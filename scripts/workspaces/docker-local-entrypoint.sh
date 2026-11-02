@@ -14,7 +14,6 @@ cd /bitcore
 # the volumes to have inherited. Failing here (set -e, plus npm's own
 # nonzero exit on a real install/compile failure) stops the script before
 # the exec below ever runs the actual test command.
-node scripts/workspaces/check-runtime.cjs
 npm ci --foreground-scripts
 
 # ci.sh passes the whole test invocation as a single string (e.g. "npm run

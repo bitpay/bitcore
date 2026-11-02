@@ -9,7 +9,6 @@ const os = require('node:os');
 const path = require('node:path');
 const semver = require('semver');
 const { audit } = require('./audit-packed.cjs');
-const baseline = require('./release-baseline.json');
 
 const root = path.resolve(__dirname, '../..');
 
@@ -25,13 +24,15 @@ function run(args, options = {}) {
 }
 
 function checkManifest(manifest, expected) {
-  assert.equal(manifest.private, undefined, `${expected.name}: private package`);
+  assert(!manifest.private, `${expected.name}: private package`);
   assert.equal(manifest.name, expected.name);
   assert.equal(manifest.version, expected.version);
-  assert.deepEqual(manifest.publishConfig ?? null, expected.publishConfig);
+  for (const field of ['publishConfig', 'main', 'types', 'bin', 'files', 'dependencies', 'optionalDependencies', 'peerDependencies']) {
+    assert.deepEqual(manifest[field] ?? null, expected[field] ?? null, `${expected.name}: packed ${field} changed`);
+  }
   for (const field of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
     for (const [name, range] of Object.entries(manifest[field] || {})) {
-      assert(!/(?:file:|workspace:|link:|\/Users\/|\/bitcore\/)/.test(range), `${manifest.name}: ${name} has nonportable range ${range}`);
+      assert(!/^(?:file:|workspace:|link:|\/|[A-Za-z]:\\)/.test(range), `${manifest.name}: ${name} has nonportable range ${range}`);
       if (name.startsWith('@bitpay-labs/')) assert(semver.validRange(range), `${manifest.name}: ${name} must use semver`);
     }
   }
@@ -39,6 +40,7 @@ function checkManifest(manifest, expected) {
 
 function checkContents(manifest, files, directory) {
   const required = [manifest.main, manifest.types,
+    ...(manifest.files || []).filter(file => !/[?*]/.test(file) && /\.js$/.test(file)),
     ...Object.values(typeof manifest.bin === 'string' ? { bin: manifest.bin } : manifest.bin || {})].filter(Boolean);
   if (manifest.name === '@bitpay-labs/bitcore-build') required.push('karma.conf.js', 'wdio.conf.js');
   if (manifest.name === '@bitpay-labs/bitcore-wallet-service') {
@@ -46,7 +48,13 @@ function checkContents(manifest, files, directory) {
       for (const entry of fs.readdirSync(path.join(directory, dir), { withFileTypes: true })) {
         const relative = `${dir}/${entry.name}`;
         if (entry.isDirectory()) walk(relative);
-        else required.push(`ts_build/${relative}`);
+        else {
+          const built = `ts_build/${relative}`;
+          required.push(built);
+          assert(files.has(built), `${manifest.name}: tarball missing ${built}`);
+          assert(fs.readFileSync(path.join(directory, relative)).equals(fs.readFileSync(path.join(directory, built))),
+            `${manifest.name}: copied template differs: ${relative}`);
+        }
       }
     }
     walk('templates');
@@ -59,31 +67,38 @@ function main() {
   assert(args.length === 0 || args.length === 1 && args[0].startsWith('--destination='), 'Usage: npm run artifacts:check -- [--destination=/absolute/path]');
   const destination = args.length ? path.resolve(args[0].slice('--destination='.length)) : fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-artifacts-'));
   fs.mkdirSync(destination, { recursive: true });
-  const releaseOrder = fs.readFileSync(path.join(root, 'packages/pub'), 'utf8').match(/MODULES='([^']+)'/)[1].trim().split(/\s+/);
-  assert.deepEqual(releaseOrder, baseline.releaseOrder, 'Release selection/order changed');
-  const publicPaths = require('../../package.json').workspaces.filter(p => !require(path.join(root, p, 'package.json')).private).sort();
-  assert.deepEqual(publicPaths, baseline.packages.map(p => p.directory).sort());
-  for (const candidate of baseline.packages) checkManifest(require(path.join(root, candidate.directory, 'package.json')), candidate);
+  const candidates = require('../../package.json').workspaces.map(directory => ({
+    directory,
+    manifest: JSON.parse(fs.readFileSync(path.join(root, directory, 'package.json'), 'utf8')),
+  })).filter(({ manifest }) => !manifest.private);
+  assert(candidates.length > 0, 'No public workspace packages found');
+  for (const { manifest } of candidates) checkManifest(manifest, manifest);
   run(['run', 'compile']);
   const artifacts = [];
-  for (const candidate of baseline.packages) {
-    for (const script of candidate.prepare) run(['run', script, `--workspace=${candidate.name}`]);
-    const output = run(['pack', `--workspace=${candidate.name}`, `--pack-destination=${destination}`, '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+  for (const { manifest: candidate } of candidates) {
+    // npm pack runs the owning package's prepack lifecycle. No release script
+    // parsing, duplicate preparation table, or frozen version baseline.
+    // npm pack defaults to foreground lifecycle scripts; their stdout would
+    // otherwise be mixed into the JSON that this command needs to parse.
+    const output = run(['pack', `--workspace=${candidate.name}`, `--pack-destination=${destination}`, '--foreground-scripts=false', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
     const [packed] = JSON.parse(output);
     const tarball = path.join(destination, packed.filename);
-    const extracted = spawnSync('tar', ['-xOf', tarball, 'package/package.json'], { encoding: 'utf8' });
-    assert.equal(extracted.status, 0, `Cannot read ${tarball}`);
-    const manifest = JSON.parse(extracted.stdout);
-    checkManifest(manifest, candidate);
-    checkContents(manifest, new Set(packed.files.map(f => f.path)), path.join(root, candidate.directory));
-    // Declared-dependency audit runs against the package's own source tree,
-    // never against what the combined validation consumer happens to have
-    // hoisted (see scripts/workspaces/audit-packed.cjs) -- a consumer
-    // containing every tarball together could otherwise mask a genuinely
-    // missing runtime dependency declaration.
-    const { failures: auditFailures, exceptions: auditExceptions } = audit(path.join(root, candidate.directory));
-    assert(auditFailures.length === 0, auditFailures.join('\n'));
-    for (const exception of auditExceptions) console.log(`[artifacts:check] documented exception: ${exception}`);
+    const unpacked = fs.mkdtempSync(path.join(destination, 'unpacked-'));
+    try {
+      const extracted = spawnSync('tar', ['-xzf', tarball, '-C', unpacked], { encoding: 'utf8' });
+      assert.equal(extracted.status, 0, `Cannot extract ${tarball}: ${extracted.stderr}`);
+      const directory = path.join(unpacked, 'package');
+      const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'));
+      checkManifest(manifest, candidate);
+      checkContents(manifest, new Set(packed.files.map(f => f.path)), directory);
+      // Audit only what consumers receive; source-tree files omitted from the
+      // tarball cannot cause false positives or hide missing shipped imports.
+      const { failures, exceptions } = audit(directory);
+      assert(failures.length === 0, failures.join('\n'));
+      for (const exception of exceptions) console.log(`[artifacts:check] documented exception: ${exception}`);
+    } finally {
+      fs.rmSync(unpacked, { recursive: true, force: true });
+    }
     artifacts.push({ name: candidate.name, version: candidate.version, tarball });
     console.log(`[artifacts:check] ${candidate.name}: ${tarball}`);
   }

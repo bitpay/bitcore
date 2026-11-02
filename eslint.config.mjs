@@ -114,7 +114,7 @@ export default defineConfig([
     }
   },
   {
-    // Dependency-free .cjs scripts and their fixtures/tests: `.cjs` forces
+    // CommonJS tooling and its fixtures/tests: `.cjs` forces
     // CommonJS regardless of root package.json, so `require` is the only
     // option, not a style choice -- same rationale as the legacy-package
     // override above.

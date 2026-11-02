@@ -6,6 +6,18 @@
     "node": ">=24.22.1 <25"
   },
   "packageManager": "npm@11.19.1",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24.22.1 <25",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "11.19.1",
+      "onFail": "error"
+    }
+  },
   "workspaces": [
     "packages/bitcore-build",
     "packages/bitcore-cli",
@@ -27,9 +39,8 @@
     "packages/crypto-wallet-core"
   ],
   "scripts": {
-    "preinstall": "node scripts/workspaces/check-runtime.cjs",
-    "postinstall": "node scripts/workspaces/verify.cjs engines && npm run compile",
-    "compile": "node scripts/workspaces/compile.cjs",
+    "postinstall": "npm run compile",
+    "compile": "npm run compile --workspace=@bitpay-labs/bitcore-logging && npm run compile --workspace=@bitpay-labs/crypto-wallet-core && npm run compile --workspace=@bitpay-labs/bitcore-wallet-service && npm run compile --workspace=@bitpay-labs/bitcore-wallet-client && npm run compile --workspace=@bitpay-labs/bitcore-client && npm run compile --workspace=@bitpay-labs/bitcore-cli && npm run compile --workspace=@bitpay-labs/bitcore-node",
     "build": "docker build -t bitcore-node . ",
     "build:docker": "npm run build:docker --workspace=@bitpay-labs/bitcore-node && npm run build:docker --workspace=@bitpay-labs/bitcore-wallet-service",
     "watch": "npm run watch --workspace=@bitpay-labs/bitcore-client --",
@@ -60,7 +71,9 @@
     "test:crypto-rpc": "npm run test --workspace=@bitpay-labs/crypto-rpc --",
     "test:crypto-wallet-core": "npm run test --workspace=@bitpay-labs/crypto-wallet-core --",
     "artifacts:check": "node scripts/workspaces/pack.cjs",
-    "artifacts:consumer": "node scripts/workspaces/verify-consumer.cjs"
+    "artifacts:consumer": "node scripts/workspaces/verify-consumer.cjs",
+    "workspaces:check": "node scripts/workspaces/check.cjs && node scripts/workspaces/check-engines.cjs && npm ls --workspaces --depth=0",
+    "test:workspaces": "node --test scripts/workspaces/test/*.test.cjs"
   },
   "config": {
     "commitizen": {

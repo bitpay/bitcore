@@ -15,10 +15,7 @@ WORKDIR /bitcore
 # only this package's own directory would defeat that.
 COPY . .
 
-# Preflight before any install machinery runs; root preinstall re-checks
-# this too, but is not a substitute for it.
-RUN node scripts/workspaces/check-runtime.cjs
-
+# npm checks root devEngines before installing dependencies.
 RUN npm ci --foreground-scripts
 
 # Start the server

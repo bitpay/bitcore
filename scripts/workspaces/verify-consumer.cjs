@@ -103,6 +103,7 @@ function writeConsumerProject(consumerDir, artifacts) {
 // pass by accident via a stale hoisted copy.
 function verifyInstalledArtifacts(consumerDir, artifacts) {
   const failures = [];
+  const lock = JSON.parse(fs.readFileSync(path.join(consumerDir, 'package-lock.json'), 'utf8'));
   for (const artifact of artifacts) {
     const installedDir = path.join(consumerDir, 'node_modules', ...artifact.name.split('/'));
     if (fs.lstatSync(installedDir, { throwIfNoEntry: false })?.isSymbolicLink()) {
@@ -114,13 +115,18 @@ function verifyInstalledArtifacts(consumerDir, artifacts) {
       failures.push(`${artifact.name}: not installed at ${installedDir}`);
       continue;
     }
-    if (realpath.startsWith(root)) {
+    const relative = path.relative(root, realpath);
+    if (relative === '' || !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)) {
       failures.push(`${artifact.name}: resolves back into the monorepo checkout (${realpath})`);
       continue;
     }
     const installedManifest = JSON.parse(fs.readFileSync(path.join(installedDir, 'package.json'), 'utf8'));
-    if (installedManifest.version !== artifact.version) {
+    if (installedManifest.name !== artifact.name || installedManifest.version !== artifact.version) {
       failures.push(`${artifact.name}: installed version ${installedManifest.version}, expected candidate ${artifact.version}`);
+    }
+    const resolved = lock.packages[`node_modules/${artifact.name}`]?.resolved;
+    if (!resolved?.startsWith('file:') || path.resolve(consumerDir, resolved.slice(5)) !== path.resolve(artifact.tarball)) {
+      failures.push(`${artifact.name}: installation did not use candidate tarball ${artifact.tarball}`);
     }
   }
   return failures;

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Delegates to the canonical compile runner (scripts/workspaces/compile.cjs)
+# Delegates to the root compile script (package.json)
 # so build order lives in one place. Resolves the repo root from this
 # script's own location, not the caller's cwd, so it works from any directory.
 set -e

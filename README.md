@@ -45,18 +45,19 @@
 
 The 18 backend packages under `packages/` (everything except `insight` and the
 three nested `benchmark/` fixtures) are npm workspaces of this root, installed
-and linked from one root install and one root lockfile. A package directory is
-no longer an independently locked checkout with its own `node_modules` or
-`package-lock.json` — you cannot `cd packages/bitcore-node && npm install`.
+and linked from one root install and one root lockfile. Run installs from the
+root and use `--workspace` to edit a package's dependencies. npm may place
+conflicting dependency versions in nested `node_modules` directories; these
+are still managed by the root lockfile.
 This is a monorepo-development-only change: it does not affect ordinary
 consumers, who continue to `npm install @bitpay-labs/bitcore-node` (or any
 other published package) from the registry exactly as before.
 
 ### Setup
 
-Use Node `24.22.1` and npm exactly `11.19.1` (pinned in root `package.json`'s
-`packageManager` field and enforced by a preflight check that runs before
-install). Then, from the repo root:
+Use Node `24.22.1` and npm exactly `11.19.1`. Root `package.json` declares
+`devEngines`, which npm checks before `install`, `ci`, and `run` commands.
+Then, from the repo root:
 
 ```sh
 git clone https://github.com/bitpay/bitcore.git
@@ -68,6 +69,10 @@ npm ci
 the packages that need a build step (`bitcore-logging`, `crypto-wallet-core`,
 `bitcore-wallet-service`, `bitcore-wallet-client`, `bitcore-client`,
 `bitcore-cli`, `bitcore-node`, in that order) via a root `postinstall` hook.
+The root `compile` script chains workspace commands with `&&` to stop on the
+first failure. Keep dependencies before their consumers when adding a compile
+step: npm does not calculate build order, and running across all workspaces
+continues after individual failures.
 To recompile later without reinstalling — after pulling changes or editing a
 package directly — run:
 
@@ -100,6 +105,30 @@ the range matches the local version.
   directly from source.
 - `npm run build` builds the root Docker image; `npm run build:docker` builds
   the bitcore-node and bitcore-wallet-service images.
+
+### Workspace and package checks
+
+```sh
+npm run workspaces:check
+npm run test:workspaces
+npm test --workspace=@bitpay-labs/bitcore-build
+npm run artifacts:check -- --destination=/tmp/bitcore-artifacts
+npm run artifacts:consumer -- --artifacts=/tmp/bitcore-artifacts/artifacts.json
+```
+
+CI runs these checks in addition to the package test matrix. They verify local
+workspace resolution, installed dependency engines, packed entry points and
+templates, declared runtime imports, and an external TypeScript/JavaScript
+consumer. The engine check permits only the legacy `socks5-client@0.3.6`
+declaration (`node: 0.x`); other incompatible engines fail CI.
+
+Package checks discover public packages and versions from current workspace
+manifests. Browser library packages generate their bundles using `prepack` and
+include them explicitly in `files`, so both `npm pack` and `npm publish` ship
+the generated bundles along with the Node entry point and `lib` tree. `artifacts:check` builds
+and packs packages without publishing or changing versions. The consumer
+check installs those tarballs outside the checkout and needs registry access
+for third-party dependencies. Choose an empty output directory for each run.
 
 ### Insight
 

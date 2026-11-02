@@ -66,20 +66,17 @@ function audit(directory) {
       walkFile(dir, entry.name);
     }
   }
-  // Limit to public implementation trees plus root entry/config JS. Manual
-  // administration scripts and uncompiled TS are not library runtime roots.
-  // Several packages (bitcore-lib, bitcore-p2p*, bitcore-mnemonic, crypto-rpc,
-  // bitcore-build) declare their `main` directly at the package root rather
-  // than inside one of those subdirectories, so the root's own top-level
-  // files are scanned too -- but not recursively, so unrelated top-level
-  // trees (e.g. bitcore-lib's leftover `karma-wdio-mig-TMP/`) are never
-  // walked into.
+  // Scan public implementation trees and manifest-declared root entry points.
+  // Root developer tools (e.g. coverage-builder.js) may legitimately import
+  // devDependencies and must not be treated as shipped library entry points.
+  const bins = typeof manifest.bin === 'string' ? [manifest.bin] : Object.values(manifest.bin || {});
+  const rootEntries = new Set([manifest.main, manifest.types, ...bins].filter(Boolean).map(file => file.replace(/^\.\//, '')));
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (entry.isDirectory()) {
       if (['lib', 'ts_build', 'build', 'ecdsa', 'ecies'].includes(entry.name)) walk(path.join(directory, entry.name));
       continue;
     }
-    walkFile(directory, entry.name);
+    if (rootEntries.has(entry.name)) walkFile(directory, entry.name);
   }
   return {
     name: manifest.name,

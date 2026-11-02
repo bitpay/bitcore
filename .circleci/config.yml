@@ -60,7 +60,6 @@ commands:
           name: Run << parameters.package >> tests
           command: |
             nvm use default
-            node scripts/workspaces/check-runtime.cjs
             npm run compile
             npm run test:<< parameters.package >>
 
@@ -75,17 +74,6 @@ jobs:
           command: |
             nvm use default
             set -x && node -v && npm -v && google-chrome --version && docker version && python3 --version
-      - run:
-          name: Runtime preflight (before any install machinery runs)
-          command: |
-            nvm use default
-            node scripts/workspaces/check-runtime.cjs
-      - run:
-          name: Verify workspace manifests/lock before install
-          command: |
-            nvm use default
-            node scripts/workspaces/verify.cjs manifests --structure-only
-            node scripts/workspaces/verify.cjs lock
       - npm_cache_restore
       - run:
           name: npm ci
@@ -94,14 +82,18 @@ jobs:
             npm ci --foreground-scripts
       - npm_cache_save
       - run:
-          name: Verify workspace links/engines/artifacts after install
+          name: Check workspaces and build tooling
           command: |
             nvm use default
-            node scripts/workspaces/verify.cjs manifests
-            node scripts/workspaces/verify.cjs engines
-            node scripts/workspaces/verify.cjs links
-            node scripts/workspaces/verify.cjs artifacts --stage=build
-            npm ls --workspaces --depth=0
+            npm run workspaces:check
+            npm run test:workspaces
+            npm test --workspace=@bitpay-labs/bitcore-build
+      - run:
+          name: Verify published package contents and external consumption
+          command: |
+            nvm use default
+            npm run artifacts:check -- --destination=/tmp/bitcore-artifacts
+            npm run artifacts:consumer -- --artifacts=/tmp/bitcore-artifacts/artifacts.json
       - run:
           name: Confirm install/compile made no tracked changes
           command: |
