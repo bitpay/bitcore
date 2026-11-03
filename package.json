@@ -102,5 +102,11 @@
     "hooks": {
       "pre-commit": "npm run precommit"
     }
+  },
+  "allowScripts": {
+    "es5-ext": false,
+    "highlight.js": false,
+    "protobufjs": false,
+    "sinon": false
   }
 }

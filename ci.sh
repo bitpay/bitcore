@@ -30,5 +30,5 @@ elif [ "$1" = "down" ]; then
   docker container rm $(docker container ls -qa --filter name=bitcore-test_runner-run-*) &>/dev/null
   docker rmi bitcore-test_runner:latest
 else
-  echo "Missing expected parameter. The first parameter should be 'build', 'local', or 'down'."
+  echo "Missing expected parameter. The first parameter should be 'build', 'run', or 'down'."
 fi
