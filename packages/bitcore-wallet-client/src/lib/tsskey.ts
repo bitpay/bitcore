@@ -495,6 +495,7 @@ export class TssKeyGen extends EventEmitter {
      * Name of the party/copayer. This is used to identify the party in the wallet (e.g. "Evan", "Sara Smith", etc.).
      * If given, the wallet will be automatically created/joined at BWS after the key generation is complete.
      * Omit if you wish to only generate the TSS key and not create the wallet.
+     * You can manually create/join wallets later via the createWallet()/joinWallet() methods.
      */
     copayerName?: string;
     /**
@@ -575,14 +576,14 @@ export class TssKeyGen extends EventEmitter {
           } else {
             let wallet;
             if (this.partyId === 0) {
-              wallet = await this.createWallet({
+              wallet = await this._createWallet({
                 walletName,
                 copayerName,
                 opts: createWalletOpts
               });
             } else if (this.partyId > 0) {
               try {
-                wallet = await this.joinWallet({ copayerName });
+                wallet = await this._joinWallet({ copayerName });
               } catch (err) {
                 if (!err.message.includes('TSS_BWS_JOIN_SECRET_NOT_FOUND')) {
                   throw err;
@@ -658,7 +659,7 @@ export class TssKeyGen extends EventEmitter {
     return null;
   }
 
-  async createWallet(params: {
+  async _createWallet(params: {
     walletName: string;
     copayerName: string;
     opts?: CreateWalletOpts & { addressType?: string };
@@ -684,7 +685,7 @@ export class TssKeyGen extends EventEmitter {
     return wallet;
   }
 
-  async joinWallet(params: {
+  async _joinWallet(params: {
     copayerName: string;
     opts?: {
       coin?: string;
