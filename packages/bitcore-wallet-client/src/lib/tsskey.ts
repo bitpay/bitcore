@@ -2,9 +2,9 @@ import { EventEmitter } from 'events';
 import { ECDSA, ECIES } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { API as Client, CreateWalletOpts } from './api';
-import { Constants, Encryption } from './common';
+import { Constants, Encryption, Utils } from './common';
 import { Credentials } from './credentials';
-import { ExportedKey, Key, KeyAlgorithm, PasswordMaybe } from './key';
+import { ExportedKey, Key, type KeyAlgorithm, type PasswordMaybe } from './key';
 import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
@@ -59,6 +59,11 @@ export interface ITssKey extends Key {
     m: number;
     n: number;
     partyId: number;
+    /**
+     * Chain of the key generation session. The session's copayer IDs are derived with this chain.
+     * Missing for keys generated before sibling wallet support.
+     */
+    keygenChain?: string;
   };
 };
 
@@ -93,7 +98,8 @@ export class TssKey extends Key implements ITssKey {
         id: this.metadata.id,
         m: this.metadata.m,
         n: this.metadata.n,
-        partyId: this.metadata.partyId
+        partyId: this.metadata.partyId,
+        keygenChain: this.metadata.keygenChain
       } as ITssKey['metadata']
     };
   }
@@ -194,6 +200,7 @@ export class TssKeyGen extends EventEmitter {
   #requestPrivateKey: BitcoreLib.PrivateKey;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
+  #roster: { [partyId: number]: string } = {};
   id: string;
   chain: string;
   network: 'livenet' | 'testnet' | 'regtest';
@@ -327,6 +334,7 @@ export class TssKeyGen extends EventEmitter {
   }): Promise<string> {
     const { partyId, partyPubKey, opts } = params;
     const extra = params.extra || '';
+    this.#roster[partyId] = partyPubKey;
     await this.#request.post('/v1/tss/keygen/' + this.id + '/register', { partyId, partyPubKey });
     const data = [this.id, partyId, this.chain, this.network, this.m, this.n, extra].join(':');
     const code = ECIES.encrypt({
@@ -638,7 +646,8 @@ export class TssKeyGen extends EventEmitter {
           id: this.id,
           m: this.m,
           n: this.n,
-          partyId: this.partyId
+          partyId: this.partyId,
+          keygenChain: this.#credentials.chain
         }
       });
       if (password) {
@@ -659,29 +668,18 @@ export class TssKeyGen extends EventEmitter {
     if (!key) {
       throw new Error('TSS Key generation is not complete. This should be called after the `complete` event is emitted.');
     }
-    this.#credentials.clientDerivedPublicKey = key.getXPubKey(this.network);
-
-    const client = new Client({ baseUrl: this.#request.baseUrl });
-    client.fromObj(this.#credentials.toObj());
-
-    const { wallet, secret } = await client.createWallet(
+    const { wallet } = await createWallet({
+      baseKey: key,
+      baseCredentials: this.#credentials,
+      baseUrl: this.#request.baseUrl,
+      request: this.#request.r,
       walletName,
       copayerName,
-      key.metadata.m,
-      key.metadata.n,
-      Object.assign({}, opts, {
-        tssKeyId: this.id,
+      parties: this.#roster,
+      opts: Object.assign({}, opts, {
         chain: this.chain,
         network: this.network,
       })
-    );
-
-    await this.#request.post(`/v1/tss/keygen/${this.id}/secret`, { secret });
-    const credObj = client.toObj();
-    this.#credentials.addWalletInfo(credObj.walletId, walletName, 1, 1, copayerName, {
-      useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
-      segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
-      tssKeyId: this.id,
     });
     return wallet;
   }
@@ -698,28 +696,17 @@ export class TssKeyGen extends EventEmitter {
     if (!key) {
       throw new Error('TSS Key generation is not complete. This should be called after the `complete` event is emitted.');
     }
-    this.#credentials.clientDerivedPublicKey = key.getXPubKey(this.network);
-
-    const { body: { secret } } = await this.#request.get(`/v1/tss/keygen/${this.id}/secret`);
-
-    const client = new Client({ baseUrl: this.#request.baseUrl });
-    client.fromObj(this.#credentials.toObj());
-
-    const wallet = await client.joinWallet(
-      secret,
+    const { wallet } = await joinWallet({
+      baseKey: key,
+      baseCredentials: this.#credentials,
+      baseUrl: this.#request.baseUrl,
+      request: this.#request.r,
       copayerName,
-      Object.assign({}, opts, {
-        chain: this.chain
+      opts: Object.assign({}, opts, {
+        chain: this.chain,
+        network: this.network
       })
-    );
-
-    const credObj = client.toObj();
-    this.#credentials.addWalletInfo(credObj.walletId, credObj.walletName, 1, 1, copayerName, {
-      useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
-      segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
-      tssKeyId: this.id,
     });
-    
     return wallet;
   }
 
@@ -730,4 +717,231 @@ export class TssKeyGen extends EventEmitter {
   cleanup() {
     this.#keygen?.cleanup();
   }
+}
+
+interface ITssWalletParams {
+  /** The TSS key */
+  baseKey: TssKey;
+  /**
+   * Credentials of the TSS key generation session or of a wallet created with `baseKey`.
+   * The leader's `publicKeyRing` must contain every party unless `parties` is given to createWallet().
+   */
+  baseCredentials: Credentials;
+  /** URL of the BWS server */
+  baseUrl: string;
+  /** Name of the party/copayer */
+  copayerName: string;
+  /**
+   * Pre-defined request object for making HTTP requests.
+   * For testing only
+   */
+  request?: Request;
+};
+
+/**
+ * Create a BWS wallet for a TSS key. Only the TSS session leader (partyId 0) can create the wallet.
+ * The other parties then join it with joinWallet().
+ * opts.chain/network can be used to create a sibling wallet on another chain than the one used for the key generation
+ *  (e.g. the key was generated for 'eth', now create an 'arb' wallet with the same key/address).
+ */
+export async function createWallet(params: ITssWalletParams & {
+  walletName: string;
+  /**
+   * Auth (request) public keys of the other parties, keyed by partyId or by keygen session copayer ID.
+   * The BWS join secret is encrypted to each of these keys.
+   * Default: the other copayers in `baseCredentials.publicKeyRing`
+   */
+  parties?: { [partyIdOrCopayerId: string]: string };
+  opts?: CreateWalletOpts & { addressType?: string };
+}) {
+  const { baseKey, baseCredentials, baseUrl, walletName, copayerName, request, opts = {} } = params;
+  $.checkArgument(baseKey instanceof TssKey, 'baseKey must be an instance of TssKey');
+  $.checkArgument(baseKey.metadata.partyId === 0, 'Only the TSS key session leader can create the wallet. Try calling joinWallet()');
+
+  const keygenChain = getKeygenChain(baseKey, baseCredentials);
+  const parties = params.parties || getOtherParties(baseCredentials, keygenChain);
+  if (Object.keys(parties).length !== baseKey.metadata.n - 1) {
+    throw new Error('Missing the public keys of some TSS parties. Every party must join the base wallet first and baseCredentials must be up to date (see openWallet()).');
+  }
+
+  const { chain, coin, network } = getChainNetwork(baseCredentials, opts);
+  checkNetwork(baseCredentials, network, 'create');
+  const client = new Client({ baseUrl, request });
+  client.fromObj(getWalletCredentials({ baseKey, baseCredentials, chain, coin, network }).toObj());
+
+  let wallet;
+  try {
+    ({ wallet } = await client.createWallet(
+      walletName,
+      copayerName,
+      baseKey.metadata.m,
+      baseKey.metadata.n,
+      Object.assign({}, opts, {
+        chain,
+        coin,
+        network,
+        tssKeyId: baseKey.metadata.id,
+        tssKeygenChain: keygenChain
+      })
+    ));
+  } catch (err) {
+    if (!err.message?.includes('Copayer ID already registered')) {
+      throw err;
+    }
+    // The wallet already exists (e.g. a previous attempt failed to store the join secrets).
+    // Recover its walletPrivKey from this copayer's customData so that the join secret can be rebuilt.
+    client.credentials.walletPrivKey = null;
+    ({ wallet } = await client.getStatus({ includeExtendedInfo: true }));
+    if (wallet.tssKeyId !== baseKey.metadata.id || wallet.chain !== chain) {
+      throw new Error(`Copayer is already registered in another wallet: ${wallet.id}`);
+    }
+  }
+
+  // Submit the join secret, encrypted for each of the other parties
+  const c = client.credentials;
+  const secret = Client._buildSecret(wallet.id, c.walletPrivKey, c.coin, c.network);
+  const secrets = {};
+  for (const [party, publicKey] of Object.entries(parties)) {
+    secrets[party] = ECIES.encrypt({ message: secret, publicKey, privateKey: c.requestPrivKey }).toString('hex');
+  }
+  await getKeygenSessionRequest({ baseCredentials, keygenChain, baseUrl, request })
+    .post(`/v1/tss/keygen/${baseKey.metadata.id}/secret`, { chain, network, secrets });
+
+  addTssWalletInfo(c, wallet, walletName, copayerName, baseKey.metadata.id);
+  return { wallet, credentials: c };
+}
+
+/**
+ * Join a BWS wallet created by the TSS session leader with createWallet().
+ * opts.chain/network must match those given to createWallet().
+ */
+export async function joinWallet(params: ITssWalletParams & {
+  opts?: {
+    chain?: string;
+    coin?: string;
+    network?: string;
+    dryRun?: boolean;
+  };
+}) {
+  const { baseKey, baseCredentials, baseUrl, copayerName, request, opts = {} } = params;
+  $.checkArgument(baseKey instanceof TssKey, 'baseKey must be an instance of TssKey');
+
+  const keygenChain = getKeygenChain(baseKey, baseCredentials);
+  const { chain, coin, network } = getChainNetwork(baseCredentials, opts);
+  checkNetwork(baseCredentials, network, 'join');
+  const credentials = getWalletCredentials({ baseKey, baseCredentials, chain, coin, network });
+
+  const qs = new URLSearchParams({ chain, network });
+  const { body: { secret } } = await getKeygenSessionRequest({ baseCredentials, keygenChain, baseUrl, request })
+    .get(`/v1/tss/keygen/${baseKey.metadata.id}/secret?${qs}`);
+  const decryptedSecret = ECIES.decrypt({ payload: Buffer.from(secret, 'hex'), privateKey: credentials.requestPrivKey }).toString();
+
+  const client = new Client({ baseUrl, request });
+  client.fromObj(credentials.toObj());
+  let wallet;
+  try {
+    wallet = await client.joinWallet(decryptedSecret, copayerName, {
+      chain,
+      coin,
+      dryRun: opts.dryRun,
+      tssKeygenChain: keygenChain
+    });
+  } catch (err) {
+    if (!err.message?.includes('Copayer already in wallet')) {
+      throw err;
+    }
+    ({ wallet } = await client.getStatus());
+  }
+
+  if (!opts.dryRun) {
+    addTssWalletInfo(client.credentials, wallet, wallet.name, copayerName, baseKey.metadata.id);
+  }
+  return { wallet, credentials: client.credentials };
+}
+
+/** Chain of the key generation session, which the session's copayer IDs are derived with */
+function getKeygenChain(baseKey: TssKey, baseCredentials: Credentials): string {
+  return baseKey.metadata.keygenChain || baseCredentials.chain;
+}
+
+function getChainNetwork(baseCredentials: Credentials, opts: { chain?: string; coin?: string; network?: string }) {
+  const chain = (opts.chain || baseCredentials.chain).toLowerCase();
+  return {
+    chain,
+    coin: opts.coin || chain,
+    network: opts.network || baseCredentials.network
+  };
+}
+
+/** The copayer xPubKey is network-specific, so BWS only accepts it for wallets on the same type of network */
+function checkNetwork(baseCredentials: Credentials, network: string, action: 'create' | 'join') {
+  const isLivenet = (n: string) => ['livenet', 'mainnet'].includes(n);
+  if (isLivenet(network) !== isLivenet(baseCredentials.network)) {
+    throw new Error(`Cannot ${action} a ${network} wallet with a ${baseCredentials.network} key`);
+  }
+}
+
+/** Auth (request) public keys of the other copayers, keyed by keygen session copayer ID */
+function getOtherParties(baseCredentials: Credentials, keygenChain: string) {
+  const parties: { [copayerId: string]: string } = {};
+  for (const copayer of baseCredentials.publicKeyRing || []) {
+    if (copayer.requestPubKey !== baseCredentials.requestPubKey) {
+      parties[Utils.xPubToCopayerId(keygenChain, copayer.xPubKey)] = copayer.requestPubKey;
+    }
+  }
+  return parties;
+}
+
+/** Credentials for a new wallet on `chain`:`network` that uses the TSS key */
+function getWalletCredentials(params: {
+  baseKey: TssKey;
+  baseCredentials: Credentials;
+  chain: string;
+  coin: string;
+  network: string;
+}) {
+  const { baseKey, baseCredentials, chain, coin, network } = params;
+  return Credentials.fromObj({
+    ...baseCredentials.toObj(),
+    chain,
+    coin,
+    network,
+    copayerId: Utils.xPubToCopayerId(chain, baseCredentials.xPubKey),
+    clientDerivedPublicKey: baseKey.getXPubKey(network),
+    // Clear the base wallet's info
+    walletId: undefined,
+    walletName: undefined,
+    walletPrivKey: undefined,
+    sharedEncryptingKey: undefined,
+    publicKeyRing: [],
+    token: undefined,
+    multisigEthInfo: undefined
+  });
+}
+
+/** Request object authenticated with this party's copayer ID in the TSS key generation session */
+function getKeygenSessionRequest(params: {
+  baseCredentials: Credentials;
+  keygenChain: string;
+  baseUrl: string;
+  request?: Request;
+}) {
+  const { baseCredentials, keygenChain, baseUrl, request } = params;
+  const keygenCredentials = Credentials.fromObj({
+    ...baseCredentials.toObj(),
+    chain: keygenChain,
+    copayerId: Utils.xPubToCopayerId(keygenChain, baseCredentials.xPubKey)
+  });
+  const keygenRequest = new Request(baseUrl, { r: request });
+  keygenRequest.setCredentials(keygenCredentials);
+  return keygenRequest;
+}
+
+function addTssWalletInfo(credentials: Credentials, wallet, walletName: string, copayerName: string, tssKeyId: string) {
+  credentials.addWalletInfo(wallet.id, walletName, 1, 1, copayerName, {
+    useNativeSegwit: Utils.isNativeSegwit(wallet.addressType),
+    segwitVersion: Utils.getSegwitVersion(wallet.addressType),
+    tssKeyId
+  });
+  credentials.addressType = wallet.addressType;
 }

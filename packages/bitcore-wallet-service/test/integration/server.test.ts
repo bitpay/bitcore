@@ -21,6 +21,7 @@ import * as TestData from '../testdata';
 import helpers from './helpers';
 import { ClientError } from '../../src/lib/errors/clienterror';
 import { ExpressApp } from '../../src/lib/expressapp';
+import { type JoinWalletOpts } from '../../src/lib/server';
 
 const should = chai.should();
 config.moralis = config.moralis ?? {
@@ -1120,7 +1121,7 @@ describe('Wallet service', function() {
           xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
           requestPubKey: TestData.copayers[0].pubKey_1H_0,
         };
-        server.joinWallet(copayerOpts, function(err) {
+        server.joinWallet(copayerOpts as JoinWalletOpts, function(err) {
           should.exist(err);
           err.message.should.contain('argument: copayerSignature missing');
           done();

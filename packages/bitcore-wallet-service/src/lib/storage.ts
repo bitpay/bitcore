@@ -1961,6 +1961,10 @@ export class Storage {
     );
   }
 
+  /**
+   * Use only for legacy (< v1.3) clients, where bwsJoinSecrets was not available.
+   * @deprecated Use storeTssKeyBwsJoinSecrets instead.
+   */
   async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne({
       id
@@ -1968,6 +1972,21 @@ export class Storage {
     {
       $set: {
         bwsJoinSecret: secret
+      }
+    },
+    { upsert: false });
+  }
+
+  async storeTssKeyBwsJoinSecrets(params: { id: string; chain: string; network: string; secrets: { [partyId: number]: string } }) {
+    const { id, chain, network, secrets } = params;
+    const _chain = chain.toLowerCase();
+    const _network = network.toLowerCase();
+    return this.db.collection(collections.TSS_KEYGEN).updateOne({
+      id
+    },
+    {
+      $set: {
+        [`bwsJoinSecrets.${_chain}:${_network}`]: secrets
       }
     },
     { upsert: false });

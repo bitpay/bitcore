@@ -27,18 +27,23 @@ export async function walletStatus(args: CommonArgs) {
 
   const status: Status = await wallet.client.getStatus({ tokenAddress: tokenObj?.contractAddress });
   const w = status.wallet;
+  const statusStr = w.status === 'complete' && !wallet.isComplete() ? 'pending' : w.status;
+  const m = wallet.isTss() ? wallet.getScheme().m : w.m;
+  const n = wallet.isTss() ? wallet.getScheme().n : w.n;
 
   const statusLines = [`ID: ${w.id}`];
   statusLines.push(`${w.chain.toUpperCase()} ${Utils.capitalize(w.network)}`);
-  statusLines.push(`${w.m}-of-${w.n}${w.tssKeyId ? ' (TSS)' : ''}${w.singleAddress ? ' single-address' : ''} [${w.derivationStrategy} ${w.addressType}]`);
-  statusLines.push(`Status: ${Utils.renderStatus(w.status)}`);
+  statusLines.push(`${m}-of-${n}${w.tssKeyId ? ' (TSS)' : ''}${w.singleAddress ? ' single-address' : ''} [${w.derivationStrategy} ${w.addressType}]`);
+  statusLines.push(`Status: ${Utils.renderStatus(statusStr)}`);
   statusLines.push(`Created on: ${Utils.formatDate(w.createdOn * 1000)}`);
 
 
-  if (w.status !== 'complete') {
+  if (w.status !== 'complete' || !wallet.isComplete()) {
     statusLines.push('');
-    statusLines.push(`Missing ${(w.n - w.copayers.length)} copayers`);
-    statusLines.push(`Secret: ${Utils.colorText(w.secret, 'yellow')}`);
+    statusLines.push(`Missing ${(n - w.copayers.length)} copayers`);
+    if (!wallet.isTss()) {
+      statusLines.push(`Secret: ${Utils.colorText(w.secret, 'yellow')}`);
+    }
   }
 
   prompt.note(statusLines.join(os.EOL), `${tokenObj ? '(Linked) ' : ''}Wallet Info`);

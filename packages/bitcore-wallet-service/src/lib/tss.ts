@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Constants } from './common/constants';
+import { Utils } from './common/utils';
 import { Errors } from './errors/errordefinitions';
 import logger from './logger';
 import { TssKeyGenModel } from './model/tsskeygen';
@@ -553,7 +554,10 @@ class TssKeyGenClass {
     // }
   }
 
-  /** Store the BWS join secret for the TSS keygen session */
+  /**
+   * Store the BWS join secret for the TSS keygen session
+   * @deprecated Use storeBwsJoinSecrets instead.
+   */
   async storeBwsJoinSecret(params: {
     /** Session ID */
     id: string;
@@ -587,10 +591,71 @@ class TssKeyGenClass {
     }
   }
 
-  /** Get the BWS join secret for the TSS keygen session */
+  /**
+   * Store the party-encrypted BWS join secrets for a wallet on `chain`:`network` created with the TSS key.
+   * This can be called after the key generation session has expired to create additional wallets (e.g. other EVM chains) for the same key.
+   */
+  async storeBwsJoinSecrets(params: {
+    /** Session ID */
+    id: string;
+    /** Blockchain (e.g., 'btc', 'eth') */
+    chain: string;
+    /** Network (e.g., 'livenet', 'testnet') */
+    network: string;
+    /** Party encrypted BWS join secrets, keyed by partyId or by the party's keygen session copayer ID */
+    secrets: { [party: string]: string };
+    /** Copayer ID of the submitting party (must be the session creator) */
+    copayerId: string;
+  }) {
+    const { id, copayerId } = params;
+    const { chain, network } = getSecretChainNetwork(params.chain, params.network);
+    if (!params.secrets || typeof params.secrets !== 'object' || Array.isArray(params.secrets)) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secrets provided');
+    }
+    const storage = WalletService.getStorage();
+    const session = await storage.fetchTssKeyGenSession({ id });
+
+    if (!session) {
+      throw Errors.TSS_SESSION_NOT_FOUND;
+    }
+
+    if (session.participants.indexOf(copayerId) !== 0) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Only the session creator can store the BWS join secret');
+    }
+
+    // Only store secrets keyed by partyId for the other parties (1..n-1)
+    const secrets: { [partyId: number]: string } = {};
+    for (const [party, secret] of Object.entries(params.secrets)) {
+      const partyId = /^\d+$/.test(party) ? parseInt(party) : session.participants.indexOf(party);
+      if (!(partyId > 0 && partyId < session.n) || typeof secret !== 'string' || !secret) {
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secret for party ' + party);
+      }
+      secrets[partyId] = secret;
+    }
+
+    if (Object.keys(secrets).length !== session.n - 1) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Missing BWS join secrets for some parties');
+    }
+
+    const result = await storage.storeTssKeyBwsJoinSecrets({ id, chain, network, secrets });
+    if (!result.result.ok) {
+      logger.error('Failed to store TSS key generation BWS join secrets %o %o', id, result);
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation BWS join secrets');
+    }
+  }
+
+  /**
+   * Get the BWS join secret for the TSS keygen session.
+   * If chain & network are given, returns the requesting party's encrypted secret for that chain & network.
+   * Otherwise, returns the legacy (< v1.3) unencrypted secret.
+   */
   async getBwsJoinSecret(params: {
     /** Session ID */
     id: string;
+    /** Blockchain (e.g., 'btc', 'eth'). Omitted by legacy clients */
+    chain?: string;
+    /** Network (e.g., 'livenet', 'testnet'). Omitted by legacy clients */
+    network?: string;
     /** Copayer ID of the requesting party */
     copayerId: string;
   }): Promise<string> {
@@ -600,15 +665,41 @@ class TssKeyGenClass {
     if (!session) {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
-    if (session.participants.indexOf(copayerId) === -1) {
+    const partyId = session.participants.indexOf(copayerId);
+    if (partyId === -1) {
       throw Errors.TSS_NON_PARTICIPANT;
     }
-    if (!session.bwsJoinSecret) {
+
+    if (params.chain == null && params.network == null) {
+      // Legacy clients don't send chain & network
+      if (!session.bwsJoinSecret) {
+        throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
+      }
+      return session.bwsJoinSecret;
+    }
+
+    // Note: sessions < v1.3 can have chain-specific secrets too (i.e. wallets created with an existing TSS key)
+    const { chain, network } = getSecretChainNetwork(params.chain, params.network);
+    const secret = session.bwsJoinSecrets?.[`${chain}:${network}`]?.[partyId];
+    if (typeof secret !== 'string') {
       throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
     }
-    return session.bwsJoinSecret;
+    return secret;
   }
 };
+
+/** Validate and normalize the chain & network used to key the BWS join secrets */
+function getSecretChainNetwork(chain: string, network: string) {
+  chain = typeof chain === 'string' ? chain.toLowerCase() : chain;
+  if (!Utils.checkValueInCollection(chain, Constants.CHAINS)) {
+    throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid chain provided');
+  }
+  network = typeof network === 'string' ? Utils.getNetworkName(chain, Utils.getGenericName(network.toLowerCase())) : network;
+  if (!Utils.checkValueInCollection(network, Constants.NETWORKS[chain])) {
+    throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid network provided');
+  }
+  return { chain, network };
+}
 
 export const TssKeyGen = new TssKeyGenClass();
 

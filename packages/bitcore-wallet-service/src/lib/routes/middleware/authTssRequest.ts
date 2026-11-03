@@ -21,7 +21,8 @@ function verifyMessage(req: express.Request, signature: string, pubKey: string) 
  * It checks if the request has valid credentials, verifies the signature,
  * and retrieves the TSS session based on the request path.
  */
-export function authTssKeyGenRequest(): express.RequestHandler {
+export function authTssKeyGenRequest(params: { bypassExpired?: boolean } = {}): express.RequestHandler {
+  const { bypassExpired } = params;
   return async function(req, res, next) {
     try {
       const storage = WalletService.getStorage();
@@ -54,7 +55,7 @@ export function authTssKeyGenRequest(): express.RequestHandler {
         }
       }
 
-      if (session.isExpired()) {
+      if (!bypassExpired && session.isExpired()) {
         throw Errors.TSS_SESSION_EXPIRED;
       }
 

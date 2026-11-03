@@ -49,6 +49,36 @@ export class TssRouter {
       }
     });
 
+    // Must be before /keygen/:id/:round so "secret" doesn't get interpreted as a round number
+    router.get('/v1/tss/keygen/:id/secret', authTssKeyGenRequest({ bypassExpired: true }), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const copayerId = req.headers['x-identity'];
+        const { chain, network } = req.query as { [key: string]: string };
+        const secret = await TssKeyGen.getBwsJoinSecret({ id, chain, network, copayerId });
+        return res.json({ secret });
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.post('/v1/tss/keygen/:id/secret', authTssKeyGenRequest({ bypassExpired: true }), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const { chain, network, secrets, secret } = req.body;
+        const copayerId = req.headers['x-identity'];
+        if (secrets == null && secret != null) {
+          // Legacy (< v1.3) clients send a single unencrypted secret
+          await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
+        } else {
+          await TssKeyGen.storeBwsJoinSecrets({ id, chain, network, secrets, copayerId });
+        }
+        return res.send();
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
     router.get('/v1/tss/keygen/:id/:round', authTssKeyGenRequest(), async function(req, res) {
       let interval: NodeJS.Timeout;
       try {
@@ -58,10 +88,6 @@ export class TssRouter {
         const { id, round } = req.params as { [key: string]: string };
         const { maxWaitTime } = req.query as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
-        if (round === 'secret') {
-          const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-          return res.json({ secret });
-        }
 
         // Validate access and fetch session before committing to a streaming response, so that errors like
         //   "session not found" or "not a participant" can still be returned with a proper
@@ -95,29 +121,6 @@ export class TssRouter {
 
         await TssKeyGen.storeKey({ id, message, copayerId });
         return res.send();
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
-
-    router.post('/v1/tss/keygen/:id/secret', authTssKeyGenRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const { secret } = req.body;
-        const copayerId = req.headers['x-identity'];
-        await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
-        return res.send();
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
-
-    router.get('/v1/tss/keygen/:id/secret', authTssKeyGenRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
-        const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-        return res.json({ secret });
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
       }

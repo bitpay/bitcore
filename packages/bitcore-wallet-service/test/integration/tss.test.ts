@@ -1,3 +1,4 @@
+import util from 'util';
 import sinon from 'sinon';
 import 'chai/register-should';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
@@ -5,6 +6,7 @@ import request from 'supertest';
 import * as twoOfThree from './data/tss/2of3';
 import BWS from '../../src/index';
 import helpers from './helpers';
+import * as TestData from '../testdata';
 import { TssKeyGen } from '../../src/lib/tss';
 import { TssSigGenModel } from '../../src/lib/model/tsssign';
 import { TssKeyGenModel } from '../../src/lib/model/tsskeygen';
@@ -836,6 +838,311 @@ describe('TSS', function() {
           await createKeyGenSession({ version: 1.1, joined: [1, 2] });
           const res = await get(path, { copayerId: 'notInSession', privKey: randomKey() });
           expectError(res, 401, 'NOT_AUTHORIZED', 'Copayer not found in session');
+        });
+      });
+    });
+
+    describe('BWS join secrets', function() {
+      const path = `/v1/tss/keygen/${SESSION_ID}/secret`;
+      const ethSecrets = { 1: 'ethSecretForParty1', 2: 'ethSecretForParty2' };
+      const storeSecrets = (body: object, auth: Auth = partyAuth(0)) => post(path, body, auth);
+      const getSecret = (auth: Auth, query: { chain?: string; network?: string } = { chain: 'eth', network: 'livenet' }) => {
+        const qs = new URLSearchParams(query).toString();
+        return get(path + (qs ? '?' + qs : ''), auth);
+      };
+      const fetchSession = () => storage.fetchTssKeyGenSession({ id: SESSION_ID });
+
+      describe('POST /v1/tss/keygen/:id/secret', function() {
+        it('should store the secrets per chain and network', async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+
+          (await storeSecrets({ chain: 'eth', network: 'livenet', secrets: ethSecrets })).status.should.equal(200);
+          (await storeSecrets({ chain: 'arb', network: 'livenet', secrets: { 1: 'arb1', 2: 'arb2' } })).status.should.equal(200);
+
+          const session = await fetchSession();
+          session.bwsJoinSecrets.should.deep.equal({
+            'eth:livenet': ethSecrets,
+            'arb:livenet': { 1: 'arb1', 2: 'arb2' }
+          });
+        });
+
+        it('should key the secrets by partyId when given keygen session copayer IDs', async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+
+          const res = await storeSecrets({ chain: 'eth', network: 'livenet', secrets: { [copayerIds[2]]: 'two', [copayerIds[1]]: 'one' } });
+          res.status.should.equal(200);
+
+          const session = await fetchSession();
+          session.bwsJoinSecrets['eth:livenet'].should.deep.equal({ 1: 'one', 2: 'two' });
+        });
+
+        it('should normalize the chain and network', async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+
+          (await storeSecrets({ chain: 'ETH', network: 'testnet', secrets: ethSecrets })).status.should.equal(200);
+          (await storeSecrets({ chain: 'btc', network: 'mainnet', secrets: ethSecrets })).status.should.equal(200);
+
+          const session = await fetchSession();
+          Object.keys(session.bwsJoinSecrets).should.deep.equal(['eth:sepolia', 'btc:livenet']);
+        });
+
+        it('should overwrite the secrets for the same chain and network', async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+
+          (await storeSecrets({ chain: 'eth', network: 'livenet', secrets: { 1: 'old1', 2: 'old2' } })).status.should.equal(200);
+          (await storeSecrets({ chain: 'eth', network: 'livenet', secrets: ethSecrets })).status.should.equal(200);
+
+          const session = await fetchSession();
+          session.bwsJoinSecrets.should.deep.equal({ 'eth:livenet': ethSecrets });
+        });
+
+        it('should store the secrets after the session has expired', async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2], timeLimit: 1 });
+          expireSession();
+
+          const res = await storeSecrets({ chain: 'eth', network: 'livenet', secrets: ethSecrets });
+          res.status.should.equal(200);
+          (await fetchSession()).bwsJoinSecrets['eth:livenet'].should.deep.equal(ethSecrets);
+        });
+
+        it('should store the secret sent by a legacy (< v1.3) client', async function() {
+          await createKeyGenSession({ version: 1.2, joined: [1, 2] });
+
+          const res = await storeSecrets({ secret: 'legacySecret' });
+          res.status.should.equal(200);
+
+          const session = await fetchSession();
+          session.bwsJoinSecret.should.equal('legacySecret');
+          session.bwsJoinSecrets.should.deep.equal({});
+        });
+
+        it('should error if the requester is not the session leader', async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+
+          const res = await storeSecrets({ chain: 'eth', network: 'livenet', secrets: ethSecrets }, partyAuth(1));
+          expectError(res, 400, 'TSS_GENERIC_ERROR', 'Only the session creator can store the BWS join secret');
+        });
+
+        it('should error if the copayer is not in the session', async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+
+          const res = await storeSecrets({ chain: 'eth', network: 'livenet', secrets: ethSecrets }, { copayerId: 'notInSession', privKey: randomKey() });
+          expectError(res, 401, 'NOT_AUTHORIZED');
+        });
+
+        for (const [description, body] of [
+          ['a party is missing a secret', { chain: 'eth', network: 'livenet', secrets: { 1: 'one' } }],
+          ['a secret is for the leader', { chain: 'eth', network: 'livenet', secrets: { ...ethSecrets, 0: 'zero' } }],
+          ['a secret is for a partyId >= n', { chain: 'eth', network: 'livenet', secrets: { ...ethSecrets, 3: 'three' } }],
+          ['a secret is for a copayer that is not in the session', { chain: 'eth', network: 'livenet', secrets: { 1: 'one', notInSession: 'two' } }],
+          ['a secret is not a string', { chain: 'eth', network: 'livenet', secrets: { 1: 'one', 2: { $ne: null } } }],
+          ['a secret is empty', { chain: 'eth', network: 'livenet', secrets: { 1: 'one', 2: '' } }],
+          ['secrets is not an object', { chain: 'eth', network: 'livenet', secrets: 'abc' }],
+          ['secrets is an array', { chain: 'eth', network: 'livenet', secrets: ['zero', 'one', 'two'] }],
+          ['secrets is missing', { chain: 'eth', network: 'livenet' }],
+          ['chain is missing', { network: 'livenet', secrets: ethSecrets }],
+          ['chain is not supported', { chain: 'foo', network: 'livenet', secrets: ethSecrets }],
+          ['chain is a Mongo path', { chain: 'eth.livenet', network: 'livenet', secrets: ethSecrets }],
+          ['network is missing', { chain: 'eth', secrets: ethSecrets }],
+          ['network is not supported', { chain: 'eth', network: 'foo', secrets: ethSecrets }],
+        ] as Array<[string, object]>) {
+          it(`should error if ${description}`, async function() {
+            await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+
+            const res = await storeSecrets(body);
+            expectError(res, 400, 'TSS_GENERIC_ERROR');
+            (await fetchSession()).bwsJoinSecrets.should.deep.equal({});
+          });
+        }
+      });
+
+      describe('GET /v1/tss/keygen/:id/secret', function() {
+        beforeEach(async function() {
+          await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+          await storage.storeTssKeyBwsJoinSecrets({ id: SESSION_ID, chain: 'eth', network: 'livenet', secrets: ethSecrets });
+        });
+
+        it('should return each party its own secret for the chain and network', async function() {
+          for (const partyId of [1, 2]) {
+            const res = await getSecret(partyAuth(partyId));
+            res.status.should.equal(200);
+            res.body.secret.should.equal(ethSecrets[partyId]);
+          }
+        });
+
+        it('should normalize the chain and network', async function() {
+          const res = await getSecret(partyAuth(1), { chain: 'ETH', network: 'mainnet' });
+          res.status.should.equal(200);
+          res.body.secret.should.equal(ethSecrets[1]);
+        });
+
+        it('should return the secret after the session has expired', async function() {
+          expireSession();
+          const res = await getSecret(partyAuth(1));
+          res.status.should.equal(200);
+          res.body.secret.should.equal(ethSecrets[1]);
+        });
+
+        it('should error if there is no secret for the chain', async function() {
+          const res = await getSecret(partyAuth(1), { chain: 'arb', network: 'livenet' });
+          expectError(res, 400, 'TSS_BWS_JOIN_SECRET_NOT_FOUND');
+        });
+
+        it('should error if there is no secret for the network', async function() {
+          const res = await getSecret(partyAuth(1), { chain: 'eth', network: 'testnet' });
+          expectError(res, 400, 'TSS_BWS_JOIN_SECRET_NOT_FOUND');
+        });
+
+        it('should error if the chain is not supported', async function() {
+          const res = await getSecret(partyAuth(1), { chain: 'foo', network: 'livenet' });
+          expectError(res, 400, 'TSS_GENERIC_ERROR', 'Invalid chain provided');
+        });
+
+        it('should error if only one of chain and network is given', async function() {
+          const res = await getSecret(partyAuth(1), { chain: 'eth' });
+          expectError(res, 400, 'TSS_GENERIC_ERROR', 'Invalid network provided');
+        });
+
+        it('should error if the copayer is not in the session', async function() {
+          const res = await getSecret({ copayerId: 'notInSession', privKey: randomKey() });
+          expectError(res, 401, 'NOT_AUTHORIZED');
+        });
+
+        it('should reject another party identity', async function() {
+          const res = await getSecret({ copayerId: copayerIds[2], privKey: parties[1].authKey });
+          expectError(res, 401, 'NOT_AUTHORIZED', 'Invalid signature');
+        });
+
+        it('should not return the legacy secret to clients that send the chain and network', async function() {
+          await storage.storeTssKeyBwsJoinSecret({ id: SESSION_ID, secret: 'legacySecret' });
+          const res = await getSecret(partyAuth(1), { chain: 'arb', network: 'livenet' });
+          expectError(res, 400, 'TSS_BWS_JOIN_SECRET_NOT_FOUND');
+        });
+
+        describe('legacy (v1.2) session', function() {
+          beforeEach(async function() {
+            await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+            await createKeyGenSession({ version: 1.2, joined: [1, 2] });
+            await storage.storeTssKeyBwsJoinSecret({ id: SESSION_ID, secret: 'legacySecret' });
+          });
+
+          it('should return the legacy secret to legacy clients', async function() {
+            const res = await getSecret(partyAuth(1), {});
+            res.status.should.equal(200);
+            res.body.secret.should.equal('legacySecret');
+          });
+
+          it('should return the chain secret for a wallet created with the existing key', async function() {
+            await storage.storeTssKeyBwsJoinSecrets({ id: SESSION_ID, chain: 'arb', network: 'livenet', secrets: { 1: 'arb1', 2: 'arb2' } });
+            const res = await getSecret(partyAuth(1), { chain: 'arb', network: 'livenet' });
+            res.status.should.equal(200);
+            res.body.secret.should.equal('arb1');
+          });
+
+          it('should error if there is no secret for the chain', async function() {
+            const res = await getSecret(partyAuth(1), { chain: 'arb', network: 'livenet' });
+            expectError(res, 400, 'TSS_BWS_JOIN_SECRET_NOT_FOUND');
+          });
+        });
+      });
+    });
+
+    describe('TSS wallets', function() {
+      // The keygen session copayer IDs are derived with 'btc'. Wallets are created on other chains.
+      const createWallet = (body: object) => app.post(urlPrefix + '/v2/wallets/').send({
+        name: 'tss wallet',
+        m: vector.m,
+        n: vector.n,
+        pubKey: TestData.keyPair.pub,
+        chain: 'arb',
+        network: 'testnet',
+        tssKeyId: SESSION_ID,
+        ...body
+      });
+      const joinWallet = (walletId: string, partyId: number, body: object = {}) => app.post(`${urlPrefix}/v2/wallets/${walletId}/copayers/`).send(
+        helpers.getSignedCopayerOpts({
+          walletId,
+          name: 'party' + partyId,
+          xPubKey: getXPubKey(parties[partyId].seed),
+          requestPubKey: authPubKey(partyId),
+          chain: 'arb',
+          ...body
+        })
+      );
+
+      beforeEach(async function() {
+        await storage.db.collection(BWS.Storage.collections.WALLETS).deleteMany({});
+        await storage.db.collection(BWS.Storage.collections.COPAYERS_LOOKUP).deleteMany({});
+        await createKeyGenSession({ version: 1.3, joined: [1, 2] });
+        await storage.storeTssKeySharedPubKey({ id: SESSION_ID, publicKey: 'sharedPublicKey' });
+      });
+
+      describe('POST /v2/wallets/', function() {
+        it('should create a wallet on another chain than the key generation session', async function() {
+          const res = await createWallet({ tssKeygenCopayerId: copayerIds[0] });
+          res.status.should.equal(200);
+          const wallet = await util.promisify(storage.fetchWallet).call(storage, res.body.walletId);
+          wallet.chain.should.equal('arb');
+          wallet.tssKeyId.should.equal(SESSION_ID);
+          wallet.tssVersion.should.equal(1.3);
+          wallet.m.should.equal(1);
+          wallet.n.should.equal(1);
+        });
+
+        it('should error if the keygen session copayer ID is missing', async function() {
+          const res = await createWallet({});
+          expectError(res, 400, 'BADREQUEST', 'Copayer ID is required for TSS version >= 1.3');
+        });
+
+        it('should error if the keygen session copayer ID is not the session leader', async function() {
+          const res = await createWallet({ tssKeygenCopayerId: copayerIds[1] });
+          expectError(res, 400, 'BADREQUEST', 'Only the TSS session leader can create a wallet');
+        });
+
+        it('should not require the keygen session copayer ID for a legacy (v1.2) session', async function() {
+          await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+          await createKeyGenSession({ version: 1.2, joined: [1, 2] });
+          await storage.storeTssKeySharedPubKey({ id: SESSION_ID, publicKey: 'sharedPublicKey' });
+
+          const res = await createWallet({});
+          res.status.should.equal(200);
+        });
+      });
+
+      describe('POST /v2/wallets/:id/copayers/', function() {
+        let walletId: string;
+
+        beforeEach(async function() {
+          const res = await createWallet({ tssKeygenCopayerId: copayerIds[0] });
+          walletId = res.body.walletId;
+        });
+
+        it('should let the parties join with their keygen session copayer IDs', async function() {
+          for (const partyId of [0, 1, 2]) {
+            const res = await joinWallet(walletId, partyId, { tssKeygenChain: 'btc' });
+            res.status.should.equal(200);
+            res.body.copayerId.should.equal(xPubToCopayerId('arb', getXPubKey(parties[partyId].seed)));
+          }
+          const wallet = await util.promisify(storage.fetchWallet).call(storage, walletId);
+          wallet.copayers.length.should.equal(3);
+        });
+
+        it('should error if the keygen chain is not given for a different wallet chain', async function() {
+          const res = await joinWallet(walletId, 1);
+          expectError(res, 400, 'TSS_NON_PARTICIPANT');
+        });
+
+        it('should error if the keygen chain is invalid', async function() {
+          const res = await joinWallet(walletId, 1, { tssKeygenChain: 'foo' });
+          expectError(res, 400, 'BADREQUEST', 'Invalid TSS keygen chain');
+        });
+
+        it('should error if the copayer was not in the key generation session', async function() {
+          const res = await joinWallet(walletId, 1, {
+            xPubKey: getXPubKey(Buffer.alloc(32, 1)),
+            tssKeygenChain: 'btc'
+          });
+          expectError(res, 400, 'TSS_NON_PARTICIPANT');
         });
       });
     });

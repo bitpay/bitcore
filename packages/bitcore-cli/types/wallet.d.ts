@@ -85,6 +85,7 @@ export interface IWallet {
   }): Promise<CWCTypes.Message.ISignedMessage>;
   getXPrivKey(password?: string): Promise<string>;
   getXPubKey(): string;
+  getScheme(): { m: number; n: number };
   isMultiSig(): boolean;
   isTss(): boolean;
   getMinSigners(): number;
@@ -97,6 +98,7 @@ export interface IWallet {
   isReadOnly(): boolean;
   getAccountFlags(): Promise<xrpl.AccountInfoAccountFlags>;
   updatePassword(currentPassword: string, newPassword: string): Promise<void>;
+  createSiblingWallet(args: { walletName: string; chain: string; network: Network }): Promise<IWallet>;
 }
 
 export interface ITokenObj {
