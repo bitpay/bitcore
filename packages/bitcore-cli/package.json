@@ -58,7 +58,6 @@
     "@types/sinon": "^22.0.0",
     "chai": "^5.2.1",
     "mongodb": "^3.5.9",
-    "monocart-coverage-reports": "^2.13.0",
     "sinon": "^21.0.0",
     "source-map-support": "0.5.16",
     "supertest": "^7.2.2",

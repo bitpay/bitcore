@@ -80,10 +80,6 @@ export async function startBws() {
         doNotCheckV8: true
       },
       () => {
-        // Sinon can stub a class's `constructor` property at runtime, but @types/sinon's stub
-        // overloads only accept keys whose type is a real call signature, and `constructor` is
-        // typed as the generic `Function` -- so stub through an `any` view of the prototype here,
-        // restoring the exact param type by hand since callsFake can no longer infer it.
         sinon.stub(API.prototype as any, 'constructor').callsFake(function(opts: NonNullable<ConstructorParameters<typeof API>[0]>) {
           opts.request = supertest(expressApp.app);
           return (API.prototype.constructor as any).wrappedMethod.call(API.prototype, opts);

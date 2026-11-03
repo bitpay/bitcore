@@ -88,7 +88,6 @@
     "@types/sinon": "^22.0.0",
     "chai": "^5.2.0",
     "memdown": "^1.0.0",
-    "monocart-coverage-reports": "^2.13.0",
     "npmlog": "^6.0.2",
     "sinon": "^7.1.1",
     "supertest": "*",

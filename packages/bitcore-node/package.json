@@ -73,7 +73,6 @@
     "@types/sinon": "4.3.3",
     "@types/through2": "2.0.33",
     "chai": "^5.2.0",
-    "monocart-coverage-reports": "^2.13.0",
     "sinon": "4.4.8",
     "socket.io-client": "4.8.1",
     "supertest": "3.0.0",

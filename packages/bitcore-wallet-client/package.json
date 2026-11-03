@@ -50,7 +50,6 @@
     "browserify": "^13.1.0",
     "chai": "^5.2.0",
     "mongodb": "^3.5.9",
-    "monocart-coverage-reports": "^2.13.0",
     "sinon": "^7.1.1",
     "supertest": "*"
   },

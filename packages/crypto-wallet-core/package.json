@@ -54,7 +54,6 @@
     "@types/mocha": "10.0.10",
     "@types/node": "22.13.1",
     "chai": "5.1.2",
-    "monocart-coverage-reports": "^2.13.0",
     "typescript": "5.7.3",
     "web3-utils": "^4.3.3"
   },
