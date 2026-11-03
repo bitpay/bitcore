@@ -42,8 +42,11 @@ export async function getChain(): Promise<string> {
  * Note: 'mainnet' is converted to 'livenet' to align with bitcore-wallet-client conventions.
  * @returns Lower-cased network string (e.g. 'livenet', 'testnet', 'regtest')
  */
-export async function getNetwork(): Promise<Network> {
-  const defaultVal = process.env['BITCORE_CLI_NETWORK'] || 'mainnet';
+export async function getNetwork(
+  /** Optional default network. Otherwise, defaults to BITCORE_CLI_NETWORK or 'mainnet' */
+  defaultNetwork?: string
+): Promise<Network> {
+  const defaultVal = defaultNetwork || process.env['BITCORE_CLI_NETWORK'] || 'mainnet';
   const network = await prompt.text({
     message: 'Network:',
     placeholder: `Default: ${defaultVal}`,
