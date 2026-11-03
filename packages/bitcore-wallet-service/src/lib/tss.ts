@@ -904,8 +904,10 @@ class TssSignClass {
     id: string;
     /** Signature to store */
     signature: ITssSigMessageObject['signature'];
+    /** Copayer ID of the sender */
+    copayerId: string;
   }): Promise<void> {
-    const { id, signature } = params;
+    const { id, signature, copayerId } = params;
     if (!signature) {
       throw Errors.TSS_NO_FINAL_SIGNATURE;
     }
@@ -917,6 +919,10 @@ class TssSignClass {
 
     if (!session) {
       throw Errors.TSS_SESSION_NOT_FOUND;
+    }
+    const party = session.participants.find(p => p.copayerId === copayerId);
+    if (!party) {
+      throw Errors.TSS_NON_PARTICIPANT;
     }
 
     const verifySig = (sig1, sig2) => {
