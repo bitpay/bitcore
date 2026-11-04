@@ -38,6 +38,11 @@ describe('CryptoRpc config', function() {
         expect(rpc).to.include({ user: 'rpcuser', pass: 'rpcpass' });
       });
 
+      it(`${chain} falls back to user/pass per field when only rpcPort is set`, function() {
+        const { rpc } = new CryptoRpc({ chain, host: '127.0.0.1', protocol: 'http', port: 20000, rpcPort: 20001, user: 'u', pass: 'p' }).get(chain);
+        expect(rpc).to.include({ port: 20001, user: 'u', pass: 'p' });
+      });
+
       it(`${chain} falls back to port/user/pass`, function() {
         const { rpc } = new CryptoRpc({ chain, ...bitcoreNodeStyle }).get(chain);
         expect(rpc).to.include({ port: 8332, user: 'user', pass: 'pass' });

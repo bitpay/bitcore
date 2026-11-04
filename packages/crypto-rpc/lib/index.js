@@ -59,6 +59,7 @@ export class CryptoRpc {
 
   /**
    * Constructor for CryptoRpcProvider class.
+   * The BTC, BCH, LTC, DOGE, LNBTC and XRP clients prefer rpcPort/rpcUser/rpcPass over port/user/pass when set.
    * @param {Object} config - The configuration object.
    * @param {string} config.chain - The chain to connect to.
    * @param {boolean} [config.isEVM] - Optional flag indicating if the chain is EVM compatible.
