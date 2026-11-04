@@ -141,6 +141,7 @@ export function authTssSignRequest(params: { joinable?: boolean } = {}): express
       if (!copayer) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found');
       }
+      // I'm not aware of an instance where copayer.requestPubKeys.length > 1, but we iterate over them to find the key for the given signature.
       const pubKey = copayer.requestPubKeys.find(pubKey => verifyMessage(req, signature, pubKey.key))?.key;
       if (!pubKey) {
         throw Errors.NOT_AUTHORIZED.withMessage('Invalid signature');
@@ -163,7 +164,7 @@ export function authTssSignRequest(params: { joinable?: boolean } = {}): express
         const party = session.participants.find(p => p.copayerId === copayerId);
         // A copayer joins an existing session by sending its round 0 message (participant is added in TssSign.processMessage)
         const isJoining = !party && body?.message?.round === 0;
-        if (!party && (!isJoining || !joinable)) {
+        if (!party && !(joinable && isJoining)) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
         if (verifyMsgFields && party && party.partyId !== body?.message?.partyId) {
