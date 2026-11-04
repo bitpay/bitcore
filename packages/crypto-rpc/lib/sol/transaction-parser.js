@@ -305,8 +305,9 @@ const parseJsonParsedTokenProgramInstruction = (instruction) => {
         destination: info.destination,
         mint: info.mint,
         source: info.source,
-        amount: Number(info.amount),
-        decimals: Number(info.decimals)
+        // jsonParsed nests these under tokenAmount for transferChecked, unlike transfer
+        amount: Number(info.amount ?? info.tokenAmount?.amount),
+        decimals: Number(info.decimals ?? info.tokenAmount?.decimals)
       }
     };
   }
