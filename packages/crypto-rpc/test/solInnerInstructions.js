@@ -19,6 +19,31 @@ describe('parseJsonParsedInstructions', function() {
     expect(parsed[instructionKeys.TRANSFER_TOKEN]).to.deep.equal([{ authority: 'A', destination: 'D', source: 'S', amount: 42 }]);
   });
 
+  it('parses a token transferChecked the way top-level transferCheckedToken is shaped', function() {
+    // jsonParsed nests the amount and decimals under tokenAmount (shape taken from a mainnet tx)
+    const parsed = parseJsonParsedInstructions([
+      {
+        programId: TOKEN,
+        program: 'spl-token',
+        parsed: {
+          type: 'transferChecked',
+          info: {
+            authority: 'A', source: 'S', destination: 'D', mint: 'M',
+            tokenAmount: { amount: '74683783', decimals: 9, uiAmount: 0.074683783, uiAmountString: '0.074683783' }
+          }
+        }
+      }
+    ]);
+    expect(parsed[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.deep.equal([{ authority: 'A', destination: 'D', mint: 'M', source: 'S', amount: 74683783, decimals: 9 }]);
+  });
+
+  it('still reads a transferChecked amount and decimals given directly on info', function() {
+    const parsed = parseJsonParsedInstructions([
+      { programId: TOKEN, program: 'spl-token', parsed: { type: 'transferChecked', info: { authority: 'A', source: 'S', destination: 'D', mint: 'M', amount: '42', decimals: 6 } } }
+    ]);
+    expect(parsed[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.deep.equal([{ authority: 'A', destination: 'D', mint: 'M', source: 'S', amount: 42, decimals: 6 }]);
+  });
+
   it('keeps instructions it does not parse under unknown, with their program address', function() {
     const createAccount = { programId: SYSTEM, program: 'system', parsed: { type: 'createAccount', info: {} } };
     const parsed = parseJsonParsedInstructions([createAccount]);
