@@ -30,41 +30,90 @@ export const instructionKeys = {
 export const parseInstructions = (instructions) => {
   const parsedInstructions = {};
   for (const instruction of instructions) {
-    let handledInstruction;
-    try {
-      if (instruction.programAddress === SolSystem.SYSTEM_PROGRAM_ADDRESS) {
-        handledInstruction = parseSystemProgramInstruction(instruction);
-      } else if (instruction.programAddress === SolMemo.MEMO_PROGRAM_ADDRESS) {
-        handledInstruction = parseMemoProgramInstruction(instruction);
-      } else if (instruction.programAddress === SolToken.ASSOCIATED_TOKEN_PROGRAM_ADDRESS) {
-        handledInstruction = parseAssociatedTokenProgramInstruction(instruction);
-      } else if (instruction.programAddress === solTokenProgramAddress) {
-        handledInstruction = parseTokenProgramInstruction(instruction);
-      } else if (instruction.programAddress === SolComputeBudget.COMPUTE_BUDGET_PROGRAM_ADDRESS) {
-        handledInstruction = parseComputeBudgetProgramInstruction(instruction);
-      } else {
-        handledInstruction = {
-          key: instructionKeys.UNKNOWN,
-          value: instruction
-        };
-      }
-    } catch (err) {
-      handledInstruction = {
-        key: instructionKeys.UNKNOWN,
-        value: {
-          ...instruction,
-          error: err.message,
-          programAddress: instruction.programAddress
-        }
-      };
-    }
-    
-    if (!parsedInstructions[handledInstruction.key]) {
-      parsedInstructions[handledInstruction.key] = [];
-    }
-    parsedInstructions[handledInstruction.key].push(handledInstruction.value);
+    const handledInstruction = parseInstruction(instruction);
+    appendParsedInstruction(parsedInstructions, handledInstruction);
   }
   return parsedInstructions;
+};
+
+/**
+ * Parses the `jsonParsed` RPC instruction shape into the same grouped output as `parseInstructions`.
+ * @param {any[]} instructions
+ * @returns {Instructions}
+ */
+export const parseJsonParsedInstructions = (instructions) => {
+  const parsedInstructions = {};
+  for (const instruction of instructions) {
+    const handledInstruction = parseJsonParsedInstruction(instruction);
+    appendParsedInstruction(parsedInstructions, handledInstruction);
+  }
+  return parsedInstructions;
+};
+
+const appendParsedInstruction = (parsedInstructions, handledInstruction) => {
+  if (!parsedInstructions[handledInstruction.key]) {
+    parsedInstructions[handledInstruction.key] = [];
+  }
+  parsedInstructions[handledInstruction.key].push(handledInstruction.value);
+};
+
+const parseInstruction = (instruction) => {
+  try {
+    if (instruction.programAddress === SolSystem.SYSTEM_PROGRAM_ADDRESS) {
+      return parseSystemProgramInstruction(instruction);
+    } else if (instruction.programAddress === SolMemo.MEMO_PROGRAM_ADDRESS) {
+      return parseMemoProgramInstruction(instruction);
+    } else if (instruction.programAddress === SolToken.ASSOCIATED_TOKEN_PROGRAM_ADDRESS) {
+      return parseAssociatedTokenProgramInstruction(instruction);
+    } else if (instruction.programAddress === solTokenProgramAddress) {
+      return parseTokenProgramInstruction(instruction);
+    } else if (instruction.programAddress === SolComputeBudget.COMPUTE_BUDGET_PROGRAM_ADDRESS) {
+      return parseComputeBudgetProgramInstruction(instruction);
+    }
+
+    return {
+      key: instructionKeys.UNKNOWN,
+      value: instruction
+    };
+  } catch (err) {
+    return {
+      key: instructionKeys.UNKNOWN,
+      value: {
+        ...instruction,
+        error: err.message,
+        programAddress: instruction.programAddress
+      }
+    };
+  }
+};
+
+const parseJsonParsedInstruction = (instruction) => {
+  try {
+    if (instruction.programId === SolSystem.SYSTEM_PROGRAM_ADDRESS) {
+      return parseJsonParsedSystemProgramInstruction(instruction);
+    } else if (instruction.programId === SolMemo.MEMO_PROGRAM_ADDRESS) {
+      return parseJsonParsedMemoProgramInstruction(instruction);
+    } else if (instruction.programId === SolToken.ASSOCIATED_TOKEN_PROGRAM_ADDRESS) {
+      return parseJsonParsedAssociatedTokenProgramInstruction(instruction);
+    } else if (instruction.programId === solTokenProgramAddress) {
+      return parseJsonParsedTokenProgramInstruction(instruction);
+    } else if (instruction.programId === SolComputeBudget.COMPUTE_BUDGET_PROGRAM_ADDRESS) {
+      return parseJsonParsedComputeBudgetProgramInstruction(instruction);
+    }
+
+    return {
+      key: instructionKeys.UNKNOWN,
+      value: normalizeJsonParsedInstruction(instruction)
+    };
+  } catch (err) {
+    return {
+      key: instructionKeys.UNKNOWN,
+      value: {
+        ...normalizeJsonParsedInstruction(instruction),
+        error: err.message
+      }
+    };
+  }
 };
 
 const parseSystemProgramInstruction = (instruction) => {
@@ -100,6 +149,14 @@ const parseMemoProgramInstruction = (instruction) => {
   parsedInstruction.key = instructionKeys.MEMO;
   parsedInstruction.value = parsedMemoInstruction.data;
   return parsedInstruction;
+};
+
+const parseJsonParsedMemoProgramInstruction = (instruction) => {
+  const memo = instruction?.parsed;
+  return {
+    key: instructionKeys.MEMO,
+    value: typeof memo === 'string' ? memo : instruction
+  };
 };
 
 const parseAssociatedTokenProgramInstruction = (instruction) => {
@@ -198,6 +255,68 @@ const parseTokenProgramInstruction = (instruction) => {
   return parsedInstruction;
 };
 
+const parseJsonParsedSystemProgramInstruction = (instruction) => {
+  const type = instruction?.parsed?.type;
+  const info = instruction?.parsed?.info ?? {};
+  if (type === 'transfer') {
+    return {
+      key: instructionKeys.TRANSFER_SOL,
+      value: {
+        // Note: This is different than info.amount for the way top-level transferSol instructions come through
+        amount: Number(info.lamports),
+        currency: 'SOL',
+        destination: info.destination,
+        source: info.source
+      }
+    };
+  }
+
+  return {
+    key: instructionKeys.UNKNOWN,
+    value: normalizeJsonParsedInstruction(instruction)
+  };
+};
+
+const parseJsonParsedAssociatedTokenProgramInstruction = (instruction) => {
+  return {
+    key: instructionKeys.UNKNOWN,
+    value: normalizeJsonParsedInstruction(instruction)
+  };
+};
+
+const parseJsonParsedTokenProgramInstruction = (instruction) => {
+  const type = instruction?.parsed?.type;
+  const info = instruction?.parsed?.info ?? {};
+  if (type === 'transfer') {
+    return {
+      key: instructionKeys.TRANSFER_TOKEN,
+      value: {
+        authority: info.authority,
+        destination: info.destination,
+        source: info.source,
+        amount: Number(info.amount)
+      }
+    };
+  } else if (type === 'transferChecked') {
+    return {
+      key: instructionKeys.TRANSFER_CHECKED_TOKEN,
+      value: {
+        authority: info.authority,
+        destination: info.destination,
+        mint: info.mint,
+        source: info.source,
+        amount: Number(info.amount),
+        decimals: Number(info.decimals)
+      }
+    };
+  }
+
+  return {
+    key: instructionKeys.UNKNOWN,
+    value: normalizeJsonParsedInstruction(instruction)
+  };
+};
+
 const parseComputeBudgetProgramInstruction = (instruction) => {
   const parsedInstruction = {};
   const identifiedComputeBudgetInstruction = SolComputeBudget.identifyComputeBudgetInstruction(instruction);
@@ -219,6 +338,20 @@ const parseComputeBudgetProgramInstruction = (instruction) => {
     parsedInstruction.value = instruction;
   }
   return parsedInstruction;
+};
+
+const parseJsonParsedComputeBudgetProgramInstruction = (instruction) => {
+  return {
+    key: instructionKeys.UNKNOWN,
+    value: normalizeJsonParsedInstruction(instruction)
+  };
+};
+
+const normalizeJsonParsedInstruction = (instruction) => {
+  return {
+    ...instruction,
+    programAddress: instruction.programId
+  };
 };
 
 
