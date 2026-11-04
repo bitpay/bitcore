@@ -4,7 +4,7 @@ import { pipe } from '@solana/functional';
 import bs58 from 'bs58';
 import { SOL_ERROR_MESSAGES } from './error_messages.js';
 import { addressesByLookupTableAddress } from './lookup-tables.js';
-import { parseInstructions } from './transaction-parser.js';
+import { parseInstructions, parseJsonParsedInstructions } from './transaction-parser.js';
 
 const {
   ComputeBudget: SolComputeBudget,
@@ -483,9 +483,16 @@ export class SolRpc {
     parsedTransaction.blockTime = Number(blockTime);
     parsedTransaction.slot = Number(slot);
 
-    if (lookupTablesUsed && !accountsLoaded) {
-      const parsedTx = await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send();
+    // Only the jsonParsed encoding parses inner instructions (instructions run by another program), and it's also where
+    // a lookup-table tx's accounts come from when loadedAddresses couldn't be used, so fetch it at most once for both
+    const hasInnerInstructions = Array.isArray(meta?.innerInstructions) && meta.innerInstructions.length > 0;
+    const needsLookupTableAccounts = lookupTablesUsed && !accountsLoaded;
+    const parsedTx = hasInnerInstructions || needsLookupTableAccounts
+      ? await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send()
+      : null;
+    parsedTransaction.innerInstructions = this.#parseInnerInstructions(parsedTx?.meta?.innerInstructions);
 
+    if (needsLookupTableAccounts) {
       return {
         ...parsedTransaction,
         meta: parsedTx.meta,
@@ -496,6 +503,45 @@ export class SolRpc {
     return {
       ...parsedTransaction,
       meta
+    };
+  }
+
+  #parseInnerInstructions(jsonParsedInnerInstructions) {
+    const parsedInnerInstructions = {};
+    if (!Array.isArray(jsonParsedInnerInstructions) || jsonParsedInnerInstructions.length === 0) {
+      return parsedInnerInstructions;
+    }
+
+    for (const innerInstructionGroup of jsonParsedInnerInstructions) {
+      const parsedInstructionGroup = parseJsonParsedInstructions(innerInstructionGroup.instructions ?? []);
+      for (const [instructionKey, values] of Object.entries(parsedInstructionGroup)) {
+        if (!parsedInnerInstructions[instructionKey]) {
+          parsedInnerInstructions[instructionKey] = [];
+        }
+
+        for (const value of values) {
+          parsedInnerInstructions[instructionKey].push(this.#addInnerInstructionContext({
+            value,
+            topLevelInstructionIndex: innerInstructionGroup.index
+          }));
+        }
+      }
+    }
+
+    return parsedInnerInstructions;
+  }
+
+  #addInnerInstructionContext({ value, topLevelInstructionIndex }) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return {
+        topLevelInstructionIndex,
+        ...value
+      };
+    }
+
+    return {
+      topLevelInstructionIndex,
+      value
     };
   }
 
