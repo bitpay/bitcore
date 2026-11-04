@@ -73,25 +73,25 @@ export class CryptoRpc {
    * @param {Object} [config.tokens] - Optional tokens configuration.
    */
   constructor(config) {
-    const chain = config.chain;
-    if (!RpcClasses[chain] && !config.isEVM) {
+    this.chain = config.chain;
+    if (!RpcClasses[this.chain] && !config.isEVM) {
       throw new Error('Invalid chain specified');
     }
-    const _config = Object.assign({}, config, {
+    this.config = Object.assign({}, config, {
       host: config.host,
       port: config.port || config.rpcPort,
       user: config.user || config.rpcUser,
       pass: config.pass || config.rpcPass,
       protocol: config.protocol
     });
-    const rpcChain = !config.isEVM ? chain : 'ETH';
+    const rpcChain = !config.isEVM ? this.chain : 'ETH';
     this.rpcs = {
-      [chain]: new RpcClasses[rpcChain](_config)
+      [this.chain]: new RpcClasses[rpcChain](this.config)
     };
     if (config.tokens) {
       for (const [token, tokenConfig] of Object.entries(config.tokens)) {
         const TokenClass = TokenClasses[rpcChain][tokenConfig.type];
-        const configForToken = Object.assign(tokenConfig, _config);
+        const configForToken = Object.assign(tokenConfig, this.config);
         this.rpcs[token] = new TokenClass(configForToken);
       }
     }
