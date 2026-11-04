@@ -4,12 +4,9 @@ import Lightning from 'lightning';
 export class LndRpc {
   constructor(config) {
     this.config = config;
-    const {
-      host,
-      port,
-      macaroon,
-      cert,
-    } = config;
+    const { host, macaroon, cert } = config;
+    // bitpay passes both the P2P port and the RPC port; the RPC port wins when present
+    const port = config.rpcPort || config.port;
     const socket = host + ':' + port;
     this.rpc = Lightning.authenticatedLndGrpc({ socket, macaroon, cert });
     this.unauthenticatedRpc = Lightning.unauthenticatedLndGrpc({ socket, cert });

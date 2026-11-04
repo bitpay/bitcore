@@ -8,13 +8,11 @@ const passwordPromptAsync = util.promisify(promptly.password);
 export class BtcRpc {
   constructor(config) {
     this.config = config;
-    const {
-      protocol,
-      host,
-      port,
-      user,
-      pass
-    } = config;
+    const { protocol, host } = config;
+    // bitpay passes both the P2P port and the RPC port; the RPC settings win when present
+    const port = config.rpcPort || config.port;
+    const user = config.rpcUser || config.user;
+    const pass = config.rpcPass || config.pass;
     this.rpc = new BitcoinRPC({ host, port, user, pass, protocol });
     this.emitter = new EventEmitter();
   }
