@@ -173,8 +173,12 @@ describe('SOL HTTP transport', function() {
   });
 });
 
-async function waitFor(condition) {
+async function waitFor(condition, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
   while (!condition()) {
+    if (Date.now() > deadline) {
+      throw new Error(`waitFor: condition not met within ${timeoutMs}ms: ${condition}`);
+    }
     await new Promise(resolve => setTimeout(resolve, 5));
   }
 }

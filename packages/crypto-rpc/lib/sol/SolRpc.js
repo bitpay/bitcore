@@ -45,7 +45,7 @@ export class SolRpc {
   }
 
   initRpcConnection() {
-    // node-fetch instead of native fetch: Node 24's fetch leaks sockets under sustained RPC load
+    // node-fetch instead of native fetch: Node 24's fetch leaks sockets under sustained RPC load (see bitpay 4a0bdbd386e)
     return SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(this.rpcUrl, { fetch: this.config.fetch }));
   }
 
