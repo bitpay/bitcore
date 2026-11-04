@@ -8,6 +8,9 @@ import { instructionKeys, parseJsonParsedInstructions } from '../lib/sol/transac
 
 const SYSTEM = '11111111111111111111111111111111';
 const TOKEN = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const MEMO = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+const ASSOCIATED_TOKEN = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
+const COMPUTE_BUDGET = 'ComputeBudget111111111111111111111111111111';
 
 describe('parseJsonParsedInstructions', function() {
   it('parses a system transfer the way top-level transferSol is shaped', function() {
@@ -53,6 +56,24 @@ describe('parseJsonParsedInstructions', function() {
     const createAccount = { programId: SYSTEM, program: 'system', parsed: { type: 'createAccount', info: {} } };
     const parsed = parseJsonParsedInstructions([createAccount]);
     expect(parsed[instructionKeys.UNKNOWN]).to.deep.equal([{ ...createAccount, programAddress: SYSTEM }]);
+  });
+
+  it('returns a memo as the plain string jsonParsed gives, unlike the object top-level memos are parsed into', function() {
+    const parsed = parseJsonParsedInstructions([{ programId: MEMO, program: 'spl-memo', parsed: 'hi' }]);
+    expect(parsed[instructionKeys.MEMO]).to.deep.equal(['hi']);
+  });
+
+  it('keeps associated token account instructions under unknown', function() {
+    const create = { programId: ASSOCIATED_TOKEN, program: 'spl-associated-token-account', parsed: { type: 'create', info: {} } };
+    const parsed = parseJsonParsedInstructions([create]);
+    expect(parsed[instructionKeys.UNKNOWN]).to.deep.equal([{ ...create, programAddress: ASSOCIATED_TOKEN }]);
+  });
+
+  it('keeps compute budget instructions under unknown', function() {
+    // jsonParsed doesn't parse compute budget instructions, so they come with raw accounts and data
+    const setComputeUnitLimit = { programId: COMPUTE_BUDGET, accounts: [], data: 'K1FDJ7', stackHeight: null };
+    const parsed = parseJsonParsedInstructions([setComputeUnitLimit]);
+    expect(parsed[instructionKeys.UNKNOWN]).to.deep.equal([{ ...setComputeUnitLimit, programAddress: COMPUTE_BUDGET }]);
   });
 });
 
