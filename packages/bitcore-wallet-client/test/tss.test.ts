@@ -863,18 +863,47 @@ describe('TSS', function() {
         delete obj.metadata.keygenChain;
         return new TssKey(obj);
       });
-      const params = (partyId: number) => ({ ...tssWalletParams(partyId), baseKey: legacyKeys[partyId] });
-      const { wallet } = await createTssWallet({ ...params(0), walletName, opts: { chain: 'matic' } });
+      const params = (partyId: number, credentials?: Credentials[]) => ({ ...tssWalletParams(partyId, credentials), baseKey: legacyKeys[partyId] });
+      const { wallet, credentials } = await createTssWallet({ ...params(0), walletName, opts: { chain: 'matic' } });
+      const maticCredentials = [credentials];
       for (const partyId of [1, 2]) {
-        (await joinTssWallet({ ...params(partyId), opts: { chain: 'matic' } })).wallet.id.should.equal(wallet.id);
+        const { wallet: joined, credentials } = await joinTssWallet({ ...params(partyId), opts: { chain: 'matic' } });
+        joined.id.should.equal(wallet.id);
+        maticCredentials.push(credentials);
+      }
+
+      // The keygen chain is stored on the key so that it isn't lost when the key is saved with the sibling wallet
+      for (const key of legacyKeys) {
+        key.metadata.keygenChain.should.equal(walletChain);
+        key.toObj().metadata.keygenChain.should.equal(walletChain);
+      }
+
+      // Use the sibling wallet as the base wallet
+      for (const [partyId, credentials] of maticCredentials.entries()) {
+        const client = getClient(credentials);
+        await client.openWallet();
+        maticCredentials[partyId] = client.credentials;
+      }
+      (await createTssWallet({ ...params(0, maticCredentials), walletName, opts: { chain: 'matic' } })).wallet.id.should.equal(wallet.id);
+      for (const partyId of [1, 2]) {
+        (await joinTssWallet({ ...params(partyId, maticCredentials), opts: { chain: 'matic' } })).wallet.id.should.equal(wallet.id);
       }
     });
 
-    it('should not create a sibling wallet on a network the key was not created for', async function() {
-      const walletCount = await countWallets();
-      await expectRejection(createSibling({ chain: 'arb', network: 'testnet' }), /Cannot create a testnet wallet with a livenet key/);
-      await expectRejection(joinSibling(1, { chain: 'arb', network: 'testnet' }), /Cannot join a testnet wallet with a livenet key/);
-      (await countWallets()).should.equal(walletCount);
+    it('should create a sibling wallet on another network with the copayer xPubKey of that network', async function() {
+      const { wallet, credentials } = await createSibling({ chain: 'arb', network: 'testnet' });
+      wallet.network.should.equal('sepolia'); // BWS normalizes EVM testnets
+      credentials.xPubKey.should.match(/^tpub/);
+      credentials.copayerId.should.equal(Utils.xPubToCopayerId('arb', credentials.xPubKey));
+      // Same key, only serialized for another network
+      new BitcoreLib.HDPublicKey(credentials.xPubKey).publicKey.toString()
+        .should.equal(new BitcoreLib.HDPublicKey(baseCredentials[0].xPubKey).publicKey.toString());
+
+      for (const partyId of [1, 2]) {
+        const { wallet: joined, credentials } = await joinSibling(partyId, { chain: 'arb', network: 'testnet' });
+        joined.id.should.equal(wallet.id);
+        credentials.xPubKey.should.match(/^tpub/);
+      }
     });
   });
 

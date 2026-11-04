@@ -154,6 +154,25 @@ describe('Sibling Wallets', function() {
       );
       assert.strictEqual(walletFileExists('singlesig_eth'), false);
     });
+
+    it('should save the keygen chain with sibling wallets of keys generated before it was stored', async function() {
+      for (const name of walletNames) {
+        const walletFile = readWalletFile(name);
+        delete walletFile.key.metadata.keygenChain;
+        fs.writeFileSync(path.join(tempDir, name + '.json'), JSON.stringify(walletFile));
+      }
+      for (const [partyId, name] of walletNames.entries()) {
+        const wallet = await loadWallet(name);
+        await wallet.createSiblingWallet({ walletName: `legacy_matic${partyId}`, chain: 'matic', network });
+        assert.strictEqual(readWalletFile(`legacy_matic${partyId}`).key.metadata.keygenChain, chain);
+      }
+      // The sibling wallets can be used as the base wallet
+      for (const partyId of [0, 1, 2]) {
+        const wallet = await loadWallet(`legacy_matic${partyId}`);
+        await wallet.createSiblingWallet({ walletName: `legacy_matic_to_base${partyId}`, chain: 'base', network });
+      }
+      assert.strictEqual(readWalletFile('legacy_matic_to_base2').credentials.walletId, readWalletFile('legacy_matic_to_base0').credentials.walletId);
+    });
   });
 
   describe('createsiblingwallet command', function() {

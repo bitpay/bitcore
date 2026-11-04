@@ -1296,8 +1296,16 @@ export class WalletService implements IWalletService {
 
         if (wallet.tssKeyId) {
           const keySession = await storage.fetchTssKeyGenSession({ id: wallet.tssKeyId });
-          const copayerId = Copayer.xPubToCopayerId(opts.tssKeygenChain || opts.chain, opts.xPubKey);
-          if (!keySession?.participants.includes(copayerId)) {
+          // A sibling wallet on another network (e.g. livenet -> testnet) has an xPubKey serialized for that network,
+          // but the keygen session's copayer IDs were derived from the xPubKey serialized for the session's network.
+          const idChain = opts.tssKeygenChain || opts.chain;
+          const copayerIds = new Set([
+            Copayer.xPubToCopayerId(idChain, opts.xPubKey), // this is probably a duplicate of one of the next two entries, but just in case.
+            Copayer.xPubToCopayerId(idChain, Utils.convertXPubKeyForNetwork(opts.xPubKey, idChain, 'livenet')),
+            Copayer.xPubToCopayerId(idChain, Utils.convertXPubKeyForNetwork(opts.xPubKey, idChain, 'testnet'))
+          ]);
+
+          if (!keySession?.participants.some(id => copayerIds.has(id))) {
             return cb(Errors.TSS_NON_PARTICIPANT);
           }
           return this._addCopayerToWallet(wallet, opts, cb);

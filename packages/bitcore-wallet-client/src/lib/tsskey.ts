@@ -64,6 +64,11 @@ export interface ITssKey extends Key {
      * Missing for keys generated before sibling wallet support.
      */
     keygenChain?: string;
+    /**
+     * Network of the key generation session. The session's copayer IDs are derived from the xPubKey serialized for this network.
+     * Missing for keys generated before sibling wallet support.
+     */
+    keygenNetwork?: string;
   };
 };
 
@@ -99,7 +104,8 @@ export class TssKey extends Key implements ITssKey {
         m: this.metadata.m,
         n: this.metadata.n,
         partyId: this.metadata.partyId,
-        keygenChain: this.metadata.keygenChain
+        keygenChain: this.metadata.keygenChain,
+        keygenNetwork: this.metadata.keygenNetwork
       } as ITssKey['metadata']
     };
   }
@@ -437,7 +443,8 @@ export class TssKeyGen extends EventEmitter {
     if (this.#keygen.isKeyChainReady()) {
       throw new Error('Cannot export a completed session. Run getKeyChain() instead.');
     }
-    return [this.id, this.partyId, this.m, this.n, this.#keygen.export()].join(':');
+    const roster = JSON.stringify(Object.entries(this.#roster));
+    return [this.id, this.partyId, this.m, this.n, roster, this.#keygen.export()].join(':');
   }
 
   /**
@@ -452,14 +459,15 @@ export class TssKeyGen extends EventEmitter {
   }): Promise<TssKeyGen> {
     const { session } = params;
     const parts = session.split(':');
-    const id = parts.slice(0, -4).join(':'); // id may contain colons, so we join all parts except the last 4
-    const [partyId, m, n, keygenSession] = parts.slice(-4);
+    const id = parts.slice(0, -5).join(':'); // id may contain colons, so we join all parts except the last 5
+    const [partyId, m, n, roster, keygenSession] = parts.slice(-5);
     this.id = id;
     this.m = parseInt(m);
     this.n = parseInt(n);
     this.partyId = parseInt(partyId);
     const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
     this.#keygen = keygen;
+    this.#roster = Object.fromEntries(JSON.parse(roster));
     return this;
   }
 
@@ -648,7 +656,8 @@ export class TssKeyGen extends EventEmitter {
           m: this.m,
           n: this.n,
           partyId: this.partyId,
-          keygenChain: this.#credentials.chain
+          keygenChain: this.#credentials.chain,
+          keygenNetwork: this.#credentials.network
         }
       });
       if (password) {
@@ -760,13 +769,13 @@ export async function createWallet(params: ITssWalletParams & {
   $.checkArgument(baseKey.metadata.partyId === 0, 'Only the TSS key session leader can create the wallet. Try calling joinWallet()');
 
   const keygenChain = getKeygenChain(baseKey, baseCredentials);
-  const parties = params.parties || getOtherParties(baseCredentials, keygenChain);
+  const keygenNetwork = getKeygenNetwork(baseKey, baseCredentials);
+  const parties = params.parties || getOtherParties(baseCredentials, keygenChain, keygenNetwork);
   if (Object.keys(parties).length !== baseKey.metadata.n - 1) {
     throw new Error('Missing the public keys of some TSS parties. Every party must join the base wallet first and baseCredentials must be up to date (see openWallet()).');
   }
 
   const { chain, coin, network } = getChainNetwork(baseCredentials, opts);
-  checkNetwork(baseCredentials, network, 'create');
   const client = new Client({ baseUrl, request });
   client.fromObj(getWalletCredentials({ baseKey, baseCredentials, chain, coin, network }).toObj());
 
@@ -782,7 +791,8 @@ export async function createWallet(params: ITssWalletParams & {
         coin,
         network,
         tssKeyId: baseKey.metadata.id,
-        tssKeygenChain: keygenChain
+        tssKeygenChain: keygenChain,
+        tssKeygenCopayerId: getKeygenCopayerId(baseCredentials, keygenChain, keygenNetwork)
       })
     ));
   } catch (err) {
@@ -805,8 +815,9 @@ export async function createWallet(params: ITssWalletParams & {
   for (const [party, publicKey] of Object.entries(parties)) {
     secrets[party] = ECIES.encrypt({ message: secret, publicKey, privateKey: c.requestPrivKey }).toString('hex');
   }
-  await getKeygenSessionRequest({ baseCredentials, keygenChain, baseUrl, request })
+  await getKeygenSessionRequest({ baseCredentials, keygenChain, keygenNetwork, baseUrl, request })
     .post(`/v1/tss/keygen/${baseKey.metadata.id}/secret`, { chain, network, secrets });
+  setKeygenSession(baseKey, keygenChain, keygenNetwork);
 
   addTssWalletInfo(c, wallet, walletName, copayerName, baseKey.metadata.id);
   return { wallet, credentials: c };
@@ -828,13 +839,14 @@ export async function joinWallet(params: ITssWalletParams & {
   $.checkArgument(baseKey instanceof TssKey, 'baseKey must be an instance of TssKey');
 
   const keygenChain = getKeygenChain(baseKey, baseCredentials);
+  const keygenNetwork = getKeygenNetwork(baseKey, baseCredentials);
   const { chain, coin, network } = getChainNetwork(baseCredentials, opts);
-  checkNetwork(baseCredentials, network, 'join');
   const credentials = getWalletCredentials({ baseKey, baseCredentials, chain, coin, network });
 
   const qs = new URLSearchParams({ chain, network });
-  const { body: { secret } } = await getKeygenSessionRequest({ baseCredentials, keygenChain, baseUrl, request })
+  const { body: { secret } } = await getKeygenSessionRequest({ baseCredentials, keygenChain, keygenNetwork, baseUrl, request })
     .get(`/v1/tss/keygen/${baseKey.metadata.id}/secret?${qs}`);
+  setKeygenSession(baseKey, keygenChain, keygenNetwork);
   const decryptedSecret = ECIES.decrypt({ payload: Buffer.from(secret, 'hex'), privateKey: credentials.requestPrivKey }).toString();
 
   const client = new Client({ baseUrl, request });
@@ -865,6 +877,21 @@ function getKeygenChain(baseKey: TssKey, baseCredentials: Credentials): string {
   return baseKey.metadata.keygenChain || baseCredentials.chain;
 }
 
+/** Network of the key generation session, which the xPubKey in the session's copayer IDs is serialized for */
+function getKeygenNetwork(baseKey: TssKey, baseCredentials: Credentials): string {
+  return baseKey.metadata.keygenNetwork || baseCredentials.network;
+}
+
+/**
+ * Store the keygen chain and network on keys generated before they were stored. Call it only after BWS accepted a
+ * keygen session request made with them, which confirms them. Otherwise, a sibling wallet saved with the key would
+ * fall back to the sibling's chain and network.
+ */
+function setKeygenSession(baseKey: TssKey, keygenChain: string, keygenNetwork: string) {
+  baseKey.metadata.keygenChain ??= keygenChain;
+  baseKey.metadata.keygenNetwork ??= keygenNetwork;
+}
+
 function getChainNetwork(baseCredentials: Credentials, opts: { chain?: string; coin?: string; network?: string }) {
   const chain = (opts.chain || baseCredentials.chain).toLowerCase();
   return {
@@ -874,20 +901,29 @@ function getChainNetwork(baseCredentials: Credentials, opts: { chain?: string; c
   };
 }
 
-/** The copayer xPubKey is network-specific, so BWS only accepts it for wallets on the same type of network */
-function checkNetwork(baseCredentials: Credentials, network: string, action: 'create' | 'join') {
-  const isLivenet = (n: string) => ['livenet', 'mainnet'].includes(n);
-  if (isLivenet(network) !== isLivenet(baseCredentials.network)) {
-    throw new Error(`Cannot ${action} a ${network} wallet with a ${baseCredentials.network} key`);
-  }
+/**
+ * Serialize an xPubKey for another network. The key itself doesn't change, only its version bytes do.
+ * Like Key.convertXPrivKeyToNetwork(), anything but testnet/regtest is livenet.
+ */
+function convertXPubKeyToNetwork(xPubKey: string, network: string): string {
+  const x = new BitcoreLib.HDPublicKey(xPubKey).toObject();
+  x.network = ['testnet', 'regtest'].includes(network) ? network : 'livenet';
+  delete x.xpubkey;
+  delete x.checksum;
+  return new BitcoreLib.HDPublicKey(x).toString();
+}
+
+/** This party's copayer ID in the keygen session */
+function getKeygenCopayerId(baseCredentials: Credentials, keygenChain: string, keygenNetwork: string): string {
+  return Utils.xPubToCopayerId(keygenChain, convertXPubKeyToNetwork(baseCredentials.xPubKey, keygenNetwork));
 }
 
 /** Auth (request) public keys of the other copayers, keyed by keygen session copayer ID */
-function getOtherParties(baseCredentials: Credentials, keygenChain: string) {
+function getOtherParties(baseCredentials: Credentials, keygenChain: string, keygenNetwork: string) {
   const parties: { [copayerId: string]: string } = {};
   for (const copayer of baseCredentials.publicKeyRing || []) {
     if (copayer.requestPubKey !== baseCredentials.requestPubKey) {
-      parties[Utils.xPubToCopayerId(keygenChain, copayer.xPubKey)] = copayer.requestPubKey;
+      parties[Utils.xPubToCopayerId(keygenChain, convertXPubKeyToNetwork(copayer.xPubKey, keygenNetwork))] = copayer.requestPubKey;
     }
   }
   return parties;
@@ -902,12 +938,15 @@ function getWalletCredentials(params: {
   network: string;
 }) {
   const { baseKey, baseCredentials, chain, coin, network } = params;
+  // The copayer xPubKey is network-specific, so serialize it for the wallet's network
+  const xPubKey = convertXPubKeyToNetwork(baseCredentials.xPubKey, network);
   return Credentials.fromObj({
     ...baseCredentials.toObj(),
     chain,
     coin,
     network,
-    copayerId: Utils.xPubToCopayerId(chain, baseCredentials.xPubKey),
+    xPubKey,
+    copayerId: Utils.xPubToCopayerId(chain, xPubKey),
     clientDerivedPublicKey: baseKey.getXPubKey(network),
     // Clear the base wallet's info
     walletId: undefined,
@@ -924,14 +963,15 @@ function getWalletCredentials(params: {
 function getKeygenSessionRequest(params: {
   baseCredentials: Credentials;
   keygenChain: string;
+  keygenNetwork: string;
   baseUrl: string;
   request?: Request;
 }) {
-  const { baseCredentials, keygenChain, baseUrl, request } = params;
+  const { baseCredentials, keygenChain, keygenNetwork, baseUrl, request } = params;
   const keygenCredentials = Credentials.fromObj({
     ...baseCredentials.toObj(),
     chain: keygenChain,
-    copayerId: Utils.xPubToCopayerId(keygenChain, baseCredentials.xPubKey)
+    copayerId: getKeygenCopayerId(baseCredentials, keygenChain, keygenNetwork)
   });
   const keygenRequest = new Request(baseUrl, { r: request });
   keygenRequest.setCredentials(keygenCredentials);

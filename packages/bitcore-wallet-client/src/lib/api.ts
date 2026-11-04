@@ -1049,7 +1049,6 @@ export class API extends EventEmitter {
       const c = this.credentials;
       c.addWalletPrivateKey(walletPrivKey.toString());
       const encWalletName = Utils.encryptMessage(walletName, c.sharedEncryptingKey);
-
       const args = {
         name: encWalletName,
         m,
@@ -1067,7 +1066,7 @@ export class API extends EventEmitter {
         clientDerivedPublicKey: c.clientDerivedPublicKey,
         tssVersion: opts.tssVersion,
         tssKeyId: opts.tssKeyId,
-        tssKeygenCopayerId: opts.tssKeygenChain ? Utils.xPubToCopayerId(opts.tssKeygenChain, c.xPubKey) : undefined,
+        tssKeygenCopayerId: opts.tssKeygenCopayerId,
       };
       const { body: res } = await this.request.post('/v2/wallets/', args);
 
@@ -4219,6 +4218,12 @@ export interface CreateWalletOpts {
    * e.g., 'the TSS keygen session was for 'eth', but the wallet being joined is on 'arb'
    */
   tssKeygenChain?: string;
+  /**
+   * The copayer ID of the wallet creator in the TSS keygen session.
+   * Needed when the wallet's network differs from the keygen session's, since the ID depends on the network the xPubKey is serialized for.
+   * Default: derived from the credentials' xPubKey and `tssKeygenChain`
+   */
+  tssKeygenCopayerId?: string;
 };
 
 

@@ -571,5 +571,21 @@ export const Utils = {
     return retval;
   },
 
-  sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  },
+
+  convertXPubKeyForNetwork(xPubKey: string, chain: string, network: string) {
+    const lib = Bitcore_[chain] || BitcoreLib;
+    const hdPubKey = lib.HDPublicKey(xPubKey);
+    const newHdPubKey = new BitcoreLib.HDPublicKey({
+      network: BitcoreLib.Networks.get(network),
+      depth: hdPubKey.depth,
+      parentFingerPrint: hdPubKey.parentFingerPrint,
+      childIndex: hdPubKey.childIndex,
+      chainCode: hdPubKey.chainCode,
+      publicKey: hdPubKey.publicKey
+    });
+    return newHdPubKey.toString();
+  }
 };
