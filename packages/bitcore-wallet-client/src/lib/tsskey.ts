@@ -340,8 +340,8 @@ export class TssKeyGen extends EventEmitter {
   }): Promise<string> {
     const { partyId, partyPubKey, opts } = params;
     const extra = params.extra || '';
-    this.#roster[partyId] = partyPubKey;
     await this.#request.post('/v1/tss/keygen/' + this.id + '/register', { partyId, partyPubKey });
+    this.#roster[partyId] = partyPubKey;
     const data = [this.id, partyId, this.chain, this.network, this.m, this.n, extra].join(':');
     const code = ECIES.encrypt({
       message: data,
