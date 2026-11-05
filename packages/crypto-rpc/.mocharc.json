@@ -1,5 +1,5 @@
 {
   "exit": true,
   "recursive": true,
-  "extension": ".js"
+  "spec": "ts_build/test/**/*.test.js"
 }

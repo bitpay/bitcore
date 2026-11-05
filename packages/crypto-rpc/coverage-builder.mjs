@@ -13,7 +13,7 @@ import EC from 'eight-colors';
  * @return config for coverage
  */
 const coverageBuilder = (thresholds) => {
-  const allDirs = ['src', 'lib', 'build/src', 'ts_build/src', 'ecdsa', 'ecies'];
+  const allDirs = ['src', 'lib', 'build/src', 'ts_build/src', 'ts_build/lib', 'ts_build/index.js', 'ecdsa', 'ecies'];
   const dirs = allDirs.filter(dir => fs.existsSync(dir));
 
   return {

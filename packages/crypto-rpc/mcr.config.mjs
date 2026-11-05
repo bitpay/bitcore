@@ -1,5 +1,5 @@
 // @ts-check
-import builder from './coverage-builder.js';
+import builder from './coverage-builder.mjs';
 
 
 /**

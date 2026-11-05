@@ -2,8 +2,33 @@
   "name": "@bitpay-labs/crypto-rpc",
   "version": "11.11.5",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
-  "main": "index.js",
-  "type": "module",
+  "main": "./ts_build/index.js",
+  "types": "./ts_build/index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./ts_build/index.d.ts",
+      "default": "./ts_build/index.js"
+    },
+    "./lib/*.js": {
+      "types": "./ts_build/lib/*.d.ts",
+      "default": "./ts_build/lib/*.js"
+    },
+    "./lib/*": {
+      "types": "./ts_build/lib/*.d.ts",
+      "default": "./ts_build/lib/*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "lib/*": ["ts_build/lib/*"]
+    }
+  },
+  "files": [
+    "ts_build",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -12,7 +37,10 @@
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/crypto-rpc"
   },
   "scripts": {
-    "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && mcr mocha test",
+    "build": "tsc",
+    "clean": "rm -rf ts_build && tsc --version",
+    "compile": "npm run clean && npm run build",
+    "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && npm run compile && mcr mocha",
     "docker:test:build": "docker compose build",
     "docker:test:down": "docker compose down",
     "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
@@ -29,8 +57,10 @@
     "@bitpay-labs/crypto-wallet-core": "^11.11.5",
     "@solana-program/address-lookup-table": "0.7.0",
     "@solana/fast-stable-stringify": "2.1.0",
+    "@solana/functional": "2.3.0",
     "@solana/rpc-spec-types": "2.1.0",
     "bitcoind-rpc": "0.9.1",
+    "bs58": "5.0.0",
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
     "lightning": "10.0.1",
@@ -40,9 +70,14 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.9",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.7.5",
+    "@types/sinon": "^22.0.2",
     "chai": "^6.2.1",
     "hardhat": "^2.22.18",
     "monocart-coverage-reports": "^2.13.0",
-    "sinon": "^21.0.0"
+    "sinon": "^21.0.0",
+    "typescript": "~6.0.3"
   }
 }
