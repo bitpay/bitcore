@@ -84,6 +84,10 @@ export class EthChain implements IChain {
     return true;
   }
 
+  protected getAdditionalNativeAmount(_txp: TxProposal): bigint {
+    return 0n;
+  }
+
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
 
@@ -106,18 +110,22 @@ export class EthChain implements IChain {
         let fees = 0n;
         let amounts = 0n;
 
-        txps.filter(txp => {
-          // Add gas used for tokens when getting native balance
-          if (!opts.tokenAddress) {
-            fees += txp.fee ? BigInt(txp.fee) : 0n;
-          }
-          // Filter tokens when getting native balance
-          if (txp.tokenAddress && !opts.tokenAddress) {
-            return false;
-          }
-          amounts += txp.amount ? BigInt(txp.amount) : 0n;
-          return true;
-        });
+        try {
+          txps.filter(txp => {
+            // Add gas used for tokens when getting native balance
+            if (!opts.tokenAddress) {
+              fees += txp.fee ? BigInt(txp.fee) : 0n;
+            }
+            // Filter tokens when getting native balance
+            if (txp.tokenAddress && !opts.tokenAddress) {
+              return false;
+            }
+            amounts += BigInt(txp.amount || 0) + this.getAdditionalNativeAmount(txp);
+            return true;
+          });
+        } catch (err) {
+          return cb(err);
+        }
 
         // TODO support big int
         const lockedSum = Number(amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
@@ -482,10 +490,15 @@ export class EthChain implements IChain {
             "gasLimit":200000
         }]
         */
-        const txpTotalAmount =
-          (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
-            ? getInvoiceValue(txp)
-            : txp.getTotalAmountBigInt();
+        let txpTotalAmount;
+        try {
+          txpTotalAmount =
+            (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
+              ? getInvoiceValue(txp)
+              : txp.getTotalAmountBigInt() + this.getAdditionalNativeAmount(txp);
+        } catch (err) {
+          return cb(err);
+        }
 
         if (totalAmount < txpTotalAmount) {
           return cb(Errors.INSUFFICIENT_FUNDS);

@@ -4,6 +4,7 @@ import { IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import logger from './../logger';
 import { ArbChain } from './arb';
+import { ArcChain } from './arc';
 import { BaseChain } from './base';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
@@ -24,6 +25,7 @@ const chains: { [chain: string]: IChain } = {
   ETH: new EthChain(),
   MATIC: new MaticChain(),
   ARB: new ArbChain(),
+  ARC: new ArcChain(),
   BASE: new BaseChain(),
   OP: new OpChain(),
   XRP: new XrpChain(),

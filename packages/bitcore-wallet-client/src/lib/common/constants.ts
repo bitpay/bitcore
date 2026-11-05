@@ -58,6 +58,7 @@ export const Constants = {
   ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,
   BASE_TOKEN_OPTS: CWC.Constants.BASE_TOKEN_OPTS,
   OP_TOKEN_OPTS: CWC.Constants.OP_TOKEN_OPTS,
+  ARC_TOKEN_OPTS: CWC.Constants.ARC_TOKEN_OPTS,
   SOL_TOKEN_OPTS: CWC.Constants.SOL_TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS,
   EVM_CHAINSUFFIXMAP: {
@@ -66,6 +67,7 @@ export const Constants = {
     arb: 'arb',
     base: 'base',
     op: 'op',
+    arc: 'arc',
   },
 
   TSS_KEYGEN_VERSION: 1.2,

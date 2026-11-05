@@ -3,6 +3,7 @@ import { LRUCache } from 'lru-cache';
 import logger from '../../../logger';
 import { CacheStorage } from '../../../models/cache';
 import { WalletAddressStorage } from '../../../models/walletAddress';
+import { getArcUsdcEffects } from '../../../providers/chain-state/evm/api/arc';
 import { BaseEVMStateProvider } from '../../../providers/chain-state/evm/api/csp';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
@@ -21,7 +22,7 @@ import {
 } from '../../../types/namespaces/ChainStateProvider';
 import { normalizeChainNetwork } from '../../../utils';
 import { EthDater } from '../../../utils/ethDater';
-import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
+import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../utils/streamWithEventPipe';
 import type { MongoBound } from '../../../models/base';
 import type {
   BuildWalletTxsStreamParams,
@@ -31,6 +32,8 @@ import type { EVMTransactionJSON, IEVMBlock } from '../../../providers/chain-sta
 import type { IIndexedAPIAdapter } from '../../../providers/chain-state/external/adapters/IIndexedAPIAdapter';
 import type { IBlock } from '../../../types/Block';
 import type { IMultiProviderConfig } from '../../../types/Config';
+
+class ArcReceiptError extends Error {}
 
 interface ProviderWithHealth {
   adapter: IIndexedAPIAdapter;
@@ -220,7 +223,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       if (!provider.health.isAvailable()) continue;
 
       try {
-        let txStream: ExternalApiStream;
+        let txStream: ExternalApiStream | TransformWithEventPipe;
 
         if (resolvedArgs.tokenAddress) {
           txStream = provider.adapter.streamERC20Transfers({
@@ -241,9 +244,31 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
           });
         }
 
+        if (this.chain === 'ARC' && !resolvedArgs.tokenAddress) {
+          const source = txStream;
+          txStream = source.eventPipe(new TransformWithEventPipe({
+            objectMode: true,
+            transform: async (tx, _, done) => {
+              try {
+                const receipt = await this.getReceipt(network, tx.txid);
+                if (!Array.isArray(receipt?.logs)) throw new Error(`Missing Arc receipt logs for ${tx.txid}`);
+                tx.effects = getArcUsdcEffects(receipt.logs, tx.effects);
+                done(null, tx);
+              } catch (err) {
+                done(new ArcReceiptError(err instanceof Error ? err.message : String(err), { cause: err }));
+              }
+            }
+          }));
+          txStream.once('close', () => source.destroy());
+        }
+
         // Preflight: wait for first data item or error before committing to this provider
         const preflight = await this._preflightStream(txStream, PREFLIGHT_TIMEOUT_MS);
         if (!preflight.success) {
+          if (preflight.error instanceof ArcReceiptError) {
+            txStream.destroy();
+            throw preflight.error;
+          }
           provider.health.recordFailure(preflight.error || new Error('preflight failed'));
           logger.warn(`MultiProvider: ${provider.adapter.name} preflight failed for ${address}: ${preflight.error?.message}`);
           txStream.destroy();
@@ -260,6 +285,9 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         logger.debug(`MultiProvider: ${provider.adapter.name} streaming ${address} on ${this.chain}:${network}`);
         // PassThrough prepends the buffered first item to the stream
         const wrapper = new PassThrough({ objectMode: true });
+        if (this.chain === 'ARC' && !resolvedArgs.tokenAddress) {
+          wrapper.once('close', () => txStream.destroy());
+        }
         txStream.on('error', (err) => {
           logger.warn(`MultiProvider: ${provider.adapter.name} mid-stream error for ${address}: ${err.message}`);
           if (err instanceof AdapterError && err.affectsHealth) {
@@ -277,6 +305,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         txStream.pipe(wrapper);
         return wrapper;
       } catch (error) {
+        if (error instanceof ArcReceiptError) throw error;
         if (error instanceof AdapterError && (error as AdapterError).code === AdapterErrorCode.INVALID_REQUEST) throw error; // 400 — no failover
         provider.health.recordFailure(error as Error);
         logger.warn(`MultiProvider: ${provider.adapter.name} stream failed for ${address}: ${(error as Error).message}`);
@@ -288,7 +317,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     throw new AllProvidersUnavailableError('streamAddressTransactions', this.chain, network);
   }
 
-  private _preflightStream(stream: ExternalApiStream, timeoutMs: number): Promise<{
+  private _preflightStream(stream: Readable, timeoutMs: number): Promise<{
     success: boolean;
     firstItem?: any;
     error?: Error;

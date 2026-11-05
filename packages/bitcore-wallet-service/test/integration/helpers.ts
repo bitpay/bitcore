@@ -555,6 +555,7 @@ class Helpers {
 
     switch (txp.coin) {
       case 'eth':
+      case 'arc':
       case 'xrp':
         // For eth => account, 0, change = 0
         const priv = xpriv.derive('m/0/0').privateKey;

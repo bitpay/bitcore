@@ -12,6 +12,8 @@ import { MultisigRelatedFilterTransform } from '../../../src/providers/chain-sta
 import * as MultisigTransformModule from '../../../src/providers/chain-state/evm/api/multisigTransform';
 import { Config } from '../../../src/services/config';
 import { EVMListTransactionsStream } from '../../../src/providers/chain-state/evm/api/transform';
+import { BaseEVMStateProvider } from '../../../src/providers/chain-state/evm/api/csp';
+import { getArcUsdcEffects } from '../../../src/providers/chain-state/evm/api/arc';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { BitcoinTransaction, TransactionInput } from '../../../src/types/namespaces/Bitcoin';
@@ -221,6 +223,90 @@ describe('Transaction Model', function() {
   });
 
   describe('EVM', function() {
+    describe('Arc native USDC history', function() {
+      const sender = Web3.utils.toChecksumAddress('0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+      const recipient = Web3.utils.toChecksumAddress('0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+      const usdc = '0x3600000000000000000000000000000000000000';
+      const emitter = '0xfffffffffffffffffffffffffffffffffffffffe';
+      const abi = new Web3().eth.abi;
+      const transferLog = (from: string, to: string, amount: string, address = emitter) => ({
+        address, logIndex: 0, data: abi.encodeParameter('uint256', amount),
+        topics: [abi.encodeEventSignature('Transfer(address,address,uint256)'),
+          abi.encodeParameter('address', from), abi.encodeParameter('address', to)]
+      });
+      const makeTx = (overrides: Record<string, any> = {}) => ({
+        _id: new ObjectId(), chain: 'ARC', network: 'testnet', txid: 'arc-tx',
+        from: sender, to: recipient, value: '0', blockHeight: 123,
+        gasPrice: 0, gasLimit: 0, fee: 0, effects: [], ...overrides
+      });
+
+      it('should stream native, ERC20 and internal USDC transfers once in native units', async () => {
+        sandbox.stub(BaseEVMStateProvider, 'initializeRpcs');
+        const provider = new BaseEVMStateProvider('ARC');
+        sandbox.stub(provider, 'getWeb3').resolves({ web3: new Web3() } as any);
+        const getWalletAddresses = sandbox.stub(provider, 'getWalletAddresses');
+        sandbox.stub(EVMTransactionStorage, 'collection').get(() => ({ updateOne: sandbox.stub().resolves() }));
+        const contract = Web3.utils.toChecksumAddress('0xcccccccccccccccccccccccccccccccccccccccc');
+        const makeTxs = () => [
+          makeTx({ txid: 'native', value: '1000000000000000001' }),
+          makeTx({ txid: 'erc20' }),
+          makeTx({ txid: 'internal', from: contract, value: '500000000000000000' })
+        ];
+        const logs = {
+          native: [transferLog(sender, recipient, '1000000000000000001')],
+          erc20: [transferLog(sender, recipient, '1000000000000000000'), transferLog(sender, recipient, '1000000', usdc)],
+          internal: [0, 1].map(logIndex => ({ ...transferLog(contract, recipient, '500000000000000000'), logIndex }))
+        };
+        const getReceipt = sandbox.stub(provider, 'getReceipt').callsFake(async (_network, txid) => ({
+          status: true, gasUsed: 21000, logs: logs[txid]
+        }));
+        sandbox.stub(provider, '_buildWalletTransactionsStream').callsFake(async (_params, { transactionStream }) => ({
+          stream: Readable.from(makeTxs()).pipe(transactionStream)
+        }));
+        const collect = async (walletAddress = recipient) => {
+          getWalletAddresses.resolves([{ address: walletAddress }] as any);
+          const stream = await provider.streamWalletTransactions({ chain: 'ARC', network: 'testnet',
+            wallet: { _id: new ObjectId() }, args: {} } as any);
+          const rows: any[] = [];
+          for await (const row of stream) rows.push(JSON.parse(row.toString()));
+          return rows;
+        };
+
+        const received = await collect();
+        expect(received.map(row => row.satoshis)).to.deep.equal([
+          '1000000000000000001', '1000000000000000000', '1000000000000000000'
+        ]);
+        expect(received.every(row => row.category === 'receive')).to.equal(true);
+        const sent = await collect(sender);
+        expect(sent.map(row => row.satoshis)).to.deep.equal(['-1000000000000000001', '-1000000000000000000']);
+        expect(sent.every(row => row.category === 'send')).to.equal(true);
+
+        getReceipt.rejects(new Error('Arc receipt unavailable'));
+        try {
+          await collect();
+          expect.fail('Expected Arc receipt error');
+        } catch (err: any) {
+          expect(err.message).to.equal('Arc receipt unavailable');
+        }
+      });
+
+      it('should report self-transfers, failed transactions and relayed USDC sends', async () => {
+        const txs = [
+          makeTx({ from: recipient, value: '1000000000000000000', receipt: { status: true }, fee: 525000000000000 }),
+          makeTx({ from: recipient, to: sender, value: '1000000000000000000', receipt: { status: false }, fee: 525000000000000 }),
+          makeTx({ to: usdc, receipt: { status: true },
+            effects: getArcUsdcEffects([transferLog(recipient, sender, '1000000000000000000')]) })
+        ];
+        const rows = await collectEvmListTransactionRows([recipient], undefined, txs);
+        expect(rows.map(row => [row.category, row.satoshis, row.fee])).to.deep.equal([
+          ['move', '1000000000000000000', 525000000000000], ['send', '0', 525000000000000],
+          ['send', '-1000000000000000000', 0]
+        ]);
+        expect(rows[2].initialFrom).to.equal(sender);
+        expect(rows[2].from).to.equal(recipient);
+      });
+    });
+
     describe('EVM token wallet history filtering', function() {
       beforeEach(() => {
         sandbox.stub(Config, 'chainConfig').returns({ leanTransactionStorage: false } as any);
