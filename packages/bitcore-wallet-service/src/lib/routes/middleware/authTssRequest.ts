@@ -11,9 +11,7 @@ import type { ITssSigMessageObject, TssSigGenModel } from '../../model/tsssign';
 function verifyMessage(req: express.Request, signature: string, pubKey: string) {
   const message = getMessage(req);
   const isValid = !!Utils.verifyMessage(message, signature, pubKey);
-  if (!isValid) {
-    throw Errors.NOT_AUTHORIZED.withMessage('Invalid signature');
-  }
+  return isValid;
 }
 
 /**
@@ -46,7 +44,10 @@ export function authTssKeyGenRequest(): express.RequestHandler {
         // This is a brand new session. Caller should be party 0 with the initial round message.
         if (body?.message?.round === 0 && body?.message?.partyId === 0) {
           const pubKey = body?.message?.publicKey;
-          verifyMessage(req, signature, pubKey); // Self verification, but at least ensures that the caller owns the message's private key
+          if (!verifyMessage(req, signature, pubKey)) {
+            // Self verification, but at least ensures that the caller owns the message's private key
+            throw Errors.NOT_AUTHORIZED.withMessage('Invalid signature');
+          }
           return next();
         } else {
           // Session should have been initialized by the client already in BWC > TssKeyGen.newKey()
@@ -103,7 +104,9 @@ export function authTssKeyGenRequest(): express.RequestHandler {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
       }
 
-      verifyMessage(req, signature, pubKey);
+      if (!verifyMessage(req, signature, pubKey)) {
+        throw Errors.NOT_AUTHORIZED.withMessage('Invalid signature');
+      }
     
       req.session = session;
       return next();
@@ -116,7 +119,8 @@ export function authTssKeyGenRequest(): express.RequestHandler {
   };
 };
 
-export function authTssSignRequest(): express.RequestHandler {
+export function authTssSignRequest(params: { joinable?: boolean } = {}): express.RequestHandler {
+  const { joinable } = params;
   return async function(req, res, next) {
     try {
       const storage = WalletService.getStorage();
@@ -132,16 +136,22 @@ export function authTssSignRequest(): express.RequestHandler {
       
       const { id } = req.params as { [key: string]: string };
       const body = req.body as { message: ITssSigMessageObject | undefined };
-      // Only some requests carry a body.message (e.g. POST /store only sends the final signature).
-      //  Omitting it is safe since routes that don't receive a message don't consume one.
-      const verifyMsg = !!body?.message;
 
       const copayer = await storage.fetchCopayerLookup(copayerId);
       if (!copayer) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found');
       }
-      const pubKey = copayer.requestPubKeys[0].key;
-      if (verifyMsg && pubKey !== body?.message?.publicKey) {
+      // I'm not aware of an instance where copayer.requestPubKeys.length > 1, but we iterate over them to find the key for the given signature.
+      const pubKey = copayer.requestPubKeys.find(pubKey => verifyMessage(req, signature, pubKey.key))?.key;
+      if (!pubKey) {
+        throw Errors.NOT_AUTHORIZED.withMessage('Invalid signature');
+      }
+
+      // Only some requests carry a body.message (e.g. POST /store only sends the final signature).
+      // Omitting it is safe since routes that don't receive a message don't change state.
+      // `verifyMsgFields` just indicates whether to check the message's fields for expected values (e.g. publicKey, partyId).
+      const verifyMsgFields = !!body?.message;
+      if (verifyMsgFields && pubKey !== body?.message?.publicKey) {
         throw Errors.NOT_AUTHORIZED.withMessage('Invalid public key');
       }
 
@@ -152,10 +162,12 @@ export function authTssSignRequest(): express.RequestHandler {
           throw Errors.TSS_SESSION_EXPIRED;
         }
         const party = session.participants.find(p => p.copayerId === copayerId);
-        if (!party) {
+        // A copayer joins an existing session by sending its round 0 message (participant is added in TssSign.processMessage)
+        const isJoining = !party && body?.message?.round === 0;
+        if (!party && !(joinable && isJoining)) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
-        if (verifyMsg && party.partyId !== body?.message?.partyId) {
+        if (verifyMsgFields && party && party.partyId !== body?.message?.partyId) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
 
@@ -164,7 +176,6 @@ export function authTssSignRequest(): express.RequestHandler {
         throw Errors.TSS_SESSION_NOT_FOUND;
       }
       
-      verifyMessage(req, signature, pubKey);
       return next();
     } catch (err) {
       if (err instanceof ClientError) {

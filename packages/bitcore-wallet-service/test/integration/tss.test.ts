@@ -1,5 +1,6 @@
 import sinon from 'sinon';
 import 'chai/register-should';
+import { utils as tssUtils } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import request from 'supertest';
 import * as twoOfThree from './data/tss/2of3';
@@ -472,6 +473,14 @@ describe('TSS', function() {
           const res = await post(path, { message }, partyAuth(0));
           expectError(res, 400, 'TSS_INVALID_MESSAGE');
         });
+
+        it('should error if messages are empty arrays for an existing session', async function() {
+          // keygen sessions have no `m`, so the 1-of-N signing exemption must not apply here
+          await createKeyGenSession({ joined: [1, 2] });
+          const message = { ...round1Message(0), broadcastMessages: [], p2pMessages: [] };
+          const res = await post(path, { message }, partyAuth(0));
+          expectError(res, 400, 'TSS_INVALID_MESSAGE');
+        });
       });
 
       describe('joining a v1.2 session', function() {
@@ -878,6 +887,16 @@ describe('TSS', function() {
     describe('POST /v1/tss/sign/:id', function() {
       const path = `/v1/tss/sign/${SESSION_ID}`;
 
+      /** A round message with a broadcast signed by the party's auth key, as round 0 always has */
+      const broadcastMessage = (partyId: number, round = 0) => ({
+        ...sigMessage(partyId),
+        round,
+        broadcastMessages: [{
+          from: partyId,
+          payload: tssUtils.detachSignData(Buffer.from(`round ${round} from party ${partyId}`), parties[partyId].authKey)
+        }]
+      });
+
       it('should error if session is expired', async function() {
         await createSigSession({ timeLimit: 1 });
         expireSession();
@@ -885,6 +904,90 @@ describe('TSS', function() {
         const message = { ...sigMessage(1), round: 1, p2pMessages: [{ payload: { encryptedMessage: 'encryptie', signature: 'siggie' } }] };
         const res = await post(path, { message }, partyAuth(1));
         expectError(res, 400, 'TSS_SESSION_EXPIRED');
+      });
+
+      it('should start a new session with party 0\'s round 0 message', async function() {
+        const res = await post(path, { message: broadcastMessage(0), m: 2, version: 1.1 }, partyAuth(0));
+        res.status.should.equal(200);
+
+        const session = await storage.fetchTssSigSession({ id: SESSION_ID });
+        session.m.should.equal(2);
+        session.participants.should.deep.equal([{ partyId: 0, copayerId: copayerIds[0] }]);
+      });
+
+      it('should let another copayer join with its round 0 message', async function() {
+        (await post(path, { message: broadcastMessage(0), m: 2, version: 1.1 }, partyAuth(0))).status.should.equal(200);
+
+        const res = await post(path, { message: broadcastMessage(1), version: 1.1 }, partyAuth(1));
+        res.status.should.equal(200);
+
+        const session = await storage.fetchTssSigSession({ id: SESSION_ID });
+        session.participants.should.deep.equal([
+          { partyId: 0, copayerId: copayerIds[0] },
+          { partyId: 1, copayerId: copayerIds[1] }
+        ]);
+        session.getCurrentRound().should.equal(1);
+      });
+
+      it('should error if a copayer joins a full session', async function() {
+        await createSigSession();
+        const res = await post(path, { message: broadcastMessage(2), version: 1.1 }, partyAuth(2));
+        expectError(res, 400, 'TSS_MAX_PARTICIPANTS_REACHED');
+      });
+
+      it('should error if a non-participant sends a message for a later round', async function() {
+        await createSigSession();
+        const res = await post(path, { message: broadcastMessage(2, 1), version: 1.1 }, partyAuth(2));
+        expectError(res, 401, 'NOT_AUTHORIZED', 'Copayer not found in session');
+      });
+
+      it('should error if messages are empty arrays in an m > 1 session', async function() {
+        await createSigSession();
+        const message = { ...sigMessage(0), round: 1 };
+        const res = await post(path, { message, version: 1.1 }, partyAuth(0));
+        expectError(res, 400, 'TSS_INVALID_MESSAGE');
+      });
+
+      describe('1-of-N session', function() {
+        const start = () => post(path, { message: broadcastMessage(0), m: 1, version: 1.1 }, partyAuth(0));
+
+        it('should accept rounds that have no messages for other parties', async function() {
+          (await start()).status.should.equal(200);
+
+          // A lone signer has no recipients, so only rounds 0 and 3 carry a (broadcast) message
+          for (const round of [1, 2, 3, 4]) {
+            const message = round === 3 ? broadcastMessage(0, round) : { ...sigMessage(0), round };
+            const res = await post(path, { message, version: 1.1 }, partyAuth(0));
+            res.status.should.equal(200, `round ${round}: ${res.text}`);
+          }
+
+          const session = await storage.fetchTssSigSession({ id: SESSION_ID });
+          session.rounds.length.should.equal(5);
+          session.getCurrentRound().should.equal(5);
+
+          const res = await get(`/v1/tss/sign/${SESSION_ID}/4?maxWaitTime=0`, partyAuth(0));
+          res.status.should.equal(200);
+          JSON.parse(res.text).messages.should.deep.equal([]);
+        });
+
+        it('should error if round 0 has no broadcast message', async function() {
+          const res = await post(path, { message: sigMessage(0), m: 1, version: 1.1 }, partyAuth(0));
+          expectError(res, 400, 'TSS_INVALID_MESSAGE');
+        });
+
+        it('should still verify broadcast signatures', async function() {
+          (await start()).status.should.equal(200);
+          const message = broadcastMessage(0, 1);
+          message.broadcastMessages[0].payload = tssUtils.detachSignData(Buffer.from('forged'), randomKey());
+          const res = await post(path, { message, version: 1.1 }, partyAuth(0));
+          expectError(res, 400, 'TSS_INVALID_MESSAGE_SIG');
+        });
+
+        it('should error if another copayer tries to join', async function() {
+          (await start()).status.should.equal(200);
+          const res = await post(path, { message: broadcastMessage(1), version: 1.1 }, partyAuth(1));
+          expectError(res, 400, 'TSS_MAX_PARTICIPANTS_REACHED');
+        });
       });
     });
 
