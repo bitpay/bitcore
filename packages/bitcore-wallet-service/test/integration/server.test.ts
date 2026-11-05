@@ -1775,6 +1775,57 @@ describe('Wallet service', function() {
         wallet.copayers.length.should.equal(0);
       });
     });
+
+    describe('TSS wallets (concurrent join)', function() {
+      it('should keep a copayer that joins while the wallet is being registered', async function() {
+        const server = new WalletService();
+        const copayerIds = [0, 1].map(i => Model.Copayer.xPubToCopayerId('btc', TestData.copayers[i].xPubKey_44H_0H_0H));
+
+        const session = TssKeyGenModel.create({
+          id: 'tss-join-during-register-test-session',
+          message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
+          n: 2,
+          copayerId: copayerIds[0],
+          version: Defaults.TSS_KEYGEN_SCHEME_VERSION
+        });
+        session.participants[1] = copayerIds[1];
+        session.sharedPublicKey = 'dummy-shared-public-key';
+        await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
+        await server.storage.storeTssKeyGenSession({ doc: session });
+
+        const walletId = await util.promisify(server.createWallet).call(server, {
+          name: 'tss wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+          coin: 'btc',
+          tssKeyId: session.id,
+        });
+        const [creatorOpts, joinerOpts] = [0, 1].map(i => helpers.getSignedCopayerOpts({
+          walletId,
+          name: 'copayer ' + (i + 1),
+          xPubKey: TestData.copayers[i].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[i].pubKey_1H_0,
+        }));
+        const { copayerId } = await util.promisify(server.joinWallet).call(server, creatorOpts);
+        const creatorServer = await helpers.getAuthServer(copayerId);
+        creatorServer.checkWalletSync = function(a, b, simple, cb) {
+          if (simple) return cb(null, false);
+          return cb(null, true);
+        };
+
+        blockchainExplorer.register = sinon.stub().callsFake((wallet, cb) => server.joinWallet(joinerOpts, cb));
+        await util.promisify(creatorServer.getStatus).call(creatorServer, { includeExtendedInfo: true });
+
+        blockchainExplorer.register.calledOnce.should.equal(true);
+        const registeredWallet = blockchainExplorer.register.firstCall.args[0];
+        const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+        wallet.copayers.length.should.equal(2);
+        wallet.beRegistered.should.equal(true);
+        wallet.beAuthPrivateKey2.should.equal(registeredWallet.beAuthPrivateKey2);
+        wallet.beAuthPublicKey2.should.equal(registeredWallet.beAuthPublicKey2);
+      });
+    });
   });
 
   describe('#removeWallet', function() {

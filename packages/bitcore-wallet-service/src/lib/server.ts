@@ -4195,7 +4195,7 @@ export class WalletService implements IWalletService {
         return cb(err);
       }
       wallet.beRegistered = true;
-      return this.storage.storeWallet(wallet, err => cb(err, true));
+      return this.storage.storeWalletRegistration(wallet, err => cb(err, true));
     });
   }
 
