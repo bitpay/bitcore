@@ -175,8 +175,15 @@ export class EthChain implements IChain {
   checkScriptOutput(_output) { }
 
   async getFee(server, wallet, opts) {
+    const { from, txType, priorityFeePercentile, gasLimitBuffer } = opts;
+    const { coin, network, chain } = wallet;
     const hasType2FeeOverride = opts.maxGasFee != null || opts.priorityGasFee != null;
     let { maxGasFee, priorityGasFee } = opts;
+    if (Number(txType) === 2 && !hasType2FeeOverride) {
+      maxGasFee = await server.estimateFee({ network, chain: chain || coin, txType: 2 });
+      priorityGasFee = await server.estimatePriorityFee({ network, chain: chain || coin, percentile: priorityFeePercentile || 15 });
+      maxGasFee = Math.max(maxGasFee, priorityGasFee);
+    }
     if (hasType2FeeOverride) {
       const chain = wallet.chain || wallet.coin;
       // Keep overrides consistent with CWC's chain-specific minimum priority fee.
@@ -185,8 +192,8 @@ export class EthChain implements IChain {
         throw new ClientError(`priorityGasFee must be at least ${minimum} wei for ${chain}`);
       }
     }
-    // Use the explicit rate for both construction and the fee reserved from the wallet balance.
-    const feeOpts = opts.gasPrice != null || hasType2FeeOverride
+    // Reserve the same rate used for construction, including the automatic type-2 fee cap.
+    const feeOpts = opts.gasPrice != null || maxGasFee != null
       ? { ...opts, feePerKb: opts.gasPrice ?? maxGasFee }
       : opts;
     // Fixed fees are converted to a gas price below, once the gas limits are known.
@@ -196,8 +203,6 @@ export class EthChain implements IChain {
       : await util.promisify(server._getFeePerKb).call(server, wallet, feeOpts);
     let feePerKb = inFeePerKb;
     let gasPrice = inFeePerKb;
-    const { from, txType, priorityFeePercentile, gasLimitBuffer } = opts;
-    const { coin, network, chain } = wallet;
     let inGasLimit = 0; // Per recepient gas limit
     let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
     let fee = 0;
@@ -296,10 +301,6 @@ export class EthChain implements IChain {
       gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer
       fee += feePerKb * gasLimit;
       logger.info(`[${from}] Top level gas limit with buffer: ${gasLimit}`);
-    }
-    if (Number(txType) === 2 && !hasType2FeeOverride) {
-      maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
-      priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15 });
     }
     return { feePerKb, gasPrice, gasLimit, maxGasFee, priorityGasFee, fee };
   }

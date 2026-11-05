@@ -6362,8 +6362,8 @@ describe('Wallet service', function() {
       sinon.stub(server, 'estimatePriorityFee').resolves(1000000000);
       const txp = await util.promisify(server.createTx).call(server, makeOpts({ txType: 2 }));
       txp.feeLevel.should.equal('normal');
-      txp.gasPrice.should.equal(1000000000);
-      txp.fee.should.equal(100000000000000);
+      txp.gasPrice.should.equal(4500000000);
+      txp.fee.should.equal(450000000000000);
       txp.maxGasFee.should.equal(4500000000);
       txp.priorityGasFee.should.equal(1000000000);
       const [raw] = txp.getRawTx();
@@ -6425,6 +6425,10 @@ describe('Wallet service', function() {
         await helpers.stubUtxos(server, wallet, [0.0002]);
         const defaultTxp = await util.promisify(server.createTx).call(server, makeOpts({ tokenAddress }));
         defaultTxp.fee.should.equal(100000000000000);
+        sinon.stub(server, 'estimateFee').resolves(3000000000);
+        sinon.stub(server, 'estimatePriorityFee').resolves(1000000000);
+        await assert.rejects(util.promisify(server.createTx).call(server, makeOpts({ txType: 2, tokenAddress })),
+          { code: tokenAddress ? 'INSUFFICIENT_ETH_FEE' : 'INSUFFICIENT_FUNDS_FOR_FEE' });
         await assert.rejects(util.promisify(server.createTx).call(server, makeOpts({
           txType: 2, maxGasFee: 3000000000, priorityGasFee: 1000000000, tokenAddress
         })), { code: tokenAddress ? 'INSUFFICIENT_ETH_FEE' : 'INSUFFICIENT_FUNDS_FOR_FEE' });
