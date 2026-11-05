@@ -1,7 +1,6 @@
 import express from 'express';
 import * as Types from '../../types/expressapp';
 import { TssKeyGen, TssSign } from '../tss';
-import { authRequest } from './middleware/authRequest';
 import { authTssKeyGenRequest, authTssSignRequest } from './middleware/authTssRequest';
 import { createWalletLimiter } from './middleware/createWalletLimiter';
 import { verifyTssMessage } from './middleware/verifyTssMessage';
@@ -126,7 +125,7 @@ export class TssRouter {
 
     /** Signature Methods */
 
-    router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
+    router.post('/v1/tss/sign/:id', authTssSignRequest({ joinable: true }), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
@@ -178,7 +177,8 @@ export class TssRouter {
       try {
         const id = req.params.id;
         const { signature } = req.body;
-        await TssSign.storeSignature({ id, signature });
+        const copayerId = req.headers['x-identity'];
+        await TssSign.storeSignature({ id, signature, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
