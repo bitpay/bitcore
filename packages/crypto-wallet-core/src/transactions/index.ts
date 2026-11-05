@@ -57,7 +57,8 @@ export class TransactionsProxy {
     return this.get(params).create(params);
   }
 
-  sign(params): string {
+  // SOL's sign() is async, all others are synchronous
+  sign(params): string | Promise<string> {
     return this.get(params).sign(params);
   }
 

@@ -1,40 +1,76 @@
 {
+  "name": "bitcore-monorepo",
   "version": "8.25.8",
+  "private": true,
   "engines": {
-    "node": ">=24.22.1"
+    "node": ">=24.22.1 <25"
   },
+  "packageManager": "npm@11.19.1",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24.22.1 <25",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "11.19.1",
+      "onFail": "error"
+    }
+  },
+  "workspaces": [
+    "packages/bitcore-build",
+    "packages/bitcore-cli",
+    "packages/bitcore-client",
+    "packages/bitcore-lib",
+    "packages/bitcore-lib-cash",
+    "packages/bitcore-lib-doge",
+    "packages/bitcore-lib-ltc",
+    "packages/bitcore-logging",
+    "packages/bitcore-mnemonic",
+    "packages/bitcore-node",
+    "packages/bitcore-p2p",
+    "packages/bitcore-p2p-cash",
+    "packages/bitcore-p2p-doge",
+    "packages/bitcore-tss",
+    "packages/bitcore-wallet-client",
+    "packages/bitcore-wallet-service",
+    "packages/crypto-rpc",
+    "packages/crypto-wallet-core"
+  ],
   "scripts": {
+    "postinstall": "npm run compile",
+    "compile": "npm run compile --workspace=@bitpay-labs/bitcore-logging && npm run compile --workspace=@bitpay-labs/crypto-wallet-core && npm run compile --workspace=@bitpay-labs/bitcore-wallet-service && npm run compile --workspace=@bitpay-labs/bitcore-wallet-client && npm run compile --workspace=@bitpay-labs/bitcore-client && npm run compile --workspace=@bitpay-labs/bitcore-cli && npm run compile --workspace=@bitpay-labs/bitcore-node",
     "build": "docker build -t bitcore-node . ",
-    "build:docker": "lerna run build:docker --concurrency 1 --stream",
-    "watch": "lerna run watch --parallel",
-    "postinstall": "npm run bootstrap && npm run compile",
-    "bootstrap": "lerna bootstrap",
-    "insight:build": "cd ./packages/insight && npm i && npm run build",
-    "node": "cd packages/bitcore-node && npm start",
-    "bws": "cd packages/bitcore-wallet-service && npm start",
-    "compile": "lerna run compile",
+    "build:docker": "npm run build:docker --workspace=@bitpay-labs/bitcore-node && npm run build:docker --workspace=@bitpay-labs/bitcore-wallet-service",
+    "watch": "npm run watch --workspace=@bitpay-labs/bitcore-client --",
+    "insight:install": "npm --prefix packages/insight ci --workspaces=false",
+    "insight:build": "npm run insight:install && npm --prefix packages/insight run build --workspaces=false",
+    "node": "npm start --workspace=@bitpay-labs/bitcore-node --",
+    "bws": "npm start --workspace=@bitpay-labs/bitcore-wallet-service --",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
     "precommit": "eslint --pass-on-no-patterns --no-warn-ignored $(git diff --name-only --cached --diff-filter=AM)",
-    "test:bitcore-cli": "cd ./packages/bitcore-cli && npm run test",
-    "test:bitcore-client": "cd ./packages/bitcore-client && npm run test",
-    "test:bitcore-lib": "cd ./packages/bitcore-lib && npm run test",
-    "test:bitcore-lib-cash": "cd ./packages/bitcore-lib-cash && npm run test",
-    "test:bitcore-lib-doge": "cd ./packages/bitcore-lib-doge && npm run test",
-    "test:bitcore-lib-ltc": "cd ./packages/bitcore-lib-ltc && npm run test",
-    "test:bitcore-logging": "cd ./packages/bitcore-logging && npm run test",
-    "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
-    "test:bitcore-node": "cd ./packages/bitcore-node && npm run test",
-    "test:bitcore-p2p": "cd ./packages/bitcore-p2p && npm run test",
-    "test:bitcore-p2p-cash": "cd ./packages/bitcore-p2p-cash && npm run test",
-    "test:bitcore-p2p-doge": "cd ./packages/bitcore-p2p-doge && npm run test",
-    "test:bitcore-tss": "cd ./packages/bitcore-tss && npm run test",
-    "test:bitcore-wallet-service": "cd ./packages/bitcore-wallet-service && npm run test",
-    "test:bitcore-wallet-client": "cd ./packages/bitcore-wallet-client && npm run test",
-    "test:crypto-rpc": "cd ./packages/crypto-rpc && npm run test",
-    "test:crypto-wallet-core": "cd ./packages/crypto-wallet-core && npm run test"
+    "test:bitcore-build": "npm run test --workspace=@bitpay-labs/bitcore-build --",
+    "test:bitcore-client": "npm run compile && npm run test --workspace=@bitpay-labs/bitcore-client --",
+    "test:bitcore-cli": "npm run test --workspace=@bitpay-labs/bitcore-cli --",
+    "test:bitcore-lib": "npm run test --workspace=@bitpay-labs/bitcore-lib --",
+    "test:bitcore-lib-cash": "npm run test --workspace=@bitpay-labs/bitcore-lib-cash --",
+    "test:bitcore-lib-doge": "npm run test --workspace=@bitpay-labs/bitcore-lib-doge --",
+    "test:bitcore-lib-ltc": "npm run test --workspace=@bitpay-labs/bitcore-lib-ltc --",
+    "test:bitcore-logging": "npm run test --workspace=@bitpay-labs/bitcore-logging --",
+    "test:bitcore-mnemonic": "npm run test --workspace=@bitpay-labs/bitcore-mnemonic --",
+    "test:bitcore-node": "npm run test --workspace=@bitpay-labs/bitcore-node --",
+    "test:bitcore-p2p": "npm run test --workspace=@bitpay-labs/bitcore-p2p --",
+    "test:bitcore-p2p-cash": "npm run test --workspace=@bitpay-labs/bitcore-p2p-cash --",
+    "test:bitcore-p2p-doge": "npm run test --workspace=@bitpay-labs/bitcore-p2p-doge --",
+    "test:bitcore-tss": "npm run test --workspace=@bitpay-labs/bitcore-tss --",
+    "test:bitcore-wallet-service": "npm run test --workspace=@bitpay-labs/bitcore-wallet-service --",
+    "test:bitcore-wallet-client": "npm run test --workspace=@bitpay-labs/bitcore-wallet-client --",
+    "test:crypto-rpc": "npm run test --workspace=@bitpay-labs/crypto-rpc --",
+    "test:crypto-wallet-core": "npm run test --workspace=@bitpay-labs/crypto-wallet-core --"
   },
   "config": {
     "commitizen": {
@@ -46,24 +82,31 @@
     "@stylistic/eslint-plugin": "^5.5.0",
     "@types/node": "22.13.1",
     "cz-customizable": "^5.2.0",
+    "eight-colors": "^1.3.3",
     "eslint": "^9.37.0",
     "eslint-plugin-import": "2.32.0",
     "globals": "^16.4.0",
     "husky": "^2.4.0",
     "lint-staged": "^9.5.0",
-    "mocha": "^11.7.5",
+    "mocha": "11.7.5",
     "monocart-coverage-reports": "^2.13.0",
+    "nyc": "^18.0.0",
     "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
     "typescript-eslint": "^8.46.0"
   },
   "dependencies": {
-    "lerna": "^5.6.2",
     "typescript": "5.7.3"
   },
   "husky": {
     "hooks": {
       "pre-commit": "npm run precommit"
     }
+  },
+  "allowScripts": {
+    "es5-ext": false,
+    "highlight.js": false,
+    "protobufjs": false,
+    "sinon": false
   }
 }

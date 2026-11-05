@@ -37,7 +37,8 @@ export class PayProV2 {
     args: '',
     agent: false
   };
-  static request = superagent;
+  // loose typing b/c tests substitube lightweight fake request client
+  static request: any = superagent;
   static trustedKeys = dfltTrustedKeys;
 
   constructor(requestOptions = {}, trustedKeys = dfltTrustedKeys) {

@@ -68,7 +68,11 @@ describe('Wallet', function() {
     await bcnStorage.stop();
   });
   beforeEach(function() {
-    sandbox.stub(request, 'Request').callsFake(function(args) {
+    // request-promise-native re-exports the underlying `request` module's `Request`
+    // constructor at runtime, but @types/request-promise-native's RequestAPI type
+    // doesn't declare it, so stub it through an `any` view of `request` for this one call
+    // (which in turn makes callsFake's `args` untyped, so give it back an explicit shape).
+    sandbox.stub(request as any, 'Request').callsFake(function(args: { url: string; method: string; headers: Record<string, string>; body?: any }) {
       args.url = args.url.replace('https://api.bitcore.io/api', baseUrl);
       args.url = args.url.replace(baseUrl, '/api');
       const req = api[args.method.toLowerCase()](args.url);
@@ -807,7 +811,12 @@ describe('Wallet', function() {
         saveWallet: async () => undefined
       } as any;
 
-      loadWalletStub = sandbox.stub(wallet.storage, 'loadWallet').resolves(ethMigrationTestWalletFixture.rawWallet);
+      // migrateWallet always calls loadWallet with `raw: true` (the string-resolving overload), but
+      // referencing the overloaded method by value for stubbing resolves to its last non-raw overload
+      // (IWallet-resolving) instead, so assert the storage object into the shape actually exercised here.
+      loadWalletStub = sandbox
+        .stub(wallet.storage as unknown as { loadWallet: (params: { name: string; raw: true }) => Promise<void | string> }, 'loadWallet')
+        .resolves(ethMigrationTestWalletFixture.rawWallet);
       getStoredKeysStub = sandbox.stub(wallet.storage, 'getStoredKeys').resolves(ethMigrationTestWalletFixture.storedKeys);
       addKeysSafeStub = sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
       saveWalletStub = sandbox.stub(wallet.storage, 'saveWallet').resolves();

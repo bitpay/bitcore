@@ -19,9 +19,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "target": "ES2023",
-    "typeRoots": [
-      "./node_modules/@types"
-    ],
+    "types": ["node", "mocha"],
     "baseUrl": ".",
     "paths": {
       "*": [

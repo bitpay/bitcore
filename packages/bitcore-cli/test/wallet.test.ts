@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import assert from 'assert';
 import sinon from 'sinon';
 import fs from 'fs';
@@ -158,8 +158,12 @@ describe('Wallet', function() {
 
     it('should handle stale lock file', function(done) {
       const lockFileName = Utils.getWalletLockFileName(WALLETS.BTC.SINGLE_SIG, DIR);
-      fs.writeFileSync(lockFileName, '999999', { mode: 0o444 }); // create a lock file with a PID that doesn't exist
-      assert(fs.readFileSync(lockFileName, 'utf-8') === '999999', 'Failed to create lock file with test PID');
+      // Use a reaped process's PID: arbitrary large values are invalid on macOS.
+      const exitedProcess = spawnSync(process.execPath, ['-e', '']);
+      assert.strictEqual(exitedProcess.status, 0);
+      const stalePid = exitedProcess.pid.toString();
+      fs.writeFileSync(lockFileName, stalePid, { mode: 0o444 });
+      assert.strictEqual(fs.readFileSync(lockFileName, 'utf-8'), stalePid);
 
       const stepInputs = [
         // Checkpoint1: Upon wallet load
@@ -258,7 +262,7 @@ describe('Wallet', function() {
                 case 0: {
                   const [lockedPid, lockedArgv] = fs.readFileSync(lockFileName, 'utf-8').split('\n');
                   assert.equal(lockedPid, child.pid.toString(), 'Lock file pid should match the running process');
-                  assert.ok(lockedArgv.split(' ')[1].endsWith('cli.js'), 'Lock file argv should include the path to cli.js');
+                  assert.ok(lockedArgv.split(' ')[1].endsWith(CLI_EXEC), 'Lock file argv should include the CLI entry point');
                   break;
                 }
               }
@@ -470,6 +474,7 @@ describe('Wallet', function() {
       await wallet.getClient({ mustExist: true, doNotComplete: true });
       getPasswordStub = sandbox.stub(promptsModule, 'getPassword').callsFake(async function(_, opts) {
         opts.validate(PASSWORD);
+        return PASSWORD;
       });
     });
 

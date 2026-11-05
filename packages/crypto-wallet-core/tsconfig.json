@@ -11,7 +11,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "target": "ES2022",
-    "typeRoots": ["./node_modules/@types"],
+    "types": ["node", "mocha"],
     "baseUrl": ".",
     "paths": {
       "*": ["*", "./src/*"]

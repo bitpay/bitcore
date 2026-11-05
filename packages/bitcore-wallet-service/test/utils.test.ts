@@ -78,7 +78,11 @@ describe('Utils', function() {
       res.should.equal(false);
     });
     it('should call logger when _tryImportSignature throws', function() {
-      const logSpy = sinon.spy(logger, 'error');
+      // winston's LeveledLogMethod is overloaded, and TypeScript resolves a bare
+      // reference to an overloaded method (as sinon.spy needs here) to its last
+      // overload -- `(infoObject: object)` -- even though these calls all use the
+      // plain string-message overload, so narrow the view to what's really used.
+      const logSpy = sinon.spy(logger as unknown as { error: (message: string, ...meta: any[]) => any }, 'error');
       const res = Utils.verifyMessage('hola', null, '02555a2d45e309c00cc8c5090b6ec533c6880ab2d3bc970b3943def989b3373f16');
       should.exist(res);
       res.should.equal(false);
@@ -86,7 +90,7 @@ describe('Utils', function() {
       logSpy.calledOnceWith('_tryImportSignature encountered an error: %o').should.equal(true);
     });
     it('should call logger when _tryImportPublicKey throws', function() {
-      const logSpy = sinon.spy(logger, 'error');
+      const logSpy = sinon.spy(logger as unknown as { error: (message: string, ...meta: any[]) => any }, 'error');
       const res = Utils.verifyMessage('hola', '3045022100d6186930e4cd9984e3168e15535e2297988555838ad10126d6c20d4ac0e74eb502201095a6319ea0a0de1f1e5fb50f7bf10b8069de10e0083e23dbbf8de9b8e02785', null);
       should.exist(res);
       res.should.equal(false);
@@ -94,8 +98,10 @@ describe('Utils', function() {
       logSpy.calledOnceWith('_tryImportPublicKey encountered an error: %o').should.equal(true);
     });
     it('should call logger when _tryVerifyMessage throws', function() {
-      const logSpy = sinon.spy(logger, 'error');
-      const fn = () => [];
+      const logSpy = sinon.spy(logger as unknown as { error: (message: string, ...meta: any[]) => any }, 'error');
+      // Deliberately hands back a value of the wrong shape (a plain array, not a Buffer/Uint8Array)
+      // to make _tryVerifyMessage's underlying secp256k1 call throw and exercise its catch path.
+      const fn: any = () => [];
       sinon.stub(Utils, '_tryImportSignature').callsFake(fn);
       sinon.stub(Utils, '_tryImportPublicKey').callsFake(fn);
       const res = Utils.verifyMessage('hola', [], []);

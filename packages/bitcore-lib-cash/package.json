@@ -7,7 +7,8 @@
   "scripts": {
     "test": "gulp test",
     "build": "gulp",
-    "pub": "npm run build && npm publish"
+    "pub": "npm run build && npm publish",
+    "prepack": "gulp browser:compressed"
   },
   "keywords": [
     "bitcoin",
@@ -49,5 +50,11 @@
     "sinon": "^7.1.1"
   },
   "license": "MIT",
-  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
+  "files": [
+    "index.js",
+    "lib",
+    "bitcore-lib.js",
+    "bitcore-lib.min.js"
+  ]
 }

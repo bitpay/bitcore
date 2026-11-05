@@ -38,6 +38,7 @@
     "@types/mocha": "^5.2.0",
     "@types/node": "^22.10.10",
     "chai": "^5.2.0",
+    "monocart-coverage-reports": "^2.13.0",
     "typescript": "^5.7.3"
   }
 }

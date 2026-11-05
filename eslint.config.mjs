@@ -100,6 +100,7 @@ export default defineConfig([
   },
   {
     files: [
+      'packages/bitcore-build/**/*.js',
       'packages/bitcore-lib*/**/*.js',
       'packages/bitcore-p2p*/**/*.js',
       'packages/bitcore-tss/**/*.js',
@@ -110,6 +111,19 @@ export default defineConfig([
       '@typescript-eslint/no-require-imports': 'warn',
       'no-bitwise': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
+    }
+  },
+  {
+    // CommonJS tooling and its fixtures/tests: `.cjs` forces
+    // CommonJS regardless of root package.json, so `require` is the only
+    // option, not a style choice -- same rationale as the legacy-package
+    // override above.
+    files: [
+      'packages/bitcore-build/test/**/*.cjs',
+    ],
+    languageOptions: { sourceType: 'commonjs' },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'warn',
     }
   },
   // Test files -- needs to be last so it can override other settings

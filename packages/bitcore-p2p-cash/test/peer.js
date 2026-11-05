@@ -84,10 +84,10 @@ describe('Peer', function() {
   });
 
   it('create instance setting a network', function() {
-    const peer = new Peer({ host: 'localhost', network: Networks.testnet });
+    const peer = new Peer({ host: 'localhost', network: Networks.testnet3 });
     peer.host.should.equal('localhost');
-    peer.network.should.equal(Networks.testnet);
-    peer.port.should.equal(Networks.testnet.port);
+    peer.network.should.equal(Networks.testnet3);
+    peer.port.should.equal(18333);
   });
 
   it('create instance setting port and network', function() {
@@ -290,11 +290,14 @@ describe('Peer', function() {
 
   it('version/subversion settings respected', function(done) {
     const socket = new EventEmitter();
+    socket.connect = function() { this.emit('connect'); };
+    socket.destroy = sinon.stub();
     const peer = new Peer({
-      socket: socket,
+      host: 'localhost',
       subversion: '/useragent:0.0.0/',
       version: 70012
     });
+    peer._getSocket = function() { return socket; };
     peer.sendMessage = function(message) {
       message.version.should.equal(70012);
       message.subversion.should.equal('/useragent:0.0.0/');

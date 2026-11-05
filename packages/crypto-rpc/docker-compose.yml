@@ -1,12 +1,11 @@
 services:
   start:
     build:
-      context: .
-      dockerfile: start.dockerfile
+      context: ../..
+      dockerfile: packages/crypto-rpc/start.dockerfile
     volumes:
       - my_data1:/root/.lnd
       - my_data2:/root/.lnd2
-      - ../crypto-wallet-core:/crypto-rpc/node_modules/crypto-wallet-core
     networks:
       default:
         ipv4_address: 172.29.0.21
@@ -23,12 +22,11 @@ services:
 
   test_runner:
     build:
-      context: .
-      dockerfile: ./test/docker/Dockerfile-test
+      context: ../..
+      dockerfile: packages/crypto-rpc/test/docker/Dockerfile-test
     volumes:
       - my_data1:/root/.lnd
       - my_data2:/root/.lnd2
-      - ../crypto-wallet-core:/crypto-rpc/node_modules/crypto-wallet-core
     networks:
       default:
         ipv4_address: 172.29.0.2
@@ -246,9 +244,6 @@ volumes:
     driver: local
   my_data2:
     driver: local
-  cwc:
-    driver: external
-    name: crypto-wallet-core
   geth-data:
 
 networks:

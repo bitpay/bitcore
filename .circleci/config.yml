@@ -13,23 +13,8 @@ executors:
       - DB_NAME: bitcore-test
       - DB_PORT: 7357
       - BITCORE_CONFIG_PATH: ~/bitcore/bitcore-test.config.json
-  crypto-rpc:
-    machine:
-      image: default
-      docker_layer_caching: true
-    resource_class: large
-    working_directory: ~/bitcore
 
 commands:
-  create_concatenated_package_lock:
-    description: "Concatenate all package-lock.json files recognized by lerna.js into single file. File is used as checksum source for part of caching key."
-    parameters:
-      filename:
-        type: string
-    steps:
-      - run:
-          name: Combine package-lock.json files to single file
-          command: npx lerna la --json | grep '"location":' | awk -F packages '{printf "packages%s\n", $2}' | awk -F '"' '{printf "\"%s/package-lock.json\" ", $1}' | xargs cat > << parameters.filename >>
   start_docker_images:
     description: Pull docker images for mongo and blockchain nodes
     steps:
@@ -38,30 +23,29 @@ commands:
           command: |
             docker buildx prune -f
             docker compose -f docker-compose.test.base.yml -f docker-compose.test.ci.yml up --detach
-  use_python2:
-    description: Set python 2.7 as global python version on the executor machine
-    steps:
-      - run:
-          name: Use Python 2
-          command: |
-            pyenv versions
-            pyenv install -s 2.7
-            pyenv global 2.7
   use_node:
-    description: Force usage of correct node version on the executor machine
+    description: Pin the executor machine to the exact Node/npm pair recorded in root package.json (engines.node / packageManager)
     steps:
       - run:
-          name: Use Node 24
+          name: Use Node 24.22.1 / npm 11.19.1
           command: |
             nvm install 24.22.1
             nvm alias default 24.22.1
             nvm use default
-  restore_dependency_cache:
+            npm install -g npm@11.19.1
+  npm_cache_restore:
+    description: Restore npm's download cache (not an installed node_modules tree -- npm workspaces hoisting makes a restored tree stale as soon as any manifest changes, so `npm ci` always runs regardless of hit/miss; this cache only avoids re-downloading tarballs already fetched by prior runs)
     steps:
-      - create_concatenated_package_lock:
-          filename: combined-package-lock.txt
       - restore_cache:
-          key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
+          keys:
+            - npm-dl-cache-v1-{{ arch }}-node24.22.1-npm11.19.1-{{ checksum "package-lock.json" }}-{{ checksum ".npmrc" }}
+            - npm-dl-cache-v1-{{ arch }}-node24.22.1-npm11.19.1-
+  npm_cache_save:
+    steps:
+      - save_cache:
+          key: npm-dl-cache-v1-{{ arch }}-node24.22.1-npm11.19.1-{{ checksum "package-lock.json" }}-{{ checksum ".npmrc" }}
+          paths:
+            - ~/.npm
   run_test:
     description: Execute the test suite for a package
     parameters:
@@ -84,64 +68,26 @@ jobs:
     executor: main
     steps:
       - checkout
-      - use_python2
       - use_node
-    #   - run:
-    #       name: Install Chrome
-    #       command: |
-    #         sudo mkdir -p /etc/apt/keyrings
-    #         curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /etc/apt/keyrings/google.gpg
-    #         echo 'deb [arch=amd64 signed-by=/etc/apt/keygrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/chrome.list
-    #         set -x && sudo apt-get update && sudo apt-get install -y google-chrome-stable
-    #         export CHROME_BIN=/usr/bin/google-chrome
       - run:
           name: Print versions
           command: |
             nvm use default
-            set -x && node -v && npm -v && google-chrome --version && docker version && python --version
-      # - restore_dependency_cache
-      - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
-          nvm use default
-          npm ci
-      - save_cache:
-          key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
-          paths:
-            - node_modules
-            - packages/bitcore-build/node_modules
-            - packages/bitcore-client/node_modules
-            - packages/bitcore-lib/node_modules
-            - packages/bitcore-lib-cash/node_modules
-            - packages/bitcore-lib-doge/node_modules
-            - packages/bitcore-lib-ltc/node_modules
-            - packages/bitcore-logging/node_modules
-            - packages/bitcore-mnemonic/node_modules
-            - packages/bitcore-node/node_modules
-            - packages/bitcore-p2p/node_modules
-            - packages/bitcore-p2p-cash/node_modules
-            - packages/bitcore-p2p-doge/node_modules
-            - packages/bitcore-tss/node_modules
-            - packages/bitcore-cli/node_modules
-            - packages/bitcore-wallet-client/node_modules
-            - packages/bitcore-wallet-service/node_modules
-            - packages/crypto-wallet-core/node_modules
-            - packages/crypto-rpc/node_modules
-            - packages/insight/node_modules
+            set -x && node -v && npm -v && google-chrome --version && docker version && python3 --version
+      - npm_cache_restore
+      - run:
+          name: npm ci
+          command: |
+            nvm use default
+            npm ci --foreground-scripts
+      - run:
+          name: Verify shared build tools
+          command: |
+            nvm use default
+            npm run test:bitcore-build
+      - npm_cache_save
       - persist_to_workspace:
           root: ~/bitcore
-          paths:
-            - .
-  build-crypto-rpc:
-    executor: crypto-rpc
-    steps:
-      - checkout
-      - use_python2
-      - use_node
-      # - restore_dependency_cache
-      - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
-          nvm use default
-          npm ci
-      - persist_to_workspace:
-          root: ~/bitcore/packages/crypto-rpc # only persist crypto-rpc package
           paths:
             - .
   bitcore-node:
@@ -204,6 +150,16 @@ jobs:
     steps:
       - run_test:
           package: bitcore-p2p
+  bitcore-p2p-cash:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-p2p-cash
+  bitcore-p2p-doge:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-p2p-doge
   bitcore-client:
     executor: main
     steps:
@@ -225,7 +181,6 @@ workflows:
   build_and_test:
     jobs:
       - build
-      # - build-crypto-rpc
       - bitcore-node:
           requires:
             - build
@@ -257,6 +212,12 @@ workflows:
           requires:
             - build
       - bitcore-p2p:
+          requires:
+            - build
+      - bitcore-p2p-cash:
+          requires:
+            - build
+      - bitcore-p2p-doge:
           requires:
             - build
       - bitcore-client:

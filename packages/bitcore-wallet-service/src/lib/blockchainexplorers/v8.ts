@@ -63,7 +63,7 @@ export class V8 {
   host: string;
   userAgent: string;
   baseUrl: string;
-  request: request;
+  request: typeof request;
   Client: typeof Client;
   private _cachedReserve: number;
   private _cachedReserveTs: number;
@@ -74,7 +74,7 @@ export class V8 {
     url: string;
     apiPrefix?: string;
     userAgent?: string;
-    request?: request;
+    request?: typeof request;
     client?: typeof Client;
   }) {
     $.checkArgument(opts);
