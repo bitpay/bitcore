@@ -1,5 +1,5 @@
 import { assert, expect } from 'chai';
-import { CryptoRpc } from '../index.js';
+import { CryptoRpc } from '../index';
 
 const config = {
   chain: 'XRP',

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { addressesByLookupTableAddress } from '../lib/sol/lookup-tables.js';
+import { addressesByLookupTableAddress } from '../lib/sol/lookup-tables';
 
 describe('SOL lookup tables', () => {
   describe('addressesByLookupTableAddress', () => {

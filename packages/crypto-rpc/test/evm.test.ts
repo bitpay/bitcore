@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { Web3, ethers } from '@bitpay-labs/crypto-wallet-core';
-import { CryptoRpc } from '../index.js';
-import { chainConfig } from '../lib/eth/chains.js';
+import { CryptoRpc } from '../index';
+import { chainConfig } from '../lib/eth/chains';
 
 const configs = [
   {

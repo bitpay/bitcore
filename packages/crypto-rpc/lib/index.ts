@@ -1,14 +1,14 @@
-import { BchRpc } from './bch/BchRpc.js';
-import { BtcRpc } from './btc/BtcRpc.js';
-import { DogeRpc } from './doge/DogeRpc.js';
-import { Erc20Rpc } from './erc20/Erc20Rpc.js';
-import { EthRpc } from './eth/EthRpc.js';
-import { LndRpc } from './lnd/LndRpc.js';
-import { LtcRpc } from './ltc/LtcRpc.js';
-import { MaticRpc } from './matic/MaticRpc.js';
-import { SolRpc } from './sol/SolRpc.js';
-import { SplRpc } from './sol/SplRpc.js';
-import { XrpRpc } from './xrp/XrpRpc.js';
+import { BchRpc } from './bch/BchRpc';
+import { BtcRpc } from './btc/BtcRpc';
+import { DogeRpc } from './doge/DogeRpc';
+import { Erc20Rpc } from './erc20/Erc20Rpc';
+import { EthRpc } from './eth/EthRpc';
+import { LndRpc } from './lnd/LndRpc';
+import { LtcRpc } from './ltc/LtcRpc';
+import { MaticRpc } from './matic/MaticRpc';
+import { SolRpc } from './sol/SolRpc';
+import { SplRpc } from './sol/SplRpc';
+import { XrpRpc } from './xrp/XrpRpc';
 
 const RpcClasses = {
   BTC: BtcRpc,

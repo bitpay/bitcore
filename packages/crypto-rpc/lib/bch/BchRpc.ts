@@ -1,4 +1,4 @@
-import { BtcRpc } from '../btc/BtcRpc.js';
+import { BtcRpc } from '../btc/BtcRpc';
 
 export class BchRpc extends BtcRpc {
   async estimateFee() {

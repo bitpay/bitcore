@@ -1,7 +1,6 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
 import assert from 'assert';
-import { createRequire } from 'module';
 import * as SolKit from '@solana/kit';
 import * as SolSystem from '@solana-program/system';
 import * as SolMemo from '@solana-program/memo';
@@ -10,16 +9,15 @@ import * as SolLookUpTable from '@solana-program/address-lookup-table';
 import * as SolToken from '@solana-program/token';
 import { pipe } from '@solana/functional';
 import { SolKit as LibSolKit } from '@bitpay-labs/crypto-wallet-core';
-import { SolRpc } from '../lib/sol/SolRpc.js';
-import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages.js';
-import { parseInstructions, instructionKeys } from '../lib/sol/transaction-parser.js';
-import { assertAccountInfoShape, recordGetAccountInfoCalls, SYSTEM_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from './getAccountInfo.helper.js';
-import { recordRpcCalls } from './solRpcCalls.helper.js';
+import { SolRpc } from '../lib/sol/SolRpc';
+import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages';
+import { parseInstructions, instructionKeys } from '../lib/sol/transaction-parser';
+import { assertAccountInfoShape, recordGetAccountInfoCalls, SYSTEM_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from './getAccountInfo.helper';
+import { recordRpcCalls } from './solRpcCalls.helper';
+import privateKey1 from '../blockchain/solana/test/keypair/id.json';
+import privateKey2 from '../blockchain/solana/test/keypair/id2.json';
+import privateKey3 from '../blockchain/solana/test/keypair/id3.json';
 
-const require = createRequire(import.meta.url);
-const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
-const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
-const privateKey3 = require('../blockchain/solana/test/keypair/id3.json');
 // const SolKit = require('@solana/kit'); // Using require to avoid issues with sinon stubbing/spying ES module imports
 
 const bs58Encoder = SolKit.getBase58Encoder();

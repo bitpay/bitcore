@@ -2,10 +2,9 @@ import { expect } from 'chai';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages.js';
-import { SolRpc } from '../lib/sol/SolRpc.js';
-import { instructionKeys, parseJsonParsedInstructions } from '../lib/sol/transaction-parser.js';
+import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages';
+import { SolRpc } from '../lib/sol/SolRpc';
+import { instructionKeys, parseJsonParsedInstructions } from '../lib/sol/transaction-parser';
 
 const SYSTEM = '11111111111111111111111111111111';
 const TOKEN = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
@@ -79,7 +78,8 @@ describe('parseJsonParsedInstructions', function() {
 });
 
 const MAINNET_TXID = '428cM3eFWDQbzs5uDVHPngKGdBmVUqjSRABxRnkoZUPMymQXQuJp1tzzx55t4pArK8vo9jWXh5SdWpC5nZySXwWY';
-const fixturePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures/sol/inner-instructions-mainnet-tx.json');
+// Fixtures are not compiled, so resolve them from the source tree rather than ts_build
+const fixturePath = path.join(__dirname, '../../test/fixtures/sol/inner-instructions-mainnet-tx.json');
 
 // Answers each JSON-RPC request with the recorded response for the same method and encoding
 const startReplayServer = async (exchanges) => {

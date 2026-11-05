@@ -1,18 +1,16 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
-import { createRequire } from 'module';
 import * as SolKit from '@solana/kit';
 import * as SolSystem from '@solana-program/system';
 import * as SolToken from '@solana-program/token';
 import { pipe } from '@solana/functional';
-import { SolRpc } from '../lib/sol/SolRpc.js';
-import { SplRpc } from '../lib/sol/SplRpc.js';
-import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages.js';
-import { assertAccountInfoShape, SYSTEM_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from './getAccountInfo.helper.js';
+import { SolRpc } from '../lib/sol/SolRpc';
+import { SplRpc } from '../lib/sol/SplRpc';
+import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages';
+import { assertAccountInfoShape, SYSTEM_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from './getAccountInfo.helper';
+import privateKey1 from '../blockchain/solana/test/keypair/id.json';
+import privateKey2 from '../blockchain/solana/test/keypair/id2.json';
 
-const require = createRequire(import.meta.url);
-const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
-const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
 // const SolKit = require('@solana/kit'); // Using require to avoid issues with sinon stubbing/spying ES module imports
 
 const bs58Encoder = SolKit.getBase58Encoder();

@@ -2,10 +2,10 @@ import EventEmitter from 'events';
 import { SolKit, SolanaProgram } from '@bitpay-labs/crypto-wallet-core';
 import { pipe } from '@solana/functional';
 import bs58 from 'bs58';
-import { SOL_ERROR_MESSAGES } from './error_messages.js';
-import { createSolanaHttpTransport } from './http-transport.js';
-import { addressesByLookupTableAddress } from './lookup-tables.js';
-import { parseInstructions, parseJsonParsedInstructions } from './transaction-parser.js';
+import { SOL_ERROR_MESSAGES } from './error_messages';
+import { createSolanaHttpTransport } from './http-transport';
+import { addressesByLookupTableAddress } from './lookup-tables';
+import { parseInstructions, parseJsonParsedInstructions } from './transaction-parser';
 
 const {
   ComputeBudget: SolComputeBudget,
@@ -179,11 +179,12 @@ export class SolRpc {
     return transactionMessage;
   }
 
-  _sendAndConfirmNonceTransactionFactory() {
+  // Explicit return types: the inferred ones name Kit internals that declaration emit cannot reference
+  _sendAndConfirmNonceTransactionFactory(): ReturnType<typeof SolKit.sendAndConfirmDurableNonceTransactionFactory> {
     return SolKit.sendAndConfirmDurableNonceTransactionFactory({ rpc: this.rpc, rpcSubscriptions: this.rpcSubscriptions });
   }
 
-  _sendAndConfirmTransactionFactory() {
+  _sendAndConfirmTransactionFactory(): ReturnType<typeof SolKit.sendAndConfirmTransactionFactory> {
     return SolKit.sendAndConfirmTransactionFactory({ rpc: this.rpc, rpcSubscriptions: this.rpcSubscriptions });
   }
 

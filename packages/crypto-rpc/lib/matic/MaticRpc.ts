@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { EthRpc } from '../eth/EthRpc.js';
+import { EthRpc } from '../eth/EthRpc';
 
 export class MaticRpc extends EthRpc {
   super(config) {

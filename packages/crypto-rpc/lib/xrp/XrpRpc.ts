@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import util from 'util';
 import { xrpl } from '@bitpay-labs/crypto-wallet-core';
 import promptly from 'promptly';
-import { XrpClientAdapter } from './XrpClientAdapter.js';
+import { XrpClientAdapter } from './XrpClientAdapter';
 
 const passwordPromptAsync = util.promisify(promptly.password);
 

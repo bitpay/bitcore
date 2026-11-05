@@ -3,8 +3,8 @@ import { SolKit } from '@bitpay-labs/crypto-wallet-core';
 import { expect } from 'chai';
 import nodeFetch from 'node-fetch';
 import sinon from 'sinon';
-import { createSolanaHttpTransport } from '../lib/sol/http-transport.js';
-import { SolRpc } from '../lib/sol/SolRpc.js';
+import { createSolanaHttpTransport } from '../lib/sol/http-transport';
+import { SolRpc } from '../lib/sol/SolRpc';
 
 describe('SOL HTTP transport', function() {
   this.timeout(5000);

@@ -1,5 +1,5 @@
 import DogecoinRPC from 'dogecoind-rpc';
-import { BtcRpc } from '../btc/BtcRpc.js';
+import { BtcRpc } from '../btc/BtcRpc';
 
 export class DogeRpc extends BtcRpc {
   constructor(config) {

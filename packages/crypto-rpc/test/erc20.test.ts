@@ -1,10 +1,11 @@
+import fs from 'fs';
+import path from 'path';
 import { expect } from 'chai';
-import { createRequire } from 'module';
 import { ethers } from '@bitpay-labs/crypto-wallet-core';
-import { CryptoRpc } from '../index.js';
+import { CryptoRpc } from '../index';
 
-const require = createRequire(import.meta.url);
-const deployedAddresses = require('../blockchain/EVM/ignition/deployments/chain-1337/deployed_addresses.json');
+// Written by hardhat:deploy before the tests compile, so it is read at runtime from the source tree
+const deployedAddresses = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../blockchain/EVM/ignition/deployments/chain-1337/deployed_addresses.json'), 'utf8'));
 
 const config = {
   chain: 'ETH',

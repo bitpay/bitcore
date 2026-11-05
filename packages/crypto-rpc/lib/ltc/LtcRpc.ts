@@ -1,5 +1,5 @@
 import LitecoinRPC from 'bitcoind-rpc';
-import { BtcRpc } from '../btc/BtcRpc.js';
+import { BtcRpc } from '../btc/BtcRpc';
 
 export class LtcRpc extends BtcRpc {
   constructor(config) {

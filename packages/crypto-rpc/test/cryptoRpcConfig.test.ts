@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { CryptoRpc } from '../index.js';
+import { CryptoRpc } from '../index';
 
 const baseConfig = { chain: 'BTC', host: '127.0.0.1', protocol: 'http', port: 8332, user: 'user', pass: 'pass' };
 

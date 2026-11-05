@@ -2,8 +2,8 @@ import EventEmitter from 'events';
 import util from 'util';
 import { Web3, ethers } from '@bitpay-labs/crypto-wallet-core';
 import promptly from 'promptly';
-import * as utils from '../utils.js';
-import { chainConfig } from './chains.js';
+import * as utils from '../utils';
+import { chainConfig } from './chains';
 
 const { toBI, toNum } = utils;
 
