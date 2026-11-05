@@ -577,7 +577,7 @@ export const Utils = {
 
   convertXPubKeyForNetwork(xPubKey: string, chain: string, network: string) {
     // Convert named network for non-UTXO chains to generic name (e.g. sepolia -> testnet)
-    network = !Bitcore_[chain] ? this.getGenericName(network) : network;
+    network = !Bitcore_[chain] ? Utils.getGenericName(network) : network;
     const lib = Bitcore_[chain] || BitcoreLib;
     $.checkArgument(xPubKey, 'xPubKey is required at <convertXPubKeyForNetwork()>');
     $.checkArgument(chain, 'chain is required at <convertXPubKeyForNetwork()>');

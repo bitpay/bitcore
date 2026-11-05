@@ -986,7 +986,25 @@ describe('TSS', function() {
         });
 
         it('should return the secret after the session has expired', async function() {
+          // Use a short time limit so that expireSession() really expires the session (the default limit is longer)
+          await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+          await createKeyGenSession({ version: 1.3, joined: [1, 2], timeLimit: 1 });
+          await storage.storeTssKeyBwsJoinSecrets({ id: SESSION_ID, chain: 'eth', network: 'livenet', secrets: ethSecrets });
+          const roundPath = `/v1/tss/keygen/${SESSION_ID}/0`;
+
+          // Before expiring: the session is live, so expiry-guarded endpoints accept the party and the secret is returned
+          (await fetchSession()).isExpired().should.equal(false);
+          const live = await get(roundPath, partyAuth(1));
+          live.status.should.equal(200);
+          (await getSecret(partyAuth(1))).body.secret.should.equal(ethSecrets[1]);
+
           expireSession();
+
+          // After expiring: the session is expired and expiry-guarded endpoints reject it...
+          (await fetchSession()).isExpired().should.equal(true);
+          expectError(await get(roundPath, partyAuth(1)), 400, 'TSS_SESSION_EXPIRED');
+
+          // ...but the secret is still available
           const res = await getSecret(partyAuth(1));
           res.status.should.equal(200);
           res.body.secret.should.equal(ethSecrets[1]);

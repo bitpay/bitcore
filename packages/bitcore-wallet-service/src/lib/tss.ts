@@ -630,6 +630,12 @@ class TssKeyGenClass {
       if (!(partyId > 0 && partyId < session.n) || typeof secret !== 'string' || !secret) {
         throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secret for party ' + party);
       }
+      if (secrets[partyId]) {
+        // Malformed secrets objects may be keyed by both partyId (number) and copayerId (string).
+        // While this technically won't break anything (only 1 secret will be stored), it indicates
+        // a malformation which could signal a broader issue with the client.
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Multiple BWS join secret for party ' + party);
+      }
       secrets[partyId] = secret;
     }
 
