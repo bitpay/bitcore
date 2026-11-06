@@ -429,6 +429,9 @@ export class TssKeyGen extends EventEmitter {
     this.n = parseInt(n);
     this.partyId = parseInt(partyId);
 
+    // Set the leader's public key in the roster (index 0)
+    this.#roster[0] = BitcoreLib.PublicKey.fromDER(code.subarray(0, code[0] === 4 ? 65 : 33)).toString();
+
     const msg = await keygen.initJoin();
     password = password || extra;
     await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, password, version: TSS_KEYGEN_VERSION });
@@ -714,7 +717,8 @@ export class TssKeyGen extends EventEmitter {
       copayerName,
       opts: Object.assign({}, opts, {
         chain: this.chain,
-        network: this.network
+        network: this.network,
+        creatorPubKey: this.#roster[0]
       })
     });
     return wallet;
@@ -813,7 +817,7 @@ export async function createWallet(params: ITssWalletParams & {
   const secret = Client._buildSecret(wallet.id, c.walletPrivKey, c.coin, c.network);
   const secrets = {};
   for (const [party, publicKey] of Object.entries(parties)) {
-    secrets[party] = ECIES.encrypt({ message: secret, publicKey, privateKey: c.requestPrivKey }).toString('hex');
+    secrets[party] = ECIES.encrypt({ message: secret, publicKey, privateKey: c.requestPrivKey, opts: { noKey: true } }).toString('hex');
   }
   await getKeygenSessionRequest({ baseCredentials, keygenChain, keygenNetwork, baseUrl, request })
     .post(`/v1/tss/keygen/${baseKey.metadata.id}/secret`, { chain, network, secrets });
@@ -833,6 +837,7 @@ export async function joinWallet(params: ITssWalletParams & {
     coin?: string;
     network?: string;
     dryRun?: boolean;
+    creatorPubKey?: string;
   };
 }) {
   const { baseKey, baseCredentials, baseUrl, copayerName, request, opts = {} } = params;
@@ -847,7 +852,7 @@ export async function joinWallet(params: ITssWalletParams & {
   const { body: { secret } } = await getKeygenSessionRequest({ baseCredentials, keygenChain, keygenNetwork, baseUrl, request })
     .get(`/v1/tss/keygen/${baseKey.metadata.id}/secret?${qs}`);
   setKeygenSession(baseKey, keygenChain, keygenNetwork);
-  const decryptedSecret = ECIES.decrypt({ payload: Buffer.from(secret, 'hex'), privateKey: credentials.requestPrivKey }).toString();
+  const decryptedSecret = decryptSecret(secret, baseCredentials, opts.creatorPubKey);
 
   const client = new Client({ baseUrl, request });
   client.fromObj(credentials.toObj());
@@ -985,4 +990,28 @@ function addTssWalletInfo(credentials: Credentials, wallet, walletName: string, 
     tssKeyId
   });
   credentials.addressType = wallet.addressType;
+}
+
+function decryptSecret(secret: string, baseCredentials: Credentials, creatorPubKey?: string) {
+  if (creatorPubKey) {
+    return ECIES.decrypt({
+      payload: Buffer.from(secret, 'hex'),
+      privateKey: baseCredentials.requestPrivKey,
+      publicKey: creatorPubKey
+    }).toString();
+  }
+  let err;
+  for (const pubKey of baseCredentials.publicKeyRing) {
+    try {
+      return ECIES.decrypt({
+        payload: Buffer.from(secret, 'hex'),
+        privateKey: baseCredentials.requestPrivKey,
+        publicKey: pubKey.requestPubKey
+      }).toString();
+    } catch (e) {
+      err = e;
+      // Ignore and try the next public key
+    }
+  }
+  throw err || new Error('Failed to decrypt secret');
 }
