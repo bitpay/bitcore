@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import util from 'util';
-import { Web3, ethers } from '@bitpay-labs/crypto-wallet-core';
+import { Web3, type Web3Types, ethers } from '@bitpay-labs/crypto-wallet-core';
 import promptly from 'promptly';
 import * as utils from '../utils';
 import { chainConfig } from './chains';
@@ -10,8 +10,86 @@ const { toBI, toNum } = utils;
 const passwordPromptAsync = util.promisify(promptly.password);
 const setTimeoutAsync = util.promisify(setTimeout);
 
+export interface EthRpcConfig {
+  chain: string;
+  /** 'http', 'https', 'ws' or 'wss' */
+  protocol: string;
+  host: string;
+  port?: number | string;
+  /** Passed through to the web3 HTTP or WebSocket provider, whose option types differ */
+  options?: any;
+  /** Default account used when no fromAccount is given */
+  account?: string;
+  isEVM?: boolean;
+}
+
+/** Amounts and fee values the node accepts as decimal numbers or strings */
+export type EthNumberLike = number | bigint | string;
+
+export interface EthSendToAddressParams {
+  address: string;
+  amount: EthNumberLike;
+  /** Address of an added account, or (for the unlockAndSend* methods) a hex private key */
+  fromAccount?: string;
+  gasPrice?: EthNumberLike;
+  nonce?: EthNumberLike;
+  gas?: EthNumberLike;
+}
+
+export interface EthPayment {
+  address: string;
+  amount: EthNumberLike;
+  id?: string;
+}
+
+export interface EthPaymentResult extends EthPayment {
+  txid?: string;
+  error?: unknown;
+}
+
+export interface EthSendToAddressManyParams extends Omit<EthSendToAddressParams, 'address' | 'amount'> {
+  payToArray: EthPayment[];
+}
+
+export interface EthEstimateFeeParams {
+  /** Not used by the EVM estimators; kept for interface parity with the UTXO chains */
+  nBlocks?: number;
+  /** '2' or 'eip-1559' for a max fee, anything else for a legacy gas price */
+  txType?: string | number;
+  priority?: number;
+  percentile?: number;
+}
+
+export interface EthDecodedTransaction {
+  to: string | undefined;
+  from: string | undefined;
+  nonce: number;
+  txid: string | null;
+  value: bigint;
+  type: number | undefined;
+  gasPrice: bigint | null;
+  maxPriorityFeePerGas: bigint | null;
+  maxFeePerGas: bigint | null;
+  gasLimit: bigint;
+  data: string;
+}
+
+/** Raw block from getBlock(n, true); its fields are read loosely below */
+type EthBlock = any;
+type PercentileFeeCache = Map<bigint, Record<string, any>>;
+type GetFees = (txs: any[]) => EthNumberLike[];
+
 export class EthRpc {
-  constructor(config) {
+  config: EthRpcConfig;
+  chain: string;
+  web3: Web3;
+  account: string | null | undefined;
+  emitter: EventEmitter;
+  blockCache: Map<bigint, EthBlock>;
+  blockGasPriceCache: PercentileFeeCache;
+  blockMaxPriorityFeeCache: PercentileFeeCache;
+
+  constructor(config: EthRpcConfig) {
     this.config = config;
     this.chain = this.config.chain;
     this.web3 = this.getWeb3(this.config);
@@ -22,10 +100,10 @@ export class EthRpc {
     this.blockMaxPriorityFeeCache = new Map();
   }
 
-  getWeb3(web3Config) {
+  getWeb3(web3Config: EthRpcConfig): Web3 {
     const { protocol, host, port, options } = web3Config;
     const connectionString = port ? `${protocol}://${host}:${port}` : `${protocol}://${host}`;
-    let Provider = null;
+    let Provider: typeof Web3.providers.HttpProvider | typeof Web3.providers.WebsocketProvider | null = null;
     switch (protocol) {
       case 'http':
         Provider = Web3.providers.HttpProvider;
@@ -52,28 +130,28 @@ export class EthRpc {
   async isUnlocked() {
     try {
       const account = await this.getAccount();
-      await this.web3.eth.sign('', account);
+      await this.web3.eth.sign('', account!);
     } catch {
       return false;
     }
     return true;
   }
 
-  addAccount(privateKey) {
+  addAccount(privateKey: string): string {
     const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
     this.web3.eth.accounts.wallet.add(account);
     this.account = account.address;
     return account.address;
   }
 
-  getAccount() {
+  getAccount(): string | undefined {
     if (this.account) {
       return this.account;
     }
     return this.web3.eth.accounts.wallet.get(0)?.address;
   }
 
-  removeAccount(address) {
+  removeAccount(address: string): void {
     address = this.web3.utils.toChecksumAddress(address);
     this.web3.eth.accounts.wallet.remove(address);
     if (this.account === address) {
@@ -81,12 +159,16 @@ export class EthRpc {
     }
   }
 
-  #getWallet(account) {
+  #getWallet(account: string) {
     return this.web3.eth.accounts.wallet.get(account);
   }
 
-  #addWallet(privateKey) {
+  #addWallet(privateKey: string): [string, boolean] {
     const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
+    // TODO(bitcore-dln): this passes the account object, not its address, so
+    // wallet.get() looks up wallet['[object Object]'] and accountExists is
+    // always false. The account is then always removed after sending.
+    // @ts-expect-error wallet.get() takes an address or index; kept as-is to preserve behavior
     const accountExists = !!this.#getWallet(account);
     if (!accountExists) {
       this.addAccount(privateKey);
@@ -99,11 +181,12 @@ export class EthRpc {
    * @param {Object} params
    * @param {number} params.time
    */
-  async cmdlineUnlock({ time }) {
+  async cmdlineUnlock({ time }: { time: number }) {
     const timeHex = this.web3.utils.toHex(time);
     const passphrase = await passwordPromptAsync(' >');
     const account = this.getAccount();
-    await this.web3.eth.personal.unlockAccount(account, passphrase, timeHex);
+    // @ts-expect-error web3 types the duration as a number; this has always sent the hex string
+    await this.web3.eth.personal.unlockAccount(account!, passphrase, timeHex);
     this.emitter.emit('unlocked');
     console.warn(account, ' unlocked for ' + time + ' seconds');
   }
@@ -113,10 +196,10 @@ export class EthRpc {
    */
   async walletLock() {
     const account = await this.getAccount();
-    return this.web3.eth.personal.lockAccount(account);
+    return this.web3.eth.personal.lockAccount(account!);
   }
 
-  async getBalance({ address }) {
+  async getBalance({ address }: { address?: string }) {
     if (address) {
       const balance = await this.web3.eth.getBalance(address);
       return balance;
@@ -130,13 +213,13 @@ export class EthRpc {
     }
   }
 
-  async sendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas }) {
+  async sendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas }: EthSendToAddressParams): Promise<string> {
     if (!gasPrice) {
       gasPrice = await this.estimateGasPrice();
     }
-    const account = fromAccount || this.getAccount();
+    const account = (fromAccount || this.getAccount())!;
     const amountStr = Number(amount).toLocaleString('fullwide', { useGrouping: false });
-    const sendParams = {
+    const sendParams: Web3Types.Transaction = {
       from: account,
       to: address,
       value: amountStr,
@@ -164,7 +247,7 @@ export class EthRpc {
     return txid;
   }
 
-  async unlockAndSendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas }) {
+  async unlockAndSendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas }: EthSendToAddressParams): Promise<string> {
     let accountAdded = true;
     if (typeof fromAccount === 'string' && (fromAccount.length === 66 || fromAccount.length === 64)) {
       [fromAccount, accountAdded] = this.#addWallet(fromAccount);
@@ -173,21 +256,21 @@ export class EthRpc {
       const txid = await this.sendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas });
       return txid;
     } finally {
-      if (accountAdded) this.removeAccount(fromAccount);
+      if (accountAdded) this.removeAccount(fromAccount!);
     }
   }
 
-  async unlockAndSendToAddressMany({ payToArray, fromAccount, gasPrice, nonce, gas }) {
+  async unlockAndSendToAddressMany({ payToArray, fromAccount, gasPrice, nonce, gas }: EthSendToAddressManyParams): Promise<EthPaymentResult[]> {
     let accountAdded = true;
     if (typeof fromAccount === 'string' && (fromAccount.length === 66 || fromAccount.length === 64)) {
       [fromAccount, accountAdded] = this.#addWallet(fromAccount);
     }
 
     try {
-      const resultArray = [];
+      const resultArray: EthPaymentResult[] = [];
       for (const payment of payToArray) {
         const { address, amount, id } = payment;
-        const emitData = { address, amount, id };
+        const emitData: EthPaymentResult = { address, amount, id };
         this.emitter.emit('attempt', emitData);
         try {
           const txid = await this.sendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas });
@@ -195,7 +278,7 @@ export class EthRpc {
           resultArray.push(emitData);
           this.emitter.emit('success', emitData);
 
-          let confirmations = 0;
+          let confirmations: bigint | number | null = 0;
           const timeout = new Date().getTime() + 120000;
           while (!confirmations || confirmations < 1) {
             if (new Date().getTime() > timeout) {
@@ -216,7 +299,7 @@ export class EthRpc {
       this.emitter.emit('done');
       return resultArray;
     } finally {
-      if (accountAdded) this.removeAccount(fromAccount);
+      if (accountAdded) this.removeAccount(fromAccount!);
     }
   }
 
@@ -229,7 +312,7 @@ export class EthRpc {
    * @param {number} [params.priority] - Optional: For type 2 txs, The priority fee to be used with the baseFee.
    * @returns {Promise<number>} The estimated fee. If txType is '2', returns the sum of maxFee and priorityFee. Otherwise, returns a number.
    */
-  async estimateFee({ nBlocks, txType = '0', priority, percentile }) {
+  async estimateFee({ nBlocks, txType = '0', priority, percentile }: EthEstimateFeeParams) {
     const _txType = txType.toString().toLowerCase();
     switch (_txType) {
       case 'eip-1559':
@@ -252,7 +335,12 @@ export class EthRpc {
    * @param {Function} params.getFees - The function to get the fees from the blocks.
    * @returns {Promise<BigInt>} The estimated fee.
    */
-  async _estimateFee({ cache, defaultEstimate, percentile = 25, getFees }) {
+  async _estimateFee({ cache, defaultEstimate, percentile = 25, getFees }: {
+    cache?: PercentileFeeCache;
+    defaultEstimate: EthNumberLike;
+    percentile?: number;
+    getFees?: GetFees;
+  }) {
     defaultEstimate = toBI(defaultEstimate);
 
     const blocks = await this._getRecentBlocks({});
@@ -269,9 +357,10 @@ export class EthRpc {
 
   /**
    * Estimates the gas price.
+   * @param {number} [_nBlocks] - Ignored. estimateFee() passes nBlocks through, but the estimate always uses the recent-block window.
    * @returns {Promise<bigint>} The estimated gas price.
    */
-  async estimateGasPrice() {
+  async estimateGasPrice(_nBlocks?: number) {
     const defaultEstimate = await this.web3.eth.getGasPrice();
     return this._estimateFee({
       cache: this.blockGasPriceCache,
@@ -287,16 +376,16 @@ export class EthRpc {
    * @param {number} [params.priority] - Optional: The maxPriorityFee to be used with the baseFee.
    * @returns {bigint} The estimated maximum base fee.
    */
-  async estimateMaxFee({ percentile, priority }) {
+  async estimateMaxFee({ percentile, priority }: { percentile?: number; priority?: number }): Promise<bigint> {
     const lastBlock = await this.web3.eth.getBlock('latest');
     const baseFeePerGas = lastBlock.baseFeePerGas || 0n;
     const gwei = BigInt(this.web3.utils.toWei('1', 'gwei'));
 
-    if (priority > 0) {
+    if (priority != null && priority > 0) {
       // user defined priority fee
       return 2n * baseFeePerGas + (BigInt(priority) * gwei);
     }
-    if (percentile > 0 && percentile <= 100) {
+    if (percentile != null && percentile > 0 && percentile <= 100) {
       // percentile priority fee
       const maxPriorityFee = await this.estimateMaxPriorityFee({ percentile });
       return 2n * baseFeePerGas + maxPriorityFee;
@@ -311,10 +400,10 @@ export class EthRpc {
    * @param {number} [params.percentile=25] - The percentile to use for the estimation.
    * @returns {Promise<bigint>} The estimated maximum priority fee.
    */
-  async estimateMaxPriorityFee({ percentile = 25 }) {
+  async estimateMaxPriorityFee({ percentile = 25 }: { percentile?: number }) {
     const minimumFee = chainConfig[this.chain] ? chainConfig[this.chain].priorityFee : 2.5;
     const defaultEstimate = parseInt(this.web3.utils.toWei(String(minimumFee), 'gwei'));
-    const getFees = (_txs) => _txs
+    const getFees: GetFees = (_txs) => _txs
       .filter((tx) => !!tx.maxPriorityFeePerGas)
       .map((tx) => parseInt(tx.maxPriorityFeePerGas));
     return this._estimateFee({
@@ -331,7 +420,7 @@ export class EthRpc {
    * @param {number} [params.n=10] - The number of blocks to fetch.
    * @returns {Promise<Array>} The fetched blocks.
    */
-  async _getRecentBlocks({ n = 10 }) {
+  async _getRecentBlocks({ n = 10 }: { n?: number }): Promise<EthBlock[]> {
     const bestBlock = await this.web3.eth.getBlockNumber();
     n = Math.min(toNum(bestBlock), n);
     const cache = this.blockCache;
@@ -369,9 +458,14 @@ export class EthRpc {
    * @param {Function} params.getFees - The function to use for getting the fees from the transactions.
    * @returns {Array} The percentile fees for the given blocks.
    */
-  _getPercentileFees({ percentile = 25, blocks, cache, getFees }) {
+  _getPercentileFees({ percentile = 25, blocks, cache, getFees }: {
+    percentile?: number;
+    blocks: EthBlock[];
+    cache?: PercentileFeeCache;
+    getFees?: GetFees;
+  }) {
     const percentileKey = `percentile${percentile}`;
-    const fees = [];
+    const fees: any[] = [];
     for (const block of blocks) {
       if (!block || !block.number || (!block.transactions || !block.transactions.length)) {
         continue;
@@ -379,8 +473,8 @@ export class EthRpc {
 
       let percentileValue;
       // get percentile fee
-      if (cache && cache.has(block.number) && cache.get(block.number)[percentileKey]) {
-        percentileValue = cache.get(block.number)[percentileKey];
+      if (cache && cache.has(block.number) && cache.get(block.number)![percentileKey]) {
+        percentileValue = cache.get(block.number)![percentileKey];
       } else {
         const _fees = getFees ? getFees(block.transactions) : block.transactions.map((tx) => tx.gasPrice);
         const feesSorted = utils.BI.sortDesc(_fees);
@@ -391,7 +485,7 @@ export class EthRpc {
       }
       // set quick fee retrieval cache
       if (cache) {
-        const blockFees = cache.has(block.number) ? cache.get(block.number) : {};
+        const blockFees = cache.has(block.number) ? cache.get(block.number)! : {};
         blockFees[percentileKey] = percentileValue;
         cache.set(block.number, blockFees);
         if (cache.size > 9) {
@@ -408,7 +502,7 @@ export class EthRpc {
    * @param {Array<bigint>} fees - The fees to calculate the estimate from.
    * @returns {bigint} The calculated fee estimate.
    */
-  _calculateFeeEstimate(fees) {
+  _calculateFeeEstimate(fees: EthNumberLike[]) {
     const shortAverage = utils.BI.avgCeil(fees.slice(0, fees.length / 2));
     const longAverage = utils.BI.avgCeil(fees);
     const divergence = utils.BI.abs(shortAverage - longAverage);
@@ -432,8 +526,9 @@ export class EthRpc {
    * @param {boolean} [params.getConfirmations]
    * @returns {Promise<object>}
    */
-  async getTransaction({ txid, getConfirmations = false }) {
-    const tx = await this.web3.eth.getTransaction(txid);
+  async getTransaction({ txid, getConfirmations = false }: { txid: string; getConfirmations?: boolean }) {
+    // Loosely typed: confirmations is added onto the node's response below
+    const tx: any = await this.web3.eth.getTransaction(txid);
     if (!getConfirmations || !tx) {
       return tx;
     }
@@ -456,11 +551,11 @@ export class EthRpc {
    * @param {string|number} [params.defaultBlock]
    * @returns {Promise<bigint>}
    */
-  async getTransactionCount({ address, defaultBlock }) {
+  async getTransactionCount({ address, defaultBlock }: { address: string; defaultBlock?: Web3Types.BlockNumberOrTag }) {
     return await this.web3.eth.getTransactionCount(address, defaultBlock);
   }
 
-  async getRawTransaction({ txid, withReceipt = false }) {
+  async getRawTransaction({ txid, withReceipt = false }: { txid: string; withReceipt?: boolean }) {
     if (!withReceipt) {
       return await this.getTransaction({ txid, getConfirmations: false });
     }
@@ -471,7 +566,7 @@ export class EthRpc {
     if (result[0].error) {
       throw new Error(result[0].error.message);
     }
-    const tx = result[0].result;
+    const tx: any = result[0].result;
     tx.receipt = result[1].result;
     return tx;
   }
@@ -482,12 +577,12 @@ export class EthRpc {
    * @param {string} params.rawTx
    * @returns {Promise<string>} Sent transaction ID (txid)
    */
-  async sendRawTransaction({ rawTx }) {
-    const txid = await new Promise((resolve, reject) => {
+  async sendRawTransaction({ rawTx }: { rawTx: string }): Promise<string> {
+    const txid = await new Promise<string>((resolve, reject) => {
       const errorHandler = (err) => {
         if (err?.message?.includes('already imported') || err?.message?.includes('already known')) {
           const txData = this.decodeRawTransaction({ rawTx });
-          return resolve(txData.txid);
+          return resolve(txData.txid!);
         }
         return reject(err);
       };
@@ -507,7 +602,7 @@ export class EthRpc {
    * @param {string} params.rawTx
    * @returns {object}
    */
-  decodeRawTransaction({ rawTx }) {
+  decodeRawTransaction({ rawTx }: { rawTx: string }): EthDecodedTransaction {
     const decodedTx = ethers.Transaction.from(rawTx);
     const {
       to,
@@ -538,7 +633,7 @@ export class EthRpc {
     };
   }
 
-  async getBlock({ hash }) {
+  async getBlock({ hash }: { hash: Web3Types.HexString32Bytes | Web3Types.BlockNumberOrTag }) {
     return await this.web3.eth.getBlock(hash);
   }
 
@@ -548,7 +643,7 @@ export class EthRpc {
    * @param {string} params.txid
    * @returns {Promise<bigint>}
    */
-  async getConfirmations({ txid }) {
+  async getConfirmations({ txid }: { txid: string }): Promise<bigint | null> {
     const tx = await this.getTransaction({ txid, getConfirmations: true });
     if (!tx) {
       return null;
@@ -570,7 +665,7 @@ export class EthRpc {
     return null;
   }
 
-  async validateAddress({ address }) {
+  async validateAddress({ address }: { address: string }) {
     // TODO: migrate to ethers.isAddress() or similar. Need to ensure same behavior first.
     return await this.web3.utils.isAddress(address);
   }
