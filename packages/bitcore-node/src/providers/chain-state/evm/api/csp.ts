@@ -833,7 +833,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     windowSize = Utils.BI.min<bigint>([windowSize, endBlock - startBlock]);
     const tokenTransfers: Partial<Web3Types.TransactionInfo>[] = [];
-    while (windowSize > 0n) {
+    while (windowSize >= 0n) {
       const [sent, received] = await Promise.all([
         token.getPastEvents('Transfer', {
           filter: { _from: address },
