@@ -3,6 +3,7 @@ import 'source-map-support/register';
 import logger from '../logger';
 import { loadModules } from '../modules';
 import { Api } from '../services/api';
+import { Config } from '../services/config';
 import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
@@ -57,6 +58,11 @@ const stop = async () => {
   logger.info(`Shutting down ${cluster.isPrimary ? 'primary' : 'worker'} process ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
+  }
+
+  if (Config.anyEVMChain()) {
+    const { BaseEVMStateProvider } = await import('../providers/chain-state/evm/api/csp');
+    BaseEVMStateProvider.teardownRpcs();
   }
 
   if (!cluster.isPrimary) {
