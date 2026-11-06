@@ -1,9 +1,21 @@
-import { ethers } from '@bitpay-labs/crypto-wallet-core';
-import { EthRpc } from '../eth/EthRpc';
+import { type Web3, type Web3Types, ethers } from '@bitpay-labs/crypto-wallet-core';
+import { type EthDecodedTransaction, EthRpc, type EthRpcConfig, type EthSendToAddressParams } from '../eth/EthRpc';
 import erc20 from './erc20.json';
 
+export interface Erc20RpcConfig extends EthRpcConfig {
+  tokenContractAddress: string;
+}
+
+export interface Erc20DecodedTransaction extends EthDecodedTransaction {
+  /** The parsed ERC20 call, or undefined/null when the data is not one */
+  decodedData?: ethers.TransactionDescription | null;
+}
+
 export class Erc20Rpc extends EthRpc {
-  constructor(config) {
+  tokenContractAddress: string;
+  erc20Contract: InstanceType<Web3['eth']['Contract']>;
+
+  constructor(config: Erc20RpcConfig) {
     super(config);
     this.tokenContractAddress = config.tokenContractAddress;
     this.erc20Contract = new this.web3.eth.Contract(
@@ -12,22 +24,22 @@ export class Erc20Rpc extends EthRpc {
     );
   }
 
-  #getWallet(account) {
+  #getWallet(account: string) {
     return this.web3.eth.accounts.wallet.get(account);
   }
 
   // this will only work on ERC20 tokens with decimals
-  async sendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas }) {
+  async sendToAddress({ address, amount, fromAccount, gasPrice, nonce, gas }: EthSendToAddressParams): Promise<string> {
     if (!gasPrice) {
       gasPrice = await this.estimateGasPrice();
     }
-    const account = fromAccount || this.getAccount();
+    const account = (fromAccount || this.getAccount())!;
     const amountStr = Number(amount).toLocaleString('fullwide', { useGrouping: false });
     const contractData = this.erc20Contract.methods
       .transfer(address, amountStr)
       .encodeABI();
 
-    const sendParams = {
+    const sendParams: Web3Types.Transaction = {
       from: account,
       gasPrice,
       data: contractData,
@@ -56,7 +68,7 @@ export class Erc20Rpc extends EthRpc {
     return txid;
   }
 
-  async getBalance({ address }) {
+  async getBalance({ address }: { address?: string }) {
     if (address) {
       const balance = await this.erc20Contract.methods
         .balanceOf(address)
@@ -72,8 +84,12 @@ export class Erc20Rpc extends EthRpc {
     }
   }
 
-  async decodeRawTransaction({ rawTx }) {
-    const decodedEthTx = await super.decodeRawTransaction({ rawTx });
+  // TODO(bitcore-dln): EthRpc's decodeRawTransaction is sync and
+  // sendRawTransaction reads .txid off its result to handle "already known"
+  // errors. This async override makes that read undefined for tokens.
+  // @ts-expect-error async override of a sync base method; kept to preserve behavior
+  async decodeRawTransaction({ rawTx }: { rawTx: string }): Promise<Erc20DecodedTransaction> {
+    const decodedEthTx: Erc20DecodedTransaction = await super.decodeRawTransaction({ rawTx });
     if (decodedEthTx.data) {
       try {
         const erc20Interface = new ethers.Interface(erc20);
