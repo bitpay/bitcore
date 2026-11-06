@@ -4037,6 +4037,26 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/moonpay/revokeActiveSession', data);
   }
 
+  async moonpaySwapGetPaths(data) {
+    return this.request.post('/v1/service/moonpaySwap/getPaths', data);
+  }
+
+  async moonpaySwapGetQuote(data) {
+    return this.request.post('/v1/service/moonpaySwap/getQuote', data);
+  }
+
+  async moonpaySwapGetAction(data) {
+    return this.request.post('/v1/service/moonpaySwap/getAction', data);
+  }
+
+  async moonpaySwapGetStatus(data) {
+    return this.request.post('/v1/service/moonpaySwap/getStatus', data);
+  }
+
+  async moonpaySwapRegisterTxs(data) {
+    return this.request.post('/v1/service/moonpaySwap/registerTxs', data);
+  }
+
   async rampGetQuote(data) {
     return this.request.post('/v1/service/ramp/quote', data);
   }
