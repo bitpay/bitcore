@@ -302,6 +302,10 @@ export class EthChain implements IChain {
       fee += feePerKb * gasLimit;
       logger.info(`[${from}] Top level gas limit with buffer: ${gasLimit}`);
     }
+    // BWC verifies an explicit feePerKb against the request, separately from the type-2 fee cap.
+    if (Number(txType) === 2 && Common.Utils.isNumber(opts.feePerKb)) {
+      feePerKb = opts.feePerKb;
+    }
     return { feePerKb, gasPrice, gasLimit, maxGasFee, priorityGasFee, fee };
   }
 
