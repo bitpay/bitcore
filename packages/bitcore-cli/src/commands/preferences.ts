@@ -1,28 +1,16 @@
 import os from 'os';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import type { CommonArgs } from '../../types/cli';
 
-export function command(args: CommonArgs) {
-  const { program } = args;
-  program
+export function command() {
+  return new Command('preferences')
     .description('View and manage wallet preferences')
-    .usage('<walletName> --command preferences [options]')
-    .optionsGroup('Preferences Options')
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-
-  return opts;
+    .optionsGroup('Preferences Options');
 }
 
 export async function getPreferences(args: CommonArgs) {
-  const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
+  const { wallet } = args;
   
   const preferences = await wallet.client.getPreferences();
   

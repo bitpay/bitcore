@@ -13,6 +13,7 @@ import { type IWallet, WalletStorage } from '../../../models/wallet';
 import { type IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
 import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
+import { Event } from '../../../services/event';
 import { Storage } from '../../../services/storage';
 import { type CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
 import { disposeOnce, normalizeChainNetwork } from '../../../utils';
@@ -509,12 +510,13 @@ export class InternalStateProvider implements IChainStateService {
   async getFee(params: GetEstimateSmartFeeParams) {
     const { chain, network, target, mode } = params;
     const cacheKey = `getFee-${chain}-${network}-${target}${mode ? '-' + mode.toLowerCase() : ''}`;
-    return CacheStorage.getGlobalOrRefresh(
+    return CacheStorage.getGlobalAndRefresh(
       cacheKey,
       async () => {
         return this.getRPC(chain, network).getEstimateSmartFee(Number(target), mode);
       },
-      5 * CacheStorage.Times.Minute
+      5 * CacheStorage.Times.Minute,
+      Event.lastBlockTime(chain, network)
     );
   }
 

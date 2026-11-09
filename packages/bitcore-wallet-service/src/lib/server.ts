@@ -605,6 +605,7 @@ export class WalletService implements IWalletService {
    * @param {number} [opts.tssVersion] TSS version to use. Supplying this with n > 1 and a multisig chain (e.g. btc) will tell the wallet to use
    *                                   threshold insead of on-chain multisig. Otherwise, n > 1 and a non-multisig chain will default to TSS_KEYGEN_SCHEME_VERSION
    * @param {string} [opts.tssKeyId] TSS key session id. This is the id of the TSS key generation session that will be used to create the wallet.
+   * @param {string} [opts.tssKeygenCopayerId] The ID of the copayer creating the wallet. Required for TSS version >= 1.3.
    */
   async createWallet(opts, cb) {
     let pubKey;
@@ -673,6 +674,17 @@ export class WalletService implements IWalletService {
       opts.tssVersion = opts.tssVersion || keySession.schemeVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
       if (!(opts.tssVersion >= Constants.TSS_KEYGEN_SCHEME_VERSION_MIN && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
         return cb(new ClientError('Invalid TSS version'));
+      }
+
+      if (opts.tssVersion >= 1.3) {
+        if (!opts.tssKeygenCopayerId) {
+          return cb(new ClientError('Copayer ID is required for TSS version >= 1.3'));
+        }
+        // This is only a sanity check to prevent problems down the line. If this is somehow
+        // spoofed, there are more strict authorization checks later in the wallet creation flow.
+        if (keySession.participants.indexOf(opts.tssKeygenCopayerId) !== 0) {
+          return cb(new ClientError('Only the TSS session leader can create a wallet'));
+        }
       }
 
       // TSS wallets behave like a single-sig
@@ -874,26 +886,29 @@ export class WalletService implements IWalletService {
       pendingTxps?: ITxProposal[];
       preferences?: boolean;
     } = {};
-    async.parallel(
-      [
-        next => {
-          this.getWallet({}, (err, wallet: Partial<Wallet>) => {
-            if (err) return next(err);
-            if (this._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet)) {
-              return next(Errors.UPGRADE_NEEDED);
-            }
+    this.getWallet({}, (err, fetchedWallet: Wallet) => {
+      if (err) return cb(err);
 
+      // Read the wallet once, and give each step its own copy, the same as reading it again: the steps change their
+      // wallet in place (this one strips copayer data, the balance code sets tokenAddress on it), and the balance step
+      // can store its copy whole.
+      const copyOfWallet = () => Wallet.fromObj(fetchedWallet.toObject());
+      const omit = (obj, keys: string[]): any => Object.fromEntries(Object.entries(obj).filter(([key]) => !keys.includes(key)));
+      async.parallel(
+        [
+          next => {
+            let wallet: Partial<Wallet> = copyOfWallet();
             const walletExtendedKeys = ['publicKeyRing', 'pubKey', 'addressManager'];
             const copayerExtendedKeys = ['xPubKey', 'requestPubKey', 'signature', 'addressManager', 'customData'];
 
             wallet.copayers = (wallet.copayers || []).map(copayer => {
               if (copayer.id == this.copayerId) return copayer;
-              return _.omit(copayer, 'customData');
+              return omit(copayer, ['customData']);
             });
             if (!opts.includeExtendedInfo) {
-              wallet = _.omit(wallet, walletExtendedKeys);
+              wallet = omit(wallet, walletExtendedKeys);
               wallet.copayers = (wallet.copayers || []).map(copayer => {
-                return _.omit(copayer, copayerExtendedKeys);
+                return omit(copayer, copayerExtendedKeys);
               }) as Copayer[];
             }
             status.wallet = wallet;
@@ -904,46 +919,45 @@ export class WalletService implements IWalletService {
               status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
             }
             next();
-          });
-        },
-        next => {
-          opts.wallet = status.wallet;
-          this.getBalance(opts, (err, balance) => {
-            // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
-            // (to allow `importWallet` to import a wallet, while scan has
-            // failed)
-            if (opts.includeExtendedInfo) {
-              if (err && err.code != 'WALLET_NEED_SCAN') {
+          },
+          next => {
+            this.getBalance({ ...opts, wallet: copyOfWallet() }, (err, balance) => {
+              // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
+              // (to allow `importWallet` to import a wallet, while scan has
+              // failed)
+              if (opts.includeExtendedInfo) {
+                if (err && err.code != 'WALLET_NEED_SCAN') {
+                  return next(err);
+                }
+              } else if (err) {
                 return next(err);
               }
-            } else if (err) {
-              return next(err);
-            }
 
-            status.balance = balance;
-            next();
-          });
-        },
-        next => {
-          this.getPendingTxs(opts, (err, pendingTxps) => {
-            if (err) return next(err);
-            status.pendingTxps = pendingTxps;
-            next();
-          });
-        },
-        next => {
-          this.getPreferences({}, (err, preferences) => {
-            if (err) return next(err);
-            status.preferences = preferences;
-            next();
-          });
+              status.balance = balance;
+              next();
+            });
+          },
+          next => {
+            this.getPendingTxs({ ...opts, wallet: copyOfWallet() }, (err, pendingTxps) => {
+              if (err) return next(err);
+              status.pendingTxps = pendingTxps;
+              next();
+            });
+          },
+          next => {
+            this.getPreferences({}, (err, preferences) => {
+              if (err) return next(err);
+              status.preferences = preferences;
+              next();
+            });
+          }
+        ],
+        err => {
+          if (err) return cb(err);
+          return cb(null, status);
         }
-      ],
-      err => {
-        if (err) return cb(err);
-        return cb(null, status);
-      }
-    );
+      );
+    });
   }
 
   /**
@@ -1037,7 +1051,11 @@ export class WalletService implements IWalletService {
     this._notify(type, data, {}, cb);
   }
 
-  _addCopayerToWallet(wallet: Wallet, opts, cb) {
+  _addCopayerToWallet(
+    wallet: Wallet,
+    opts: JoinWalletOpts,
+    cb: (err: ClientError | null, result?: { copayerId: string | null; wallet: Wallet }) => void
+  ) {
     const copayer = Copayer.create({
       coin: wallet.coin,
       chain: wallet.chain, // chain === coin for stored clients
@@ -1193,20 +1211,11 @@ export class WalletService implements IWalletService {
 
   /**
    * Joins a wallet in creation.
-   * @param {Object} opts
-   * @param {string} opts.walletId The wallet id.
-   * @param {string} opts.coin The expected coin for this wallet (btc, bch, eth, doge, ltc). Default: btc
-   * @param {string} opts.chain The expected chain for this wallet (btc, bch, eth, doge, ltc). Default: btc
-   * @param {string} opts.name The copayer name.
-   * @param {string} opts.xPubKey Extended Public Key for this copayer
-   * @param {string} opts.hardwareSourcePublicKey Public key from a hardware device for this copayer
-   * @param {string} opts.clientDerivedPublicKey Public key from the client for this wallet
-   * @param {string} opts.requestPubKey Public Key used to check requests from this copayer.
-   * @param {string} opts.copayerSignature S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
-   * @param {string} [opts.customData] Custom data for this copayer.
-   * @param {boolean} [opts.dryRun] Simulate the action but do not change server state.
    */
-  joinWallet(opts, cb) {
+  joinWallet(
+    opts: JoinWalletOpts,
+    cb: (err: ClientError | null, result?: { copayerId: string | null; wallet: Wallet }) => void
+  ) {
     // xPubKey is the canonical copayer identity in the current protocol. Alternate public-key
     // fields are ancillary metadata; supporting an xPubKey-less copayer requires a versioned
     // end-to-end identity protocol rather than a local identity fallback.
@@ -1225,6 +1234,9 @@ export class WalletService implements IWalletService {
       opts.chain = opts.coin; // chain === coin for stored clients
     }
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
+    if (opts.tssKeygenChain != null && !Utils.checkValueInCollection(opts.tssKeygenChain, Constants.CHAINS)) {
+      return cb(new ClientError('Invalid TSS keygen chain'));
+    }
 
     // xPubKey is parsed and validated for every join; ancillary fields never suppress it.
     // A future update will re-add conditional logic which allows opts.hardwareSourcePublicKey
@@ -1285,8 +1297,16 @@ export class WalletService implements IWalletService {
 
         if (wallet.tssKeyId) {
           const keySession = await storage.fetchTssKeyGenSession({ id: wallet.tssKeyId });
-          const copayerId = Copayer.xPubToCopayerId(opts.chain, opts.xPubKey);
-          if (!keySession.participants.includes(copayerId)) {
+          // A sibling wallet on another network (e.g. livenet -> testnet) has an xPubKey serialized for that network,
+          // but the keygen session's copayer IDs were derived from the xPubKey serialized for the session's network.
+          const idChain = opts.tssKeygenChain || opts.chain;
+          const copayerIds = new Set([
+            Copayer.xPubToCopayerId(idChain, opts.xPubKey), // this is probably a duplicate of one of the next two entries, but just in case.
+            Copayer.xPubToCopayerId(idChain, Utils.convertXPubKeyForNetwork(opts.xPubKey, idChain, 'livenet')),
+            Copayer.xPubToCopayerId(idChain, Utils.convertXPubKeyForNetwork(opts.xPubKey, idChain, 'testnet'))
+          ]);
+
+          if (!keySession?.participants.some(id => copayerIds.has(id))) {
             return cb(Errors.TSS_NON_PARTICIPANT);
           }
           return this._addCopayerToWallet(wallet, opts, cb);
@@ -1552,9 +1572,10 @@ export class WalletService implements IWalletService {
   _canCreateAddress(ignoreMaxGap, cb) {
     if (ignoreMaxGap) return cb(null, true);
 
-    this.storage.fetchAddresses(this.walletId, (err, addresses: IAddress[]) => {
+    const newest = { noChange: true, reverse: true, limit: Defaults.MAX_MAIN_ADDRESS_GAP };
+    this.storage.fetchAddressesPage(this.walletId, newest, (err, addresses: IAddress[]) => {
       if (err) return cb(err);
-      const latestAddresses = addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
+      const latestAddresses = addresses.reverse();
       if (
         latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
         latestAddresses.some(a => a.hasActivity)
@@ -1655,7 +1676,7 @@ export class WalletService implements IWalletService {
     };
 
     const getFirstAddress = (wallet, cb) => {
-      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+      this.storage.fetchAddressesPage(this.walletId, { limit: 1 }, (err, addresses) => {
         if (err) return cb(err);
         if (addresses?.length) {
           const x = addresses[0];
@@ -1708,17 +1729,9 @@ export class WalletService implements IWalletService {
 
   getAddresses(opts: GetAddressesOpts, cb) {
     opts = opts || {};
-    this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+    const { noChange, addresses: only, reverse, skip, limit } = opts;
+    this.storage.fetchAddressesPage(this.walletId, { noChange, addresses: only, reverse, skip, limit }, (err, addresses) => {
       if (err) return cb(err);
-      if (opts.noChange) {
-        addresses = addresses.filter(a => !a.isChange);
-      }
-      if (opts.addresses) {
-        addresses = addresses.filter(a => opts.addresses.includes(a.address));
-      }
-      if (opts.reverse) addresses.reverse();
-      if (opts.skip > 0) addresses = addresses.slice(opts.skip);
-      if (opts.limit > 0) addresses = addresses.slice(0, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
@@ -1800,7 +1813,7 @@ export class WalletService implements IWalletService {
     async.series(
       [
         next => {
-          this.getWallet({}, (err, w) => {
+          const useWallet = (err, w) => {
             if (err) return next(err);
 
             wallet = w;
@@ -1810,7 +1823,10 @@ export class WalletService implements IWalletService {
             bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             return next();
-          });
+          };
+          // the balance code passes the wallet it already has
+          if (opts.wallet) return useWallet(null, opts.wallet);
+          this.getWallet({}, useWallet);
         },
         next => {
           if (Array.isArray(opts.addresses)) {
@@ -1906,7 +1922,7 @@ export class WalletService implements IWalletService {
         next => {
           utxoIndex = _.keyBy(allUtxos, utxoKey);
 
-          this.getPendingTxs({ numberFormat: opts.numberFormat }, (err, txps) => {
+          this.getPendingTxs({ numberFormat: opts.numberFormat, wallet }, (err, txps) => {
             if (err) return next(err);
 
             const lockedInputs = txps.flatMap(t => t.inputs).map(utxoKey);
@@ -1950,7 +1966,8 @@ export class WalletService implements IWalletService {
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
-            }
+            },
+            wallet
           );
         },
         next => {
@@ -3227,19 +3244,23 @@ export class WalletService implements IWalletService {
    * @returns {Object} txProposal
    */
   getTx(opts, cb: (err: any, txp?: TxProposal) => void) {
-    this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+    // the tx and its note are both completed from the wallet, so read it once
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
-      if (!txp) return cb(Errors.TX_NOT_FOUND);
+      this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+        if (err) return cb(err);
+        if (!txp) return cb(Errors.TX_NOT_FOUND);
 
-      if (!txp.txid) return cb(null, txp);
+        if (!txp.txid) return cb(null, txp);
 
-      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
-        if (err) {
-          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
-        }
-        txp.note = note;
-        return cb(null, txp);
-      });
+        this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+          if (err) {
+            this.logw(`Error fetching tx note for ${txp.txid}:`, err);
+          }
+          txp.note = note;
+          return cb(null, txp);
+        }, wallet);
+      }, wallet);
     });
   }
 
@@ -3257,19 +3278,22 @@ export class WalletService implements IWalletService {
     // foreign wallet's proposal data to any authenticated copayer. The
     // internal global consumers (BlockchainMonitor, getWalletFromIdentifier)
     // are unaffected; they keep calling storage.fetchTxByHash directly.
-    this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
-      if (!txp) return cb(Errors.TX_NOT_FOUND);
+      this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
+        if (err) return cb(err);
+        if (!txp) return cb(Errors.TX_NOT_FOUND);
 
-      if (!txp.txid) return cb(null, txp);
+        if (!txp.txid) return cb(null, txp);
 
-      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
-        if (err) {
-          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
-        }
-        txp.note = note;
-        return cb(null, txp);
-      });
+        this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+          if (err) {
+            this.logw(`Error fetching tx note for ${txp.txid}:`, err);
+          }
+          txp.note = note;
+          return cb(null, txp);
+        }, wallet);
+      }, wallet);
     });
   }
 
@@ -3899,7 +3923,7 @@ export class WalletService implements IWalletService {
             return cb(err, txps);
           }
         );
-      });
+      }, opts.wallet);
     }
   }
 
@@ -4189,7 +4213,7 @@ export class WalletService implements IWalletService {
         return cb(err);
       }
       wallet.beRegistered = true;
-      return this.storage.storeWallet(wallet, err => cb(err, true));
+      return this.storage.storeWalletRegistration(wallet, err => cb(err, true));
     });
   }
 
@@ -4925,7 +4949,8 @@ export class WalletService implements IWalletService {
                       minTs,
                       maxTs
                     },
-                    done
+                    done,
+                    wallet
                   );
                 },
                 done => {
@@ -4934,7 +4959,8 @@ export class WalletService implements IWalletService {
                     {
                       minTs
                     },
-                    done
+                    done,
+                    wallet
                   );
                 }
               ],
@@ -5848,3 +5874,30 @@ export const UPGRADES = {
 } as const;
 
 type Upgrade = typeof UPGRADES[keyof typeof UPGRADES];
+
+export interface JoinWalletOpts {
+  /** The wallet id. */
+  walletId: string;
+  /** The expected coin for this wallet (btc, bch, eth, doge, ltc). Default: btc */
+  coin?: string;
+  /** The expected chain for this wallet (btc, bch, eth, doge, ltc). Default: btc */
+  chain?: string;
+  /** The copayer name. */
+  name: string;
+  /** Extended Public Key for this copayer */
+  xPubKey: string;
+  /** Public key from a hardware device for this copayer */
+  hardwareSourcePublicKey?: string;
+  /** Public key from the client for this wallet */
+  clientDerivedPublicKey?: string;
+  /** Public Key used to check requests from this copayer. */
+  requestPubKey: string;
+  /** Signature proving knowledge of the wallet secret for this copayer. */
+  copayerSignature: string;
+  /** Custom data for this copayer. */
+  customData?: string;
+  /** Simulate the action but do not change server state. */
+  dryRun?: boolean;
+  /** The chain used for TSS key generation. */
+  tssKeygenChain?: string;
+};

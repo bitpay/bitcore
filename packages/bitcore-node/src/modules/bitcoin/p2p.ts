@@ -455,9 +455,6 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     this.stopping = true;
     this.multiThreadSync.stop();
     logger.debug(`Stopping worker for chain ${this.chain}`);
-    for (const queuedRegistration of this.queuedRegistrations) {
-      clearTimeout(queuedRegistration);
-    }
     await this.unregisterSyncingNode();
     await this.disconnect();
   }

@@ -19,6 +19,76 @@ describe('Chain ETH', function() {
     x.address.should.equal('0x01');
   });
 
+  describe('#onTx', function() {
+    const token = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+    const sender = '0xC877cBCF020A8AA259A1Efab1559B2A3A7259086';
+    const recipient = '0x37D3bCDA9d7d5Dc41e32DAd77a5BA89a77aA8BD0';
+    const multisig = '0x9527a556f0D9AA753dE0D1f9Ad024a17dd281B1D';
+    // a tx event as bitcore-node emits it to the wallets room
+    const tx = (fields = {}) => ({ chain: 'ETH', network: 'mainnet', txid: '0x01', to: token, from: sender, value: 0, ...fields });
+    // effects as bitcore-node builds them
+    const erc20 = { type: 'ERC20:transfer', to: recipient, from: sender, amount: '1000000', contractAddress: token, callStack: '' };
+    const internal = { to: recipient, from: sender, amount: '2000', callStack: '0' };
+    const multisigEffect = type => ({ type, to: recipient, from: sender, amount: '3000', contractAddress: multisig, callStack: '' });
+
+    it('notifies the tx recipient and value for a tx without effects', function() {
+      ChainService.onTx('eth', tx({ to: recipient, value: 5000 })).should.deep.equal({
+        txid: '0x01',
+        out: { address: recipient, amount: 5000, tokenAddress: undefined, multisigContractAddress: undefined }
+      });
+      ChainService.onTx('eth', tx({ to: recipient, value: 5000, effects: [] })).out.should.deep.equal({
+        address: recipient, amount: 5000, tokenAddress: undefined, multisigContractAddress: undefined
+      });
+    });
+
+    it('notifies the recipient of an internal value transfer', function() {
+      ChainService.onTx('eth', tx({ effects: [internal] })).out.should.deep.equal({
+        address: recipient, amount: '2000', tokenAddress: undefined, multisigContractAddress: undefined
+      });
+    });
+
+    for (const type of ['MULTISIG:confirmTransaction', 'MULTISIG:submitTransaction']) {
+      it(`notifies the recipient of a ${type} with its multisig contract`, function() {
+        ChainService.onTx('eth', tx({ effects: [internal, multisigEffect(type)] })).out.should.deep.equal({
+          address: recipient, amount: '3000', tokenAddress: undefined, multisigContractAddress: multisig
+        });
+      });
+    }
+
+    it('prefers a multisig effect to an ERC20 transfer', function() {
+      ChainService.onTx('eth', tx({ effects: [erc20, multisigEffect('MULTISIG:submitTransaction')] })).out.should.deep.equal({
+        address: recipient, amount: '3000', tokenAddress: undefined, multisigContractAddress: multisig
+      });
+    });
+
+    it('falls back to the tx recipient for effects it does not know', function() {
+      const other = { type: 'OTHER:call', to: recipient, from: sender, amount: '1', contractAddress: token, callStack: '' };
+      ChainService.onTx('eth', tx({ effects: [other] })).out.should.deep.equal({
+        address: token, amount: 0, tokenAddress: undefined, multisigContractAddress: undefined
+      });
+    });
+
+    it('handles MATIC txs the same way', function() {
+      ChainService.onTx('matic', tx({ chain: 'MATIC', to: recipient, value: 5000 })).out.should.deep.equal({
+        address: recipient, amount: 5000, tokenAddress: undefined, multisigContractAddress: undefined
+      });
+    });
+
+    it('notifies the token recipient, amount and token of an ERC20 transfer', function() {
+      ChainService.onTx('eth', tx({ effects: [erc20] })).should.deep.equal({
+        txid: '0x01',
+        out: { address: recipient, amount: '1000000', tokenAddress: token, multisigContractAddress: undefined }
+      });
+      ChainService.onTx('matic', tx({ chain: 'MATIC', effects: [erc20] })).out.tokenAddress.should.equal(token);
+    });
+
+    it('prefers an ERC20 transfer to an internal value transfer', function() {
+      ChainService.onTx('eth', tx({ effects: [internal, erc20] })).out.should.deep.equal({
+        address: recipient, amount: '1000000', tokenAddress: token, multisigContractAddress: undefined
+      });
+    });
+  });
+
   describe('#selectTxInputs', function() {
     it('should reject a total that a number rounds down to the balance', function(done) {
       const server = {

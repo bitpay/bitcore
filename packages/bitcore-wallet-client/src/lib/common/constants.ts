@@ -70,6 +70,6 @@ export const Constants = {
     arc: 'arc',
   },
 
-  TSS_KEYGEN_VERSION: 1.2,
+  TSS_KEYGEN_VERSION: 1.3,
   TSS_SIGN_VERSION: 1.1
 };

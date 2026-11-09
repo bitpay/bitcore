@@ -1,8 +1,8 @@
-import { type ICliOptions } from '../types/cli';
+import { type ICliWalletOptions } from '../types/cli';
 import { type IWallet } from '../types/wallet';
 import { Utils } from './utils';
 
-export function getCommands(args: { wallet: IWallet; opts?: ICliOptions }) {
+export function getCommands(args: { wallet: IWallet; opts?: ICliWalletOptions }) {
   const { wallet } = args;
 
   const COMMANDS = {
@@ -34,7 +34,8 @@ export function getCommands(args: { wallet: IWallet; opts?: ICliOptions }) {
       { label: 'Flags', value: 'flags', hint: 'Manage XRP wallet flags', show: () => wallet.isXrp() },
       { label: 'Register', value: 'register', hint: 'Register the wallet with the Bitcore Wallet Service' },
       { label: 'Clear Cache', value: 'clearcache', hint: 'Clear the wallet cache' },
-      { label: 'Change Password', value: 'changepassword', hint: 'Change the wallet password', show: () => !wallet.isReadOnly(), noCmd: true }
+      { label: 'Change Password', value: 'changepassword', hint: 'Change the wallet password', show: () => !wallet.isReadOnly(), noCmd: true },
+      { label: 'Sibling Wallet', value: 'createsiblingwallet', hint: 'Create or join a wallet on another chain with this TSS key (e.g. ETH -> ARB)', show: () => wallet.isTss(), noCmd: true }
     ]
   } as const;
   return COMMANDS;
