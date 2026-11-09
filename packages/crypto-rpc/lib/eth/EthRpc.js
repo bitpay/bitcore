@@ -250,13 +250,20 @@ export class EthRpc {
    * @param {number|BigInt} params.defaultEstimate - The default fee value.
    * @param {number} [params.percentile=25] - The percentile to use for the estimation.
    * @param {Function} params.getFees - The function to get the fees from the blocks.
+   * @param {Function} params.getFeeHistoryFee - The function to get a block's fee from its eth_feeHistory base fee and
+   * reward.
    * @returns {Promise<BigInt>} The estimated fee.
    */
-  async _estimateFee({ cache, defaultEstimate, percentile = 25, getFees }) {
+  async _estimateFee({ cache, defaultEstimate, percentile = 25, getFees, getFeeHistoryFee }) {
     defaultEstimate = toBI(defaultEstimate);
 
-    const blocks = await this._getRecentBlocks({});
-    const percentileFees = this._getPercentileFees({ percentile, blocks, cache, getFees });
+    let percentileFees = chainConfig[this.chain]?.feeHistory
+      ? await this._getFeeHistoryFees({ percentile, getFee: getFeeHistoryFee })
+      : null;
+    if (!percentileFees) {
+      const blocks = await this._getRecentBlocks({});
+      percentileFees = this._getPercentileFees({ percentile, blocks, cache, getFees });
+    }
     if (!percentileFees.length) {
       return defaultEstimate;
     }
@@ -277,6 +284,7 @@ export class EthRpc {
       cache: this.blockGasPriceCache,
       defaultEstimate,
       percentile: 25,
+      getFeeHistoryFee: ({ baseFee, reward }) => baseFee + reward,
     });
   }
 
@@ -322,6 +330,7 @@ export class EthRpc {
       defaultEstimate,
       percentile,
       getFees,
+      getFeeHistoryFee: ({ reward }) => reward,
     });
   }
 
@@ -336,8 +345,8 @@ export class EthRpc {
     n = Math.min(toNum(bestBlock), n);
     const cache = this.blockCache;
     const blocks = await Promise.all(
-      [...Array(n).keys()].map(async (n) => {
-        const targetBlockNumber = bestBlock - BigInt(n);
+      [...Array(n).keys()].map(async (i) => {
+        const targetBlockNumber = bestBlock - BigInt(i);
         if (cache && cache.has(targetBlockNumber)) {
           return cache.get(targetBlockNumber);
         }
@@ -347,9 +356,6 @@ export class EthRpc {
         }
         if (cache) {
           cache.set(targetBlockNumber, block);
-          if (cache.size > n) {
-            cache.delete(Array.from(cache.keys()).sort((a, b) => Number(BigInt(a) - BigInt(b)))[0]);
-          }
         }
         return block;
       })
@@ -357,7 +363,51 @@ export class EthRpc {
       this.emitter.emit('failure', err);
       return [];
     });
+    if (cache) {
+      // keep the blocks this call read, which the next one mostly reads again
+      for (const blockNumber of cache.keys()) {
+        if (blockNumber <= bestBlock - BigInt(n)) {
+          cache.delete(blockNumber);
+        }
+      }
+    }
     return blocks;
+  }
+
+  /**
+   * Gets the percentile fees of the last n blocks from eth_feeHistory, newest first, as _getPercentileFees does for
+   * the blocks _getRecentBlocks reads. eth_feeHistory gives each block's effective priority fee at a percentile of its
+   * gas used, counted from the lowest fee, so percentile p of the highest fees is reward percentile 100 - p.
+   * @param {Object} params - The parameters for getting the percentile fees.
+   * @param {number} params.percentile - The percentile to get the fees for.
+   * @param {Function} params.getFee - The function to get a block's fee from its base fee and reward.
+   * @param {number} [params.n=10] - The number of blocks.
+   * @returns {Promise<Array|null>} The percentile fees, or null if eth_feeHistory can't give them.
+   */
+  async _getFeeHistoryFees({ percentile, getFee, n = 10 }) {
+    const rewardPercentile = 100 - Number(percentile);
+    if (!(rewardPercentile >= 0 && rewardPercentile <= 100)) {
+      return null;
+    }
+    try {
+      const history = await this.web3.eth.getFeeHistory(n, 'latest', [rewardPercentile]);
+      const fees = [];
+      for (let i = history.reward.length - 1; i >= 0; i--) {
+        // a block without transactions has a zero reward, and _getPercentileFees skips it
+        if (!history.gasUsedRatio[i]) {
+          continue;
+        }
+        const reward = history.reward[i][0];
+        if (reward == null) {
+          throw new Error('eth_feeHistory returned a block without a reward');
+        }
+        fees.push(getFee({ baseFee: toBI(history.baseFeePerGas[i]), reward: toBI(reward) }));
+      }
+      return fees;
+    } catch (err) {
+      this.emitter.emit('failure', err);
+      return null;
+    }
   }
 
   /**
@@ -394,11 +444,17 @@ export class EthRpc {
         const blockFees = cache.has(block.number) ? cache.get(block.number) : {};
         blockFees[percentileKey] = percentileValue;
         cache.set(block.number, blockFees);
-        if (cache.size > 9) {
-          cache.delete(Array.from(cache.keys()).sort((a, b) => Number(a - b))[0]);
-        }
       }
       fees.push(percentileValue);
+    }
+    if (cache && blocks.length) {
+      // keep the fees of these blocks, which the next call mostly reads again
+      const blockNumbers = new Set(blocks.map((block) => block.number));
+      for (const blockNumber of cache.keys()) {
+        if (!blockNumbers.has(blockNumber)) {
+          cache.delete(blockNumber);
+        }
+      }
     }
     return fees;
   }
