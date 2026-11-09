@@ -933,7 +933,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           data,
           to: to && to.toLowerCase(),
           from: from && from.toLowerCase(),
-          value: Utils.toHex(value)
+          value: Utils.toHex(value ?? 0)
         }
       ],
       jsonrpc: '2.0',
