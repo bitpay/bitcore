@@ -1,8 +1,8 @@
 import LitecoinRPC from 'bitcoind-rpc';
-import { BtcRpc } from '../btc/BtcRpc';
+import { BtcRpc, type BtcRpcConfig } from '../btc/BtcRpc';
 
 export class LtcRpc extends BtcRpc {
-  constructor(config) {
+  constructor(config: BtcRpcConfig) {
     super(config);
     const {
       protocol,

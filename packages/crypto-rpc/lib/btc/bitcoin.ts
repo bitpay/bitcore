@@ -1,8 +1,18 @@
 import bitcoinDRPC from 'bitcoind-rpc';
 import promptly from 'promptly';
 
+export interface BitcoinRPCOptions {
+  protocol?: string;
+  host?: string;
+  port?: number | string;
+  user?: string;
+  pass?: string;
+}
+
 export class BitcoinRPC extends bitcoinDRPC {
-  constructor (opts) {
+  httpOptions: { rejectUnauthorized: boolean };
+
+  constructor (opts?: BitcoinRPCOptions) {
     const args = { protocol: opts?.protocol }; // to allow nodes without ssl (protocol: 'http')
     super(args);
 
@@ -14,7 +24,7 @@ export class BitcoinRPC extends bitcoinDRPC {
     this.httpOptions = { rejectUnauthorized: false };
   }
 
-  cmdlineUnlock(timeout, callback) {
+  cmdlineUnlock(timeout: number, callback: (err: Error | null, lock?: (doneLocking?: () => void) => void) => void) {
     this.getWalletInfo((err, result) => {
       if (err) {
         console.error(err);

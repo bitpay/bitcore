@@ -1,8 +1,8 @@
 import DogecoinRPC from 'dogecoind-rpc';
-import { BtcRpc } from '../btc/BtcRpc';
+import { BtcRpc, type BtcRpcConfig } from '../btc/BtcRpc';
 
 export class DogeRpc extends BtcRpc {
-  constructor(config) {
+  constructor(config: BtcRpcConfig) {
     super(config);
     const {
       protocol,
@@ -14,7 +14,7 @@ export class DogeRpc extends BtcRpc {
     this.rpc = new DogecoinRPC({ host, port, user, pass, protocol });
   }
 
-  async getBlock({ hash, verbose = true }) {
+  async getBlock({ hash, verbose = true }: { hash: string; verbose?: number | boolean }) {
     return this.asyncCall('getBlock', [hash, verbose]);
   }
 }

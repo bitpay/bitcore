@@ -2,11 +2,55 @@ import EventEmitter from 'events';
 import util from 'util';
 import promptly from 'promptly';
 import { BitcoinRPC } from './bitcoin';
+import type BitcoindRpcClient from 'bitcoind-rpc';
 
 const passwordPromptAsync = util.promisify(promptly.password);
 
+/** Connection settings for the BTC-family clients (BTC, BCH, LTC, DOGE) */
+export interface BtcRpcConfig {
+  chain?: string;
+  protocol?: string;
+  host?: string;
+  port?: number | string;
+  user?: string;
+  pass?: string;
+  [key: string]: any;
+}
+
+/** Error raised for a node-level JSON-RPC error response */
+export interface BtcRpcError extends Error {
+  code?: number;
+  conclusive?: boolean;
+}
+
+export interface PayToItem {
+  address: string;
+  amount: number;
+  id?: string;
+}
+
+export interface PayToResult extends PayToItem {
+  txid?: string;
+  vout?: string | number;
+  error?: unknown;
+}
+
+export interface PaymentEmitData {
+  txid: string;
+  vout: string | number;
+  id: string | undefined;
+  amount: string | number;
+  address: string;
+  error?: unknown;
+}
+
 export class BtcRpc {
-  constructor(config) {
+  config: BtcRpcConfig;
+  // BitcoinRPC for BTC/BCH; LTC and DOGE swap in their own bitcoind-rpc style clients
+  rpc: BitcoindRpcClient;
+  emitter: EventEmitter;
+
+  constructor(config: BtcRpcConfig) {
     this.config = config;
     const {
       protocol,
@@ -19,9 +63,9 @@ export class BtcRpc {
     this.emitter = new EventEmitter();
   }
 
-  asyncCall(method, args) {
+  asyncCall(method: string, args: any[]): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.rpc[method](...args, (err, response) => {
+      this.rpc[method](...args, (err: BtcRpcError | null, response) => {
         if (err instanceof Error) {
           return reject(err);
         }
@@ -41,11 +85,11 @@ export class BtcRpc {
     });
   }
 
-  async cmdlineUnlock({ time }) {
+  async cmdlineUnlock({ time }: { time: number }) {
     return this.asyncCall('cmdlineUnlock', [time]);
   }
 
-  async sendMany({ account, batch, options }) {
+  async sendMany({ account, batch, options }: { account?: string; batch: Record<string, number>; options?: any }) {
     const batchClone = Object.assign({}, batch);
     for (const tx in batch) {
       batchClone[tx] /= 1e8;
@@ -53,18 +97,18 @@ export class BtcRpc {
     if (!account) {
       account = '';
     }
-    const paramArray = [account, batchClone];
+    const paramArray: any[] = [account, batchClone];
     if (options) {
       paramArray.push(options);
     }
     return this.asyncCall('sendMany', paramArray);
   }
 
-  async sendToAddress({ address, amount }) {
+  async sendToAddress({ address, amount }: { address: string; amount: number }) {
     return this.asyncCall('sendToAddress', [address, amount / 1e8]);
   }
 
-  async unlockAndSendToAddress({ address, amount, passphrase }) {
+  async unlockAndSendToAddress({ address, amount, passphrase }: { address: string; amount: number; passphrase?: string }) {
     if (passphrase === undefined) {
       passphrase = await passwordPromptAsync('> ');
     }
@@ -74,23 +118,31 @@ export class BtcRpc {
     return tx;
   }
 
-  async unlockAndSendToAddressMany({ account, payToArray, passphrase, time = 10800, maxValue = 10*1e8, maxOutputs = 1 }) {
+  async unlockAndSendToAddressMany({ account, payToArray, passphrase, time = 10800, maxValue = 10*1e8, maxOutputs = 1 }: {
+    account?: string;
+    payToArray: PayToItem[];
+    passphrase?: string;
+    time?: number;
+    maxValue?: number;
+    maxOutputs?: number;
+  }) {
     const payToArrayClone = [...payToArray];
     if (passphrase === undefined) {
       passphrase = await passwordPromptAsync('> ');
     }
     await this.walletUnlock({ passphrase, time });
-    const payToArrayResult = [];
+    const payToArrayResult: PayToResult[] = [];
     while (payToArrayClone.length) {
       let currentValue = 0;
       let currentOutputs = 0;
-      const paymentsObj = {};
-      const paymentsArr = [];
+      const paymentsObj: Record<string, number> = {};
+      const paymentsArr: PayToResult[] = [];
       if (payToArrayClone.length < maxOutputs) {
         maxOutputs = payToArrayClone.length;
       }
       while (currentValue < maxValue && currentOutputs < maxOutputs) {
-        const { address, amount, id } = payToArrayClone.shift();
+        // maxOutputs is capped at the remaining count above, so shift() never runs dry here
+        const { address, amount, id } = payToArrayClone.shift()!;
         paymentsArr.push({ address, amount, id });
         const emitAttempt = {
           address,
@@ -105,7 +157,7 @@ export class BtcRpc {
         currentValue += amount;
         currentOutputs++;
       }
-      const emitData = {
+      const emitData: PaymentEmitData = {
         txid: '',
         vout: '',
         id: '',
@@ -173,7 +225,7 @@ export class BtcRpc {
     return walletInfo['unlocked_until'] === 0;
   }
 
-  async walletUnlock({ passphrase, time }) {
+  async walletUnlock({ passphrase, time }: { passphrase?: string; time: number }) {
     if (await this.isWalletEncrypted()) {
       await this.asyncCall('walletPassPhrase', [passphrase, time]);
     }
@@ -187,8 +239,8 @@ export class BtcRpc {
     this.emitter.emit('locked');
   }
 
-  async estimateFee({ nBlocks, mode }) {
-    const args = [nBlocks];
+  async estimateFee({ nBlocks, mode }: { nBlocks?: number; mode?: string }) {
+    const args: any[] = [nBlocks];
     if (mode) { // We don't want args[1] to be undefined/null
       args.push(mode);
     }
@@ -207,7 +259,7 @@ export class BtcRpc {
     return this.asyncCall('getBestBlockHash', []);
   }
 
-  async getTransaction({ txid, detail = false, verbosity }) {
+  async getTransaction({ txid, detail = false, verbosity }: { txid: string; detail?: boolean; verbosity?: number }) {
     const tx = await this.getRawTransaction({ txid, verbosity });
 
     if (tx && detail) {
@@ -249,14 +301,19 @@ export class BtcRpc {
    * @param {boolean} inclWatchOnly defaults to true, include watch-only addresses in the returned transactions
    * @returns {Array}
    */
-  async getTransactions({ label = '*', count = 10, skip = 0, inclWatchOnly = true } = {}) {
+  async getTransactions({ label = '*', count = 10, skip = 0, inclWatchOnly = true }: {
+    label?: string;
+    count?: number;
+    skip?: number;
+    inclWatchOnly?: boolean;
+  } = {}) {
     return this.asyncCall('listTransactions', [label, count, skip, inclWatchOnly]);
   }
 
-  async getRawTransaction({ txid, verbosity = 1 }) {
+  async getRawTransaction({ txid, verbosity = 1 }: { txid: string; verbosity?: number }) {
     try {
       return await this.asyncCall('getRawTransaction', [txid, verbosity]);
-    } catch (err) {
+    } catch (err: any) {
       if (err.code === -5) {
         return null;
       }
@@ -264,23 +321,23 @@ export class BtcRpc {
     }
   }
 
-  async sendRawTransaction({ rawTx }) {
+  async sendRawTransaction({ rawTx }: { rawTx: string }) {
     return this.asyncCall('sendRawTransaction', [rawTx]);
   }
 
-  async decodeRawTransaction({ rawTx }) {
+  async decodeRawTransaction({ rawTx }: { rawTx: string }) {
     return this.asyncCall('decodeRawTransaction', [rawTx]);
   }
 
-  async getBlock({ hash, verbose = 1 }) {
+  async getBlock({ hash, verbose = 1 }: { hash: string; verbose?: number | boolean }) {
     return this.asyncCall('getBlock', [hash, verbose]);
   }
 
-  async getBlockHash({ height }) {
+  async getBlockHash({ height }: { height: number }) {
     return this.asyncCall('getBlockHash', [height]);
   }
 
-  async getConfirmations({ txid }) {
+  async getConfirmations({ txid }: { txid: string }) {
     const tx = await this.getTransaction({ txid });
     if (!tx) {
       return null;
@@ -297,7 +354,12 @@ export class BtcRpc {
     return { height, hash };
   }
 
-  async getTxOutputInfo({ txid, vout, includeMempool = false, transformToBitcore }) {
+  async getTxOutputInfo({ txid, vout, includeMempool = false, transformToBitcore }: {
+    txid: string;
+    vout: number;
+    includeMempool?: boolean;
+    transformToBitcore?: boolean;
+  }) {
     const txidInfo = await this.asyncCall('gettxout', [txid, vout, includeMempool]);
     if (!txidInfo) {
       this.emitter.emit('error', new Error(`No info found for ${txid}`));
@@ -317,7 +379,7 @@ export class BtcRpc {
     return txidInfo;
   }
 
-  async validateAddress({ address }) {
+  async validateAddress({ address }: { address: string }) {
     const validateInfo = await this.asyncCall('validateaddress', [address]);
     const { isvalid } = validateInfo;
     return isvalid;
@@ -327,7 +389,7 @@ export class BtcRpc {
     return {};
   }
 
-  getServerInfo() {
+  getServerInfo(): Promise<any> {
     return this.asyncCall('getblockchaininfo', []);
   }
 }
