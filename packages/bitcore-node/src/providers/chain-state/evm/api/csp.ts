@@ -920,9 +920,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       return Number(gasLimit);
     }
 
-    // Previously, we only used value if data was present with the following note.
-    // However, Glamsterdam changed the behavior of estimateGas. Zero-value standard transfers are now
-    // estimated to be 15000, so passing a zero value may not return an accurate estimate.
+    // Previously, we only used value if data was present. However, Glamsterdam changed the
+    // behavior of estimateGas. Zero-value standard transfers are now estimated to be 15000,
+    // so passing a zero value may not return an accurate estimate.
 
     const opts = {
       method: 'eth_estimateGas',
