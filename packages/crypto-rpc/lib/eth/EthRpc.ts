@@ -340,19 +340,19 @@ export class EthRpc {
     defaultEstimate: EthNumberLike;
     percentile?: number;
     getFees?: GetFees;
-  }) {
+  }): Promise<bigint> {
     defaultEstimate = toBI(defaultEstimate);
 
     const blocks = await this._getRecentBlocks({});
     const percentileFees = this._getPercentileFees({ percentile, blocks, cache, getFees });
     if (!percentileFees.length) {
-      return defaultEstimate;
+      return defaultEstimate as bigint;
     }
     if (percentileFees.length === 1) {
-      return utils.BI.max([toBI(percentileFees[0]), defaultEstimate]);
+      return utils.BI.max([toBI(percentileFees[0]), defaultEstimate]) as bigint;
     }
     const estimate = this._calculateFeeEstimate(percentileFees);
-    return utils.BI.max([estimate, defaultEstimate]);
+    return utils.BI.max([estimate, defaultEstimate]) as bigint;
   }
 
   /**
@@ -360,7 +360,7 @@ export class EthRpc {
    * @param {number} [_nBlocks] - Ignored. estimateFee() passes nBlocks through, but the estimate always uses the recent-block window.
    * @returns {Promise<bigint>} The estimated gas price.
    */
-  async estimateGasPrice(_nBlocks?: number) {
+  async estimateGasPrice(_nBlocks?: number): Promise<bigint> {
     const defaultEstimate = await this.web3.eth.getGasPrice();
     return this._estimateFee({
       cache: this.blockGasPriceCache,
@@ -400,7 +400,7 @@ export class EthRpc {
    * @param {number} [params.percentile=25] - The percentile to use for the estimation.
    * @returns {Promise<bigint>} The estimated maximum priority fee.
    */
-  async estimateMaxPriorityFee({ percentile = 25 }: { percentile?: number }) {
+  async estimateMaxPriorityFee({ percentile = 25 }: { percentile?: number }): Promise<bigint> {
     const minimumFee = chainConfig[this.chain] ? chainConfig[this.chain].priorityFee : 2.5;
     const defaultEstimate = parseInt(this.web3.utils.toWei(String(minimumFee), 'gwei'));
     const getFees: GetFees = (_txs) => _txs
@@ -502,11 +502,13 @@ export class EthRpc {
    * @param {Array<bigint>} fees - The fees to calculate the estimate from.
    * @returns {bigint} The calculated fee estimate.
    */
-  _calculateFeeEstimate(fees: EthNumberLike[]) {
-    const shortAverage = utils.BI.avgCeil(fees.slice(0, fees.length / 2));
-    const longAverage = utils.BI.avgCeil(fees);
-    const divergence = utils.BI.abs(shortAverage - longAverage);
-    return utils.BI.max([shortAverage, longAverage]) + divergence;
+  _calculateFeeEstimate(fees: EthNumberLike[]): bigint {
+    // The BI helpers accept and return any BigInt-like value; here every
+    // input is a bigint, so the results are too.
+    const shortAverage = utils.BI.avgCeil(fees.slice(0, fees.length / 2)) as bigint;
+    const longAverage = utils.BI.avgCeil(fees) as bigint;
+    const divergence = utils.BI.abs(shortAverage - longAverage) as bigint;
+    return (utils.BI.max([shortAverage, longAverage]) as bigint) + divergence;
   }
 
   /**
