@@ -8,10 +8,8 @@ import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 import { Storage } from '../lib/storage';
 
-type TransakEnv = 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-
 interface TransakKeys {
-  ENV: TransakEnv;
+  ENV: string;
   API: string;
   API_KEY: string;
   SECRET_KEY: string;
@@ -101,13 +99,13 @@ export class TransakService {
     this.lock = lock ?? new Lock(storage);
   }
 
-  private transakGetKeys(req, cleanBody: boolean = true): TransakKeys {
+  private transakGetKeys(req, cleanBody: boolean = true) {
     if (!config.transak) throw new Error('Transak missing credentials');
 
-    let env: TransakEnv;
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
     env = req.body.env === 'production' ? 'production' : 'sandbox';
     if (req.body.context === 'web') {
-      env = `${env}Web` as TransakEnv;
+      env += 'Web';
     }
 
     if (cleanBody) {
@@ -115,13 +113,15 @@ export class TransakService {
       delete req.body.context;
     }
 
-    return {
+    const keys: TransakKeys = {
       ENV: env,
       API: config.transak[env].api,
       API_KEY: config.transak[env].apiKey,
       SECRET_KEY: config.transak[env].secretKey,
       WIDGET_API: config.transak[env].widgetApi
     };
+
+    return keys;
   }
 
   // Web requests are proxied through the bitpay backend, so the IP on the
@@ -230,20 +230,28 @@ export class TransakService {
 
   private fetchPartnerToken(keys: TransakKeys, userIp: string): Promise<TransakPartnerToken> {
     return new Promise((resolve, reject) => {
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+      const SECRET_KEY = keys.SECRET_KEY;
+
       const headers = {
         'Content-Type': 'application/json',
-        'api-secret': keys.SECRET_KEY,
-        'x-api-key': keys.API_KEY,
+        'api-secret': SECRET_KEY,
+        'x-api-key': API_KEY,
         'x-user-ip': userIp,
       };
 
-      const URL: string = keys.API + '/partners/api/v2/refresh-token';
+      const body = {
+        apiKey: API_KEY
+      };
+
+      const URL: string = API + '/partners/api/v2/refresh-token';
 
       this.request.post(
         URL,
         {
           headers,
-          body: { apiKey: keys.API_KEY },
+          body,
           json: true,
           timeout: PARTNER_TOKEN_REQUEST_TIMEOUT
         },
@@ -531,105 +539,131 @@ export class TransakService {
     });
   }
 
-  async transakGetSignedPaymentUrl(req): Promise<{ urlWithSignature: string }> {
-    const appRequiredParams = [
-      'walletAddress',
-      'redirectURL',
-      'fiatAmount',
-      'fiatCurrency',
-      'network',
-      'cryptoCurrencyCode',
-      'partnerOrderId',
-      'partnerCustomerId',
-    ];
+  transakGetSignedPaymentUrl(req): Promise<{ urlWithSignature: string }> {
+    return new Promise(async (resolve, reject) => {
+      const appRequiredParams = [
+        'walletAddress',
+        'redirectURL',
+        'fiatAmount',
+        'fiatCurrency',
+        'network',
+        'cryptoCurrencyCode',
+        'partnerOrderId',
+        'partnerCustomerId',
+      ];
 
-    const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
-    const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
-    const userIp = this.transakGetUserIp(req);
-    const keys = this.transakGetKeys(req, false);
+      const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
+      const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
+      const userIp = this.transakGetUserIp(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req, false);
+      } catch (err) {
+        return reject(err);
+      }
+      const API_KEY = keys.API_KEY;
+      const WIDGET_API = keys.WIDGET_API;
 
-    if (!checkRequired(req.body, requiredParams)) {
-      throw new ClientError("Transak's request missing arguments");
-    }
+      if (!checkRequired(req.body, requiredParams)) {
+        return reject(new ClientError("Transak's request missing arguments"));
+      }
 
-    // Build widgetParams from an allowlist. Spreading req.body here used to
-    // forward accessToken, env and context into Transak's front-end widget.
-    const widgetParams: Record<string, any> = {};
-    for (const param of WIDGET_PARAMS) {
-      if (req.body[param] !== undefined) widgetParams[param] = req.body[param];
-    }
-    widgetParams.apiKey = keys.API_KEY;
-    widgetParams.referrerDomain = referrerDomain;
+      const headers = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': userIp,
+      };
 
-    const URL: string = keys.WIDGET_API + '/api/v2/auth/session';
-
-    const data = await this.withPartnerToken(keys, userIp, accessToken =>
-      this.sendRequest(
-        'post',
-        URL,
-        {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'access-token': accessToken,
-            'x-api-key': keys.API_KEY,
-            'x-user-ip': userIp,
-          },
-          body: { widgetParams }
+      // Build widgetParams from an allowlist. Spreading req.body here used to
+      // forward accessToken, env and context into Transak's front-end widget.
+      const widgetBody = {};
+      for (const param of WIDGET_PARAMS) {
+        if (req.body[param] !== undefined) widgetBody[param] = req.body[param];
+      }
+      const body = {
+        widgetParams: {
+          ...widgetBody,
+          apiKey: API_KEY,
+          referrerDomain,
         },
-        'Failed to get Transak signed payment URL'
-      )
-    );
+      };
 
-    const widgetUrl = data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl;
-    const success = data?.statusCode >= 200 && data?.statusCode < 300;
-    if (!success || !widgetUrl) {
-      logger.warn(`Transak request failed with status code ${data?.statusCode}: ${URL}${transakErrorDetail(data)}`);
-      throw new ClientError('Failed to get Transak signed payment URL');
-    }
-    return { urlWithSignature: widgetUrl };
+      const URL: string = WIDGET_API + '/api/v2/auth/session';
+
+      try {
+        const data = await this.withPartnerToken(keys, userIp, accessToken =>
+          this.sendRequest(
+            'post',
+            URL,
+            { headers: { ...headers, 'access-token': accessToken }, body },
+            'Failed to get Transak signed payment URL'
+          )
+        );
+        const widgetUrl = data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl;
+        const success = data?.statusCode >= 200 && data?.statusCode < 300;
+        if (!success || !widgetUrl) {
+          logger.warn(`Transak request failed with status code ${data?.statusCode}: ${URL}${transakErrorDetail(data)}`);
+          return reject(new ClientError('Failed to get Transak signed payment URL'));
+        }
+        return resolve({ urlWithSignature: widgetUrl });
+      } catch (err) {
+        return reject(err);
+      }
+    });
   }
 
-  async transakGetOrderDetails(req): Promise<any> {
-    const userIp = this.transakGetUserIp(req);
-    const keys = this.transakGetKeys(req, false);
+  transakGetOrderDetails(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      const userIp = this.transakGetUserIp(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req, false);
+      } catch (err) {
+        return reject(err);
+      }
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
 
-    if (!checkRequired(req.body, ['orderId'])) {
-      throw new ClientError("Transak's request missing arguments");
-    }
+      if (!checkRequired(req.body, ['orderId'])) {
+        return reject(new ClientError("Transak's request missing arguments"));
+      }
 
-    // orderId goes into the URL path of a request made with the partner token;
-    // reject anything that could change the path (e.g. "../orders").
-    const orderId = String(req.body.orderId);
-    if (!ORDER_ID_PATTERN.test(orderId)) {
-      throw new ClientError('Invalid Transak orderId');
-    }
+      // orderId goes into the URL path of a request made with the partner token;
+      // reject anything that could change the path (e.g. "../orders").
+      const orderId = String(req.body.orderId);
+      if (!ORDER_ID_PATTERN.test(orderId)) {
+        return reject(new ClientError('Invalid Transak orderId'));
+      }
 
-    const URL: string = keys.API + `/partners/api/v2/order/${orderId}`;
+      const headers = {
+        Accept: 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': userIp,
+      };
 
-    const data = await this.withPartnerToken(keys, userIp, accessToken =>
-      this.sendRequest(
-        'get',
-        URL,
-        {
-          headers: {
-            Accept: 'application/json',
-            'access-token': accessToken,
-            'x-api-key': keys.API_KEY,
-            'x-user-ip': userIp,
-          }
-        },
-        'Failed to get Transak order details'
-      )
-    );
+      const URL: string = API + `/partners/api/v2/order/${orderId}`;
 
-    const success = data.statusCode >= 200 && data.statusCode < 300;
-    if (!success) {
-      logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}${transakErrorDetail(data)}`);
-    }
-    if (!data.body) {
-      throw new ClientError('Transak did not return order details');
-    }
-    return data.body;
+      try {
+        const data = await this.withPartnerToken(keys, userIp, accessToken =>
+          this.sendRequest(
+            'get',
+            URL,
+            { headers: { ...headers, 'access-token': accessToken } },
+            'Failed to get Transak order details'
+          )
+        );
+        const success = data.statusCode >= 200 && data.statusCode < 300;
+        if (!success) {
+          logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}${transakErrorDetail(data)}`);
+        }
+        if (!data.body) {
+          return reject(new ClientError('Transak did not return order details'));
+        }
+        return resolve(data.body);
+      } catch (err) {
+        return reject(err);
+      }
+    });
   }
 }
