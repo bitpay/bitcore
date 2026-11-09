@@ -920,23 +920,20 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       return Number(gasLimit);
     }
 
-    let _value;
-    if (data) {
-      // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
-      // We want this method to give a blind fee estimation, though, so we should not include the value
-      // unless it's needed for estimating smart contract execution.
-      _value = Utils.toHex(value);
-    }
+    // Previously, we only used value if data was present with the following note.
+    // However, Glamsterdam changed the behavior of estimateGas. Zero-value standard transfers are now
+    // estimated to be 15000, so passing a zero value may not return an accurate estimate.
 
     const opts = {
       method: 'eth_estimateGas',
       params: [
         {
+          // Note: passing `gasPrice` and/or `gasFeeCap` to eth_estimateGas will cause this to return an insufficient funds error
+          // if the `from` does not have enough funds to cover the value + fees. For blind estimates, don't give `gasPrice` or `gasFeeCap`.
           data,
           to: to && to.toLowerCase(),
           from: from && from.toLowerCase(),
-          // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
-          value: _value
+          value: Utils.toHex(value)
         }
       ],
       jsonrpc: '2.0',
