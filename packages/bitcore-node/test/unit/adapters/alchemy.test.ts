@@ -6,6 +6,7 @@ import { AlchemyAdapter, AlchemyAssetTransferStream } from '../../../src/provide
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { EthDater } from '../../../src/utils/ethDater';
 import config from '../../../src/config';
+import { Constants } from '@bitpay-labs/crypto-wallet-core';
 
 // --- Mock data ---
 // Use lowercase addresses so real Web3.utils.toChecksumAddress always accepts them
@@ -262,6 +263,30 @@ describe('AlchemyAdapter', function() {
       const toCall = axiosPostStub.getCalls().find(c => c.args[1].params[0].toAddress);
       expect(fromCall!.args[1].params[0].category).to.deep.equal(['external', 'internal', 'erc20']);
       expect(toCall!.args[1].params[0].category).to.deep.equal(['external', 'internal']);
+    });
+
+    it('should discover Arc native USDC receives without changing explicit token queries', async function() {
+      const tokenAddress = VALID_FROM;
+      for (const token of [undefined, tokenAddress]) {
+        axiosPostStub.resetHistory();
+        axiosPostStub.resolves(rpcOk({ transfers: [], pageKey: null }));
+        const params = {
+          chain: 'ARC', network: 'mainnet', chainId: '5042', address: VALID_ADDRESS,
+          args: { startBlock: 1, endBlock: 100 } as any
+        };
+        const stream = token
+          ? adapter.streamERC20Transfers({ ...params, tokenAddress: token })
+          : adapter.streamAddressTransactions(params);
+        for await (const _ of stream) { /* drain the stream */ }
+
+        expect(axiosPostStub.callCount).to.equal(2);
+        const sends = axiosPostStub.firstCall.args[1].params[0];
+        const receives = axiosPostStub.secondCall.args[1].params[0];
+        expect(sends.category).to.deep.equal(token ? ['erc20'] : ['external', 'internal', 'erc20']);
+        expect(receives.category).to.deep.equal(sends.category);
+        expect(sends.contractAddresses).to.deep.equal(token ? [token] : undefined);
+        expect(receives.contractAddresses).to.deep.equal([token || Constants.ARC.USDC_CONTRACT_ADDRESS]);
+      }
     });
 
     it('should zero out value for erc20 sends so they show as 0-ETH txs', async function() {

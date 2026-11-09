@@ -6,6 +6,7 @@ import os from 'os';
 import path from 'path';
 import { Transform } from 'stream';
 import { Encryption, Key } from '@bitpay-labs/bitcore-wallet-client';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import * as helpers from './helpers';
 import * as walletData from './data/walletsData';
@@ -389,6 +390,41 @@ describe('Wallet', function() {
       });
     });
 
+  });
+
+  describe('getTokenFromChain', function() {
+    const sandbox = sinon.createSandbox();
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    for (const [network, rpcUrl] of Object.entries({
+      livenet: 'https://arc-rpc.publicnode.com',
+      testnet: 'https://arc-testnet-rpc.publicnode.com'
+    })) {
+      it(`should fetch Arc token metadata on ${network}`, async function() {
+        const wallet = new Wallet({ name: 'arc-token', dir: DIR });
+        sandbox.stub(wallet, 'chain').get(() => 'arc');
+        sandbox.stub(wallet, 'network').get(() => network);
+        const abi = new Web3().eth.abi;
+        const request = sandbox.stub(Web3.providers.HttpProvider.prototype, 'request').callsFake(async payload => ({
+          jsonrpc: '2.0',
+          id: payload.id,
+          result: payload.params[0].data === '0x95d89b41'
+            ? abi.encodeParameter('string', 'TEST')
+            : abi.encodeParameter('uint8', 6)
+        }));
+
+        const token = await wallet.getTokenFromChain({ address: '0x1111111111111111111111111111111111111111' });
+
+        assert.strictEqual(request.callCount, 2);
+        assert.ok(request.getCalls().every(call => call.thisValue.clientUrl === rpcUrl));
+        assert.strictEqual(token.code, 'TEST');
+        assert.strictEqual(token.chain, 'ARC');
+        assert.strictEqual(token.toSatoshis, 1e6);
+      });
+    }
   });
 
   describe('save', function() {

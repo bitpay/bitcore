@@ -57,6 +57,32 @@ export class EVMListTransactionsStream extends TransformWithEventPipe {
       baseTx.data = transaction.data ? transaction.data.toString() : '';
     }
     const sending = this.isWalletAddress(transaction.from);
+    if (transaction.chain === 'ARC' && !tokenAddressLower && transaction.receipt) {
+      const transfers = (transaction.effects || []).filter(effect => !effect.contractAddress);
+      let received = 0n;
+      let sent = 0n;
+      for (const transfer of transfers) {
+        if (this.isWalletAddress(transfer.to)) received += BigInt(transfer.amount);
+        if (this.isWalletAddress(transfer.from)) sent += BigInt(transfer.amount);
+      }
+      const amount = received - sent;
+      const move = amount === 0n && (received > 0n || (sending && this.isWalletAddress(transaction.to)));
+      if (amount !== 0n || sending || move) {
+        baseTx.category = amount > 0n ? 'receive' : move ? 'move' : 'send';
+        baseTx.satoshis = move
+          ? received || (isFailedReceipt(transaction.receipt) ? 0n : BigInt(transaction.value || 0))
+          : amount;
+        const transfer = transfers.find(effect => amount > 0n
+          ? this.isWalletAddress(effect.to) && !this.isWalletAddress(effect.from)
+          : this.isWalletAddress(effect.from) && !this.isWalletAddress(effect.to));
+        if (transfer) {
+          baseTx.from = transfer.from;
+          baseTx.address = transfer.to;
+        }
+        this.push(jsonStringify(baseTx) + '\n');
+      }
+      return done();
+    }
     if (sending) {
       const sendingToOurself = this.isWalletAddress(transaction.to);
       if (!sendingToOurself) {

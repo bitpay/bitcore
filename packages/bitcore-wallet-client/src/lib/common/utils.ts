@@ -24,6 +24,7 @@ const Bitcore_ = {
   arb: BitcoreLib,
   base: BitcoreLib,
   op: BitcoreLib,
+  arc: BitcoreLib,
   xrp: BitcoreLib,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc,
@@ -541,6 +542,9 @@ export class Utils {
   }
 
   static getCurrencyCodeFromCoinAndChain(coin: string, chain: string): string {
+    if (coin.toLowerCase() === 'arc' && chain.toLowerCase() === 'arc') {
+      return 'USDC_arc';
+    }
     if (coin.toLowerCase() === chain.toLowerCase()) {
       return coin.toUpperCase();
     }

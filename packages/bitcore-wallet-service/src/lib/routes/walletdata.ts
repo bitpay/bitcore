@@ -125,11 +125,13 @@ export function registerWalletDataRoutes(router: express.Router, context: RouteC
       const opts: {
         feePerKb?: number;
         feeLevel?: number;
+        txType?: number;
         returnInputs?: boolean;
         excludeUnconfirmedUtxos?: boolean;
       } = {};
       if (query.feePerKb) opts.feePerKb = +query.feePerKb;
       if (query.feeLevel) opts.feeLevel = Number(query.feeLevel);
+      if (query.txType != null) opts.txType = Number(query.txType);
       if (query.excludeUnconfirmedUtxos == '1') opts.excludeUnconfirmedUtxos = true;
       if (query.returnInputs == '1') opts.returnInputs = true;
 

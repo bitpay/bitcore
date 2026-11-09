@@ -29,6 +29,7 @@ const Bitcore_ = {
   arb: Bitcore,
   op: Bitcore,
   base: Bitcore,
+  arc: Bitcore,
   sol: Bitcore
 };
 

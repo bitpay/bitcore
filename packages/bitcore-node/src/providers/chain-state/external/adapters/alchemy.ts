@@ -1,4 +1,4 @@
-import { Web3 } from '@bitpay-labs/crypto-wallet-core';
+import { Constants, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import axios from 'axios';
 import config from '../../../../config';
 import logger from '../../../../logger';
@@ -332,6 +332,12 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
       const receiveCategories = category || ['external', 'internal'];
       const sendsRequest = { ...baseParams, category: sendCategories, fromAddress: address };
       const receivesRequest = { ...baseParams, category: receiveCategories, toAddress: address };
+      // Arc's USDC token interface also moves native funds. The contract filter
+      // applies only to token categories, leaving external/internal receives intact.
+      if (this.alchemyParams.chain.toUpperCase() === 'ARC' && !category) {
+        receivesRequest.category = [...receiveCategories, 'erc20'];
+        receivesRequest.contractAddresses = [Constants.ARC.USDC_CONTRACT_ADDRESS];
+      }
       if (this.sendsPageKey) sendsRequest.pageKey = this.sendsPageKey;
       if (this.receivesPageKey) receivesRequest.pageKey = this.receivesPageKey;
 
