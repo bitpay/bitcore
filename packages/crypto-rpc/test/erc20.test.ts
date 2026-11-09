@@ -3,6 +3,7 @@ import path from 'path';
 import { expect } from 'chai';
 import { ethers } from '@bitpay-labs/crypto-wallet-core';
 import { CryptoRpc } from '../index';
+import type { EthPaymentResult } from '../lib/eth/EthRpc';
 
 // Written by hardhat:deploy before the tests compile, so it is read at runtime from the source tree
 const deployedAddresses = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../blockchain/EVM/ignition/deployments/chain-1337/deployed_addresses.json'), 'utf8'));
@@ -37,7 +38,7 @@ describe('ERC20 Tests', function() {
   let rpcs;
   
   before(done => {
-    rpcs = new CryptoRpc(config, currencyConfig);
+    rpcs = new CryptoRpc(config);
     setTimeout(done, 5000);
   });
 
@@ -87,7 +88,7 @@ describe('ERC20 Tests', function() {
     const payToArray = [{ address, amount }, { address, amount }];
     const eventEmitter = rpcs.rpcs.ERC20.emitter;
     let eventCounter = 0;
-    const emitResults = [];
+    const emitResults: EthPaymentResult[] = [];
     const emitPromise = new Promise(resolve => {
       eventEmitter.on('success', (emitData) => {
         eventCounter++;
@@ -126,8 +127,8 @@ describe('ERC20 Tests', function() {
       { address: 'funkyColdMedina', amount: 1 }
     ];
     const eventEmitter = rpcs.rpcs.ERC20.emitter;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: EthPaymentResult[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('failure', (emitData) => {
         emitResults.push(emitData);
         resolve();

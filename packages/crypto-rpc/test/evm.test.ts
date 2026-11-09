@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { Web3, ethers } from '@bitpay-labs/crypto-wallet-core';
 import { CryptoRpc } from '../index';
+import type { EthPaymentResult } from '../lib/eth/EthRpc';
 import { chainConfig } from '../lib/eth/chains';
 
 const configs = [
@@ -92,7 +93,7 @@ describe('EVM', function() {
   before(async function() {
     const recipientConfigs = configs.slice(1);
     const mainConfig = configs[0];
-    const rpc = new CryptoRpc(mainConfig, mainConfig.currencyConfig);
+    const rpc = new CryptoRpc(mainConfig);
     for (const config of recipientConfigs) {
       // fund the other addresses
       await rpc.unlockAndSendToAddress({
@@ -116,7 +117,7 @@ describe('EVM', function() {
       let evmRPC;
     
       before(done => {
-        rpcs = new CryptoRpc(config, currencyConfig);
+        rpcs = new CryptoRpc(config);
         evmRPC = rpcs.get(currency);
         setTimeout(done, 10000);
       });
@@ -185,7 +186,7 @@ describe('EVM', function() {
             currency,
             rawTx: signedTx
           });
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.include('nonce too low');
         }
       });
@@ -193,6 +194,7 @@ describe('EVM', function() {
       it('should estimate fee for type 2 transaction', async () => {
         sinon.spy(evmRPC.web3.eth, 'getBlock');
         const maxFee = await evmRPC.estimateFee({ txType: 2, priority: 5 });
+        // @ts-expect-error chai's types only allow number | Date here; it compares bigints at runtime
         expect(maxFee).to.be.gt(5000000000n);
         expect(evmRPC.web3.eth.getBlock.callCount).to.equal(1);
       });
@@ -286,7 +288,7 @@ describe('EVM', function() {
         const payToArray = [{ address, amount }, { address, amount }];
         const eventEmitter = rpcs.rpcs[config.chain].emitter;
         let eventCounter = 0;
-        const emitResults = [];
+        const emitResults: EthPaymentResult[] = [];
         const emitPromise = new Promise(resolve => {
           eventEmitter.on('success', (emitData) => {
             eventCounter++;
@@ -326,8 +328,8 @@ describe('EVM', function() {
           { address: 'funkyColdMedina', amount: 1 }
         ];
         const eventEmitter = rpcs.rpcs[config.chain].emitter;
-        const emitResults = [];
-        const emitPromise = new Promise(resolve => {
+        const emitResults: EthPaymentResult[] = [];
+        const emitPromise = new Promise<void>(resolve => {
           eventEmitter.on('failure', (emitData) => {
             emitResults.push(emitData);
             resolve();
@@ -379,7 +381,7 @@ describe('EVM', function() {
         try {
           await rpcs.getConfirmations({ currency, txid: 'wrongtxid' });
           throw new Error('should have thrown');
-        } catch (err) {
+        } catch (err: any) {
           expect(err.name).to.equal('Web3ValidatorError');
           expect(err.message).to.include('value "wrongtxid" at "/0" must pass "bytes32" validation');
         }
