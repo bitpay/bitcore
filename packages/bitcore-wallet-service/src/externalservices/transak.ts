@@ -1,20 +1,113 @@
+import * as crypto from 'crypto';
 import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import { Lock } from '../lib/lock';
 import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
+import { Storage } from '../lib/storage';
+
+type TransakEnv = 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+
+interface TransakKeys {
+  ENV: TransakEnv;
+  API: string;
+  API_KEY: string;
+  SECRET_KEY: string;
+  WIDGET_API: string;
+}
+
+interface TransakPartnerToken {
+  accessToken: string;
+  /** Unix epoch in milliseconds */
+  expiresAt: number;
+  /** Unix epoch in milliseconds */
+  fetchedAt: number;
+}
+
+// The partner access token from /partners/api/v2/refresh-token is scoped to
+// BitPay's whole Transak account (it can read every order), so it must never
+// leave BWS. It is cached in the shared global cache so every BWS instance
+// reuses one token until it nears expiry, as Transak requires.
+const PARTNER_TOKEN_CACHE_PREFIX = 'transakPartnerToken:';
+const PARTNER_TOKEN_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const PARTNER_TOKEN_REFRESH_BUFFER = 10 * 60 * 1000;
+// Used if Transak omits expiresAt or returns one that is already (nearly) past.
+const PARTNER_TOKEN_FALLBACK_TTL = 60 * 60 * 1000;
+// If Transak rejects a token fetched less than this long ago, the rejection
+// isn't about token age, so don't refresh again.
+const PARTNER_TOKEN_MIN_FORCED_REFRESH_AGE = 60 * 1000;
+// Statuses that mean Transak rejected the token itself.
+const PARTNER_TOKEN_REJECTED_STATUSES = [401, 403];
+// If a refresh can't happen, keep serving the current token until this close
+// to its real expiry.
+const PARTNER_TOKEN_EXPIRY_MARGIN = 30 * 1000;
+const PARTNER_TOKEN_REQUEST_TIMEOUT = 10 * 1000;
+// Lock time is well above the request timeout so a holder never outlives its
+// lock (Lock.release is not owner-checked).
+const PARTNER_TOKEN_LOCK_TIME = 30 * 1000;
+const PARTNER_TOKEN_LOCK_WAIT = 15 * 1000;
+// After a failed refresh, don't retry for this long (shared across instances),
+// so an outage or disabled key doesn't turn every checkout into a refresh call.
+const PARTNER_TOKEN_FAILURE_PREFIX = 'transakPartnerTokenFailure:';
+const PARTNER_TOKEN_FAILURE_BACKOFF = 30 * 1000;
+
+// App builds and the bitpay.com widget still call getAccessToken and refuse to
+// continue without a non-empty accessToken and an integer expiresAt (seconds).
+// They get this placeholder; BWS ignores whatever token a client sends back.
+const CLIENT_TOKEN_PLACEHOLDER = 'server-managed';
+// Short so a rollback (or old pods during a rolling deploy) only sees the
+// placeholder briefly; getAccessToken no longer calls Transak, so it's cheap.
+const CLIENT_TOKEN_PLACEHOLDER_TTL = 2 * 60; // seconds
+
+// Only these client fields are forwarded to Transak's front-end widget.
+const WIDGET_PARAMS = [
+  'walletAddress',
+  'disableWalletAddressForm',
+  'redirectURL',
+  'exchangeScreenTitle',
+  'fiatAmount',
+  'fiatCurrency',
+  'network',
+  'defaultNetwork',
+  'cryptoCurrencyCode',
+  'cryptoCurrencyList',
+  'hideExchangeScreen',
+  'themeColor',
+  'hideMenu',
+  'partnerOrderId',
+  'partnerCustomerId',
+  'paymentMethod',
+  'defaultPaymentMethod',
+];
+
+const ORDER_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
+
+// Transak's error message, if any, for logs. Never the whole body.
+function transakErrorDetail(data): string {
+  const message = data?.body?.error?.message ?? data?.body?.message;
+  return typeof message === 'string' ? ` (${message.slice(0, 200)})` : '';
+}
 
 export class TransakService {
   request: any = request;
+  storage: Storage;
+  lock: Lock;
+  partnerTokenLockWait = PARTNER_TOKEN_LOCK_WAIT;
 
-  private transakGetKeys(req, cleanBody: boolean = true) {
+  constructor(storage: Storage, lock?: Lock) {
+    this.storage = storage;
+    this.lock = lock ?? new Lock(storage);
+  }
+
+  private transakGetKeys(req, cleanBody: boolean = true): TransakKeys {
     if (!config.transak) throw new Error('Transak missing credentials');
 
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    let env: TransakEnv;
     env = req.body.env === 'production' ? 'production' : 'sandbox';
     if (req.body.context === 'web') {
-      env += 'Web';
+      env = `${env}Web` as TransakEnv;
     }
 
     if (cleanBody) {
@@ -22,19 +115,13 @@ export class TransakService {
       delete req.body.context;
     }
 
-    const keys: {
-      API: string;
-      API_KEY: string;
-      SECRET_KEY: string;
-      WIDGET_API: string;
-    } = {
+    return {
+      ENV: env,
       API: config.transak[env].api,
       API_KEY: config.transak[env].apiKey,
       SECRET_KEY: config.transak[env].secretKey,
       WIDGET_API: config.transak[env].widgetApi
     };
-
-    return keys;
   }
 
   // Web requests are proxied through the bitpay backend, so the IP on the
@@ -55,55 +142,243 @@ export class TransakService {
     return userIp || '';
   }
 
-  transakGetAccessToken(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const userIp = this.transakGetUserIp(req);
-      let keys;
-      try {
-        keys = this.transakGetKeys(req);
-      } catch (err) {
-        return reject(err);
+  /**
+   * Kept for clients that still fetch a token before checkout. Returns a
+   * placeholder in the shape they expect; the real partner token stays in BWS.
+   */
+  async transakGetAccessToken(req): Promise<{ data: { accessToken: string; expiresAt: number } }> {
+    this.transakGetKeys(req);
+    return {
+      data: {
+        accessToken: CLIENT_TOKEN_PLACEHOLDER,
+        expiresAt: Math.floor(Date.now() / 1000) + CLIENT_TOKEN_PLACEHOLDER_TTL
       }
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const SECRET_KEY = keys.SECRET_KEY;
+    };
+  }
 
+  /**
+   * Cache/lock id for a partner token. Includes a hash of the API key so a
+   * rotated key never reuses a token minted for the old one.
+   */
+  private partnerTokenId(keys: TransakKeys): string {
+    const keyHash = crypto.createHash('sha256').update(String(keys.API_KEY)).digest('hex').slice(0, 12);
+    return `${keys.ENV}:${keyHash}`;
+  }
+
+  private readCachedPartnerToken(id: string): Promise<TransakPartnerToken | null> {
+    return new Promise(resolve => {
+      this.storage.checkAndUseGlobalCache(PARTNER_TOKEN_CACHE_PREFIX + id, PARTNER_TOKEN_CACHE_MAX_AGE, (err, values) => {
+        if (err) {
+          logger.warn(`Transak partner token cache read failed: ${err.message || err}`);
+          return resolve(null);
+        }
+        return resolve(values?.accessToken ? values : null);
+      });
+    });
+  }
+
+  private storeCachedPartnerToken(id: string, token: TransakPartnerToken): Promise<void> {
+    return new Promise(resolve => {
+      this.storage.storeGlobalCache(PARTNER_TOKEN_CACHE_PREFIX + id, token, err => {
+        if (err) logger.warn(`Transak partner token cache write failed: ${err.message || err}`);
+        return resolve();
+      });
+    });
+  }
+
+  private recentRefreshFailed(id: string): Promise<boolean> {
+    return new Promise(resolve => {
+      this.storage.checkAndUseGlobalCache(PARTNER_TOKEN_FAILURE_PREFIX + id, PARTNER_TOKEN_FAILURE_BACKOFF, (err, values) => {
+        return resolve(!err && !!values);
+      });
+    });
+  }
+
+  private markRefreshFailed(id: string): Promise<void> {
+    return new Promise(resolve => {
+      this.storage.storeGlobalCache(PARTNER_TOKEN_FAILURE_PREFIX + id, { failedAt: Date.now() }, () => resolve());
+    });
+  }
+
+  private acquirePartnerTokenLock(id: string): Promise<((cb?: () => void) => void) | null> {
+    return new Promise(resolve => {
+      this.lock.acquire(
+        PARTNER_TOKEN_CACHE_PREFIX + id,
+        { lockTime: PARTNER_TOKEN_LOCK_TIME, waitTime: this.partnerTokenLockWait },
+        (err, release) => {
+          if (err) {
+            logger.warn(`Transak partner token lock not acquired: ${err.message || err}`);
+            return resolve(null);
+          }
+          return resolve(release);
+        }
+      );
+    });
+  }
+
+  private isUsablePartnerToken(token: TransakPartnerToken | null, staleToken?: string): boolean {
+    return !!token?.accessToken
+      && token.accessToken !== staleToken
+      && token.expiresAt - PARTNER_TOKEN_REFRESH_BUFFER > Date.now();
+  }
+
+  private isUnexpiredPartnerToken(token: TransakPartnerToken | null, staleToken?: string): boolean {
+    return !!token?.accessToken
+      && token.accessToken !== staleToken
+      && token.expiresAt - PARTNER_TOKEN_EXPIRY_MARGIN > Date.now();
+  }
+
+  private fetchPartnerToken(keys: TransakKeys, userIp: string): Promise<TransakPartnerToken> {
+    return new Promise((resolve, reject) => {
       const headers = {
         'Content-Type': 'application/json',
-        'api-secret': SECRET_KEY,
-        'x-api-key': API_KEY,
+        'api-secret': keys.SECRET_KEY,
+        'x-api-key': keys.API_KEY,
         'x-user-ip': userIp,
       };
 
-      const body = {
-        apiKey: API_KEY
-      };
-
-      const URL: string = API + '/partners/api/v2/refresh-token';
+      const URL: string = keys.API + '/partners/api/v2/refresh-token';
 
       this.request.post(
         URL,
         {
           headers,
-          body,
-          json: true
+          body: { apiKey: keys.API_KEY },
+          json: true,
+          timeout: PARTNER_TOKEN_REQUEST_TIMEOUT
         },
         (err, data) => {
           if (err) {
             logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
             return reject(new ClientError('Failed to get Transak access token'));
-          } else {
-            const success = data.statusCode >= 200 && data.statusCode < 300;
-            if (!success) {
-              logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}`);
-            }
-            if (!data.body) {
-              return reject(new ClientError('Transak did not return an access token'));
-            }
-            return resolve(data.body);
           }
+          const success = data.statusCode >= 200 && data.statusCode < 300;
+          const accessToken = data.body?.data?.accessToken;
+          if (!success || !accessToken || typeof accessToken !== 'string') {
+            logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}${transakErrorDetail(data)}`);
+            return reject(new ClientError('Transak did not return an access token'));
+          }
+
+          // Transak returns expiresAt in seconds; accept milliseconds too. If it
+          // is missing or already inside the refresh buffer (e.g. a duration
+          // instead of a timestamp), use a fallback TTL rather than treating the
+          // token as expired and refreshing on every request.
+          const now = Date.now();
+          const rawExpiresAt = Number(data.body.data.expiresAt);
+          let expiresAt = rawExpiresAt < 1e12 ? rawExpiresAt * 1000 : rawExpiresAt;
+          if (!Number.isFinite(expiresAt) || expiresAt - PARTNER_TOKEN_REFRESH_BUFFER <= now) {
+            logger.warn(`Transak returned an unusable access token expiresAt (${data.body.data.expiresAt}); using fallback TTL`);
+            expiresAt = now + PARTNER_TOKEN_FALLBACK_TTL;
+          }
+          return resolve({ accessToken, expiresAt, fetchedAt: now });
         }
       );
+    });
+  }
+
+  /**
+   * Returns the cached partner token if usable, or null if a refresh is
+   * needed. Throws if a refresh must not happen right now.
+   */
+  private async checkPartnerTokenCache(id: string, staleToken?: string): Promise<string | null> {
+    const cached = await this.readCachedPartnerToken(id);
+    if (this.isUsablePartnerToken(cached, staleToken)) return cached.accessToken;
+
+    if (staleToken && cached?.accessToken === staleToken
+      && Date.now() - (cached.fetchedAt || 0) < PARTNER_TOKEN_MIN_FORCED_REFRESH_AGE) {
+      throw new ClientError('Transak rejected the access token');
+    }
+    if (await this.recentRefreshFailed(id)) {
+      throw new ClientError('Failed to get Transak access token');
+    }
+    return null;
+  }
+
+  /**
+   * Returns the cached partner access token, refreshing it at most once across
+   * all BWS instances when it is missing, near expiry, or equal to staleToken
+   * (a token Transak just rejected).
+   */
+  private async getPartnerToken(keys: TransakKeys, userIp: string, staleToken?: string): Promise<string> {
+    const id = this.partnerTokenId(keys);
+
+    const cached = await this.readCachedPartnerToken(id);
+    if (this.isUsablePartnerToken(cached, staleToken)) return cached.accessToken;
+
+    try {
+      return await this.refreshPartnerToken(keys, userIp, id, staleToken);
+    } catch (err) {
+      // The refresh buffer is proactive. If the refresh can't happen right now
+      // (backoff, lock timeout, Transak error), keep serving the current token
+      // while Transak would still accept it.
+      const current = await this.readCachedPartnerToken(id);
+      if (this.isUnexpiredPartnerToken(current, staleToken)) {
+        logger.warn(`Transak partner token refresh unavailable; using current token: ${err?.message || err}`);
+        return current.accessToken;
+      }
+      throw err;
+    }
+  }
+
+  private async refreshPartnerToken(keys: TransakKeys, userIp: string, id: string, staleToken?: string): Promise<string> {
+    const cached = await this.checkPartnerTokenCache(id, staleToken);
+    if (cached) return cached;
+
+    const release = await this.acquirePartnerTokenLock(id);
+    if (!release) {
+      // Never refresh without the lock: if the holder is slow, every waiter
+      // would time out together and refresh at once.
+      const afterWait = await this.readCachedPartnerToken(id);
+      if (this.isUsablePartnerToken(afterWait, staleToken)) return afterWait.accessToken;
+      throw new ClientError('Failed to get Transak access token');
+    }
+
+    try {
+      // Another instance may have refreshed (or failed) while we waited.
+      const recheck = await this.checkPartnerTokenCache(id, staleToken);
+      if (recheck) return recheck;
+
+      let fresh: TransakPartnerToken;
+      try {
+        fresh = await this.fetchPartnerToken(keys, userIp);
+      } catch (err) {
+        await this.markRefreshFailed(id);
+        throw err;
+      }
+      await this.storeCachedPartnerToken(id, fresh);
+      return fresh.accessToken;
+    } finally {
+      release();
+    }
+  }
+
+  /**
+   * Calls a Transak endpoint with the partner token. If Transak rejects the
+   * token (revoked or expired early), refreshes it once and retries.
+   */
+  private async withPartnerToken(
+    keys: TransakKeys,
+    userIp: string,
+    call: (accessToken: string) => Promise<any>
+  ): Promise<any> {
+    const accessToken = await this.getPartnerToken(keys, userIp);
+    const data = await call(accessToken);
+    if (!PARTNER_TOKEN_REJECTED_STATUSES.includes(data?.statusCode)) return data;
+
+    logger.warn('Transak rejected the cached partner token; refreshing');
+    const freshToken = await this.getPartnerToken(keys, userIp, accessToken);
+    return call(freshToken);
+  }
+
+  private sendRequest(method: 'get' | 'post', URL: string, opts: any, errorMessage: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request[method](URL, { ...opts, json: true }, (err, data) => {
+        if (err) {
+          logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
+          return reject(new ClientError(errorMessage));
+        }
+        return resolve(data);
+      });
     });
   }
 
@@ -256,121 +531,105 @@ export class TransakService {
     });
   }
 
-  transakGetSignedPaymentUrl(req): Promise<{ urlWithSignature: string }> {
-    return new Promise(async (resolve, reject) => {
-      const appRequiredParams = [
-        'accessToken',
-        'walletAddress',
-        'redirectURL',
-        'fiatAmount',
-        'fiatCurrency',
-        'network',
-        'cryptoCurrencyCode',
-        'partnerOrderId',
-        'partnerCustomerId',
-      ];
+  async transakGetSignedPaymentUrl(req): Promise<{ urlWithSignature: string }> {
+    const appRequiredParams = [
+      'walletAddress',
+      'redirectURL',
+      'fiatAmount',
+      'fiatCurrency',
+      'network',
+      'cryptoCurrencyCode',
+      'partnerOrderId',
+      'partnerCustomerId',
+    ];
 
-      const requiredParams = req.body.context === 'web' ? ['accessToken'] : appRequiredParams;
-      const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
-      const userIp = this.transakGetUserIp(req);
-      let keys;
-      try {
-        keys = this.transakGetKeys(req, false);
-      } catch (err) {
-        return reject(err);
-      }
-      const API_KEY = keys.API_KEY;
-      const WIDGET_API = keys.WIDGET_API;
+    const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
+    const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
+    const userIp = this.transakGetUserIp(req);
+    const keys = this.transakGetKeys(req, false);
 
-      if (!checkRequired(req.body, requiredParams)) {
-        return reject(new ClientError("Transak's request missing arguments"));
-      }
+    if (!checkRequired(req.body, requiredParams)) {
+      throw new ClientError("Transak's request missing arguments");
+    }
 
-      const headers = {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'access-token': req.body.accessToken,
-        'x-api-key': API_KEY,
-        'x-user-ip': userIp,
-      };
+    // Build widgetParams from an allowlist. Spreading req.body here used to
+    // forward accessToken, env and context into Transak's front-end widget.
+    const widgetParams: Record<string, any> = {};
+    for (const param of WIDGET_PARAMS) {
+      if (req.body[param] !== undefined) widgetParams[param] = req.body[param];
+    }
+    widgetParams.apiKey = keys.API_KEY;
+    widgetParams.referrerDomain = referrerDomain;
 
-      const widgetBody = { ...req.body };
-      delete widgetBody.deviceIp;
-      const body = {
-        widgetParams: {
-          ...widgetBody,
-          apiKey: API_KEY,
-          referrerDomain,
-        },
-      };
+    const URL: string = keys.WIDGET_API + '/api/v2/auth/session';
 
-      const URL: string = WIDGET_API + '/api/v2/auth/session';
-
-      this.request.post(
+    const data = await this.withPartnerToken(keys, userIp, accessToken =>
+      this.sendRequest(
+        'post',
         URL,
         {
-          headers,
-          body,
-          json: true
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'access-token': accessToken,
+            'x-api-key': keys.API_KEY,
+            'x-user-ip': userIp,
+          },
+          body: { widgetParams }
         },
-        (err, data) => {
-          if (err) {
-            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
-            return reject(new ClientError('Failed to get Transak signed payment URL'));
-          } else {
-            return resolve({ urlWithSignature: data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl });
-          }
-        }
-      );
-    });
+        'Failed to get Transak signed payment URL'
+      )
+    );
+
+    const widgetUrl = data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl;
+    const success = data?.statusCode >= 200 && data?.statusCode < 300;
+    if (!success || !widgetUrl) {
+      logger.warn(`Transak request failed with status code ${data?.statusCode}: ${URL}${transakErrorDetail(data)}`);
+      throw new ClientError('Failed to get Transak signed payment URL');
+    }
+    return { urlWithSignature: widgetUrl };
   }
 
-  transakGetOrderDetails(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      let keys;
-      try {
-        keys = this.transakGetKeys(req, false);
-      } catch (err) {
-        return reject(err);
-      }
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
+  async transakGetOrderDetails(req): Promise<any> {
+    const userIp = this.transakGetUserIp(req);
+    const keys = this.transakGetKeys(req, false);
 
-      if (!checkRequired(req.body, ['orderId', 'accessToken'])) {
-        return reject(new ClientError("Transak's request missing arguments"));
-      }
+    if (!checkRequired(req.body, ['orderId'])) {
+      throw new ClientError("Transak's request missing arguments");
+    }
 
-      const headers = {
-        Accept: 'application/json',
-        'access-token': req.body.accessToken,
-        'x-api-key': API_KEY,
-        'x-user-ip': Utils.getIpFromReq(req),
-      };
+    // orderId goes into the URL path of a request made with the partner token;
+    // reject anything that could change the path (e.g. "../orders").
+    const orderId = String(req.body.orderId);
+    if (!ORDER_ID_PATTERN.test(orderId)) {
+      throw new ClientError('Invalid Transak orderId');
+    }
 
-      const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
+    const URL: string = keys.API + `/partners/api/v2/order/${orderId}`;
 
-      this.request.get(
+    const data = await this.withPartnerToken(keys, userIp, accessToken =>
+      this.sendRequest(
+        'get',
         URL,
         {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            logger.error(`Transak request failed with error (${URL}): ${err.stack || err}`);
-            return reject(new ClientError('Failed to get Transak order details'));
-          } else {
-            const success = data.statusCode >= 200 && data.statusCode < 300;
-            if (!success) {
-              logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}`);
-            }
-            if (!data.body) {
-              return reject(new ClientError('Transak did not return order details'));
-            }
-            return resolve(data.body);
+          headers: {
+            Accept: 'application/json',
+            'access-token': accessToken,
+            'x-api-key': keys.API_KEY,
+            'x-user-ip': userIp,
           }
-        }
-      );
-    });
+        },
+        'Failed to get Transak order details'
+      )
+    );
+
+    const success = data.statusCode >= 200 && data.statusCode < 300;
+    if (!success) {
+      logger.warn(`Transak request failed with status code ${data.statusCode}: ${URL}${transakErrorDetail(data)}`);
+    }
+    if (!data.body) {
+      throw new ClientError('Transak did not return order details');
+    }
+    return data.body;
   }
 }
