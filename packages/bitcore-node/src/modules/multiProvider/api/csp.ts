@@ -252,7 +252,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
               try {
                 const receipt = await this.getReceipt(network, tx.txid);
                 if (!Array.isArray(receipt?.logs)) throw new Error(`Missing Arc receipt logs for ${tx.txid}`);
-                tx.effects = getArcUsdcEffects(receipt.logs, tx.effects);
+                tx.effects = getArcUsdcEffects(receipt.logs, tx.effects, network);
                 done(null, tx);
               } catch (err) {
                 done(new ArcReceiptError(err instanceof Error ? err.message : String(err), { cause: err }));

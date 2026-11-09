@@ -77,13 +77,21 @@ describe('ETH Chain State Provider', function() {
       processed: true
     } as MongoBound<IEVMBlock>;
     mockModel('blocks', mockBlock);
-    sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
+    const getReceipt = sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
     const found = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
     expect(found).to.exist;
     expect(found!.fee).to.eq(21000 * 10);
     expect(found!.confirmations).to.eq(1);
+    getReceipt.resolves({ gasUsed: 21000, effectiveGasPrice: 25000000000 });
+    mockModel('transactions', { ...mockTx, receipt: undefined, gasPrice: 0 });
+    const type2 = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
+    expect(type2!.fee).to.eq(525000000000000);
+    getReceipt.resolves({ gasUsed: 21000, effectiveGasPrice: 0 });
+    mockModel('transactions', { ...mockTx, receipt: undefined });
+    const zeroFee = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
+    expect(zeroFee!.fee).to.eq(0);
     sandbox.restore();
   });
 

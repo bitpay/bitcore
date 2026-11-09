@@ -483,7 +483,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (!tx.receipt || (isArc && !Array.isArray(tx.receipt.logs))) {
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
-        const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
+        const fee = Number(BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice ?? tx.gasPrice));
         await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt: receipt as any, fee } });
         tx.receipt = receipt as any;
         tx.fee = fee;
@@ -493,7 +493,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (isArc) {
       const logs = tx.receipt?.logs;
       if (Array.isArray(logs)) {
-        tx.effects = getArcUsdcEffects(logs, tx.effects);
+        tx.effects = getArcUsdcEffects(logs, tx.effects, tx.network);
       } else if ((tx.blockHeight ?? -1) >= 0) {
         throw new Error(`Missing Arc receipt logs for ${tx.txid}`);
       }

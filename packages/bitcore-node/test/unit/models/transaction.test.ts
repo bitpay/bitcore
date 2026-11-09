@@ -228,10 +228,12 @@ describe('Transaction Model', function() {
       const recipient = Web3.utils.toChecksumAddress('0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
       const usdc = '0x3600000000000000000000000000000000000000';
       const emitter = '0xfffffffffffffffffffffffffffffffffffffffe';
+      const legacyEmitter = '0x1800000000000000000000000000000000000000';
       const abi = new Web3().eth.abi;
-      const transferLog = (from: string, to: string, amount: string, address = emitter) => ({
+      const transferLog = (from: string, to: string, amount: string, address = emitter,
+        event = 'Transfer(address,address,uint256)') => ({
         address, logIndex: 0, data: abi.encodeParameter('uint256', amount),
-        topics: [abi.encodeEventSignature('Transfer(address,address,uint256)'),
+        topics: [abi.encodeEventSignature(event),
           abi.encodeParameter('address', from), abi.encodeParameter('address', to)]
       });
       const makeTx = (overrides: Record<string, any> = {}) => ({
@@ -250,15 +252,18 @@ describe('Transaction Model', function() {
         const makeTxs = () => [
           makeTx({ txid: 'native', value: '1000000000000000001' }),
           makeTx({ txid: 'erc20' }),
-          makeTx({ txid: 'internal', from: contract, value: '500000000000000000' })
+          makeTx({ txid: 'internal', from: contract, value: '500000000000000000' }),
+          makeTx({ txid: 'legacy' })
         ];
         const logs = {
           native: [transferLog(sender, recipient, '1000000000000000001')],
           erc20: [transferLog(sender, recipient, '1000000000000000000'), transferLog(sender, recipient, '1000000', usdc)],
-          internal: [0, 1].map(logIndex => ({ ...transferLog(contract, recipient, '500000000000000000'), logIndex }))
+          internal: [0, 1].map(logIndex => ({ ...transferLog(contract, recipient, '500000000000000000'), logIndex })),
+          legacy: [transferLog(sender, recipient, '1000000000000000000', legacyEmitter,
+            'NativeCoinTransferred(address,address,uint256)'), transferLog(sender, recipient, '1000000', usdc)]
         };
         const getReceipt = sandbox.stub(provider, 'getReceipt').callsFake(async (_network, txid) => ({
-          status: true, gasUsed: 21000, logs: logs[txid]
+          status: true, gasUsed: 21000, effectiveGasPrice: 25000000000, logs: logs[txid]
         }));
         sandbox.stub(provider, '_buildWalletTransactionsStream').callsFake(async (_params, { transactionStream }) => ({
           stream: Readable.from(makeTxs()).pipe(transactionStream)
@@ -274,12 +279,15 @@ describe('Transaction Model', function() {
 
         const received = await collect();
         expect(received.map(row => row.satoshis)).to.deep.equal([
-          '1000000000000000001', '1000000000000000000', '1000000000000000000'
+          '1000000000000000001', '1000000000000000000', '1000000000000000000', '1000000000000000000'
         ]);
         expect(received.every(row => row.category === 'receive')).to.equal(true);
         const sent = await collect(sender);
-        expect(sent.map(row => row.satoshis)).to.deep.equal(['-1000000000000000001', '-1000000000000000000']);
+        expect(sent.map(row => row.satoshis)).to.deep.equal([
+          '-1000000000000000001', '-1000000000000000000', '-1000000000000000000'
+        ]);
         expect(sent.every(row => row.category === 'send')).to.equal(true);
+        expect(sent.map(row => row.fee)).to.deep.equal([525000000000000, 525000000000000, 525000000000000]);
 
         getReceipt.rejects(new Error('Arc receipt unavailable'));
         try {
@@ -288,6 +296,20 @@ describe('Transaction Model', function() {
         } catch (err: any) {
           expect(err.message).to.equal('Arc receipt unavailable');
         }
+      });
+
+      it('should decode historical testnet mints and burns without enabling them on mainnet', async () => {
+        const logs = ['NativeCoinMinted', 'NativeCoinBurned'].map((event, logIndex) => ({
+          address: legacyEmitter, logIndex, data: abi.encodeParameter('uint256', '1000000000000000000'),
+          topics: [abi.encodeEventSignature(`${event}(address,uint256)`), abi.encodeParameter('address', recipient)]
+        }));
+        const effects = getArcUsdcEffects(logs, [], 'testnet');
+        const zeroAddress = '0x0000000000000000000000000000000000000000';
+        expect(effects).to.deep.equal([
+          { from: zeroAddress, to: recipient, amount: '1000000000000000000', callStack: '0' },
+          { from: recipient, to: zeroAddress, amount: '1000000000000000000', callStack: '1' }
+        ]);
+        expect(getArcUsdcEffects(logs, [], 'mainnet')).to.deep.equal([]);
       });
 
       it('should report self-transfers, failed transactions and relayed USDC sends', async () => {
