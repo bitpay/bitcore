@@ -804,7 +804,9 @@ describe('Transak integration', () => {
   });
 
   describe('#transakGetOrderDetails', () => {
-    beforeEach(() => {
+    let ownedAddress: string;
+
+    beforeEach(async () => {
       req = {
         headers: {},
         body: {
@@ -813,22 +815,83 @@ describe('Transak integration', () => {
         }
       };
       server.externalServices.transak.request = fakeRequest;
+      ownedAddress = (await util.promisify(server.createAddress).call(server, {})).address;
+      orderBody = { data: { walletAddress: ownedAddress, status: 'PROCESSING' } };
+    });
+
+    it('should return an order for an address of the requesting wallet', async () => {
+      const data = await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
+      data.should.deep.equal({ data: { walletAddress: ownedAddress, status: 'PROCESSING' } });
+    });
+
+    it('should not return another wallet\'s order', async () => {
+      const { server: otherServer } = await helpers.createAndJoinWallet(1, 1, { offset: 1 });
+      const otherAddress = (await util.promisify(otherServer.createAddress).call(otherServer, {})).address;
+      orderBody = { data: { walletAddress: otherAddress, status: 'PROCESSING' } };
+      try {
+        await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak order not found');
+      }
+      // The owner can still read it.
+      otherServer.externalServices.transak.request = fakeRequest;
+      const data = await otherServer.externalServices.transak.transakGetOrderDetails({ headers: {}, body: { ...req.body } }, otherServer.walletId);
+      data.data.walletAddress.should.equal(otherAddress);
+    });
+
+    it('should not return an order without a wallet address', async () => {
+      orderBody = { data: { status: 'PROCESSING' } };
+      try {
+        await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak order not found');
+      }
+    });
+
+    it('should not return an order without a requesting wallet', async () => {
+      try {
+        await server.externalServices.transak.transakGetOrderDetails(req, undefined);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak order not found');
+      }
+    });
+
+    it('should match an EVM order address in any case', async () => {
+      const { server: ethServer } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth', offset: 1 });
+      ethServer.externalServices.transak.request = fakeRequest;
+      const ethAddress = (await util.promisify(ethServer.createAddress).call(ethServer, {})).address;
+      ethAddress.should.not.equal(ethAddress.toLowerCase());
+      for (const walletAddress of [ethAddress.toLowerCase(), ethAddress.toUpperCase().replace('0X', '0x')]) {
+        orderBody = { data: { walletAddress, status: 'PROCESSING' } };
+        const data = await ethServer.externalServices.transak.transakGetOrderDetails({ headers: {}, body: { ...req.body } }, ethServer.walletId);
+        data.data.walletAddress.should.equal(walletAddress);
+      }
+    });
+
+    it('should pass through a Transak error without an ownership check', async () => {
+      orderStatuses = [400];
+      orderBody = { error: { statusCode: 400, message: 'Invalid orderId' } };
+      const data = await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
+      data.should.deep.equal({ error: { statusCode: 400, message: 'Invalid orderId' } });
     });
 
     it('should work properly if req is OK', async () => {
-      const data = await server.externalServices.transak.transakGetOrderDetails(req);
+      const data = await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
       should.exist(data);
     });
 
     it('should work properly if req is OK for web', async () => {
       req.body.context = 'web';
-      const data = await server.externalServices.transak.transakGetOrderDetails(req);
+      const data = await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
       should.exist(data);
     });
 
     it('should use the server-side partner token and ignore any client accessToken', async () => {
       req.body.accessToken = 'clientSuppliedToken';
-      await server.externalServices.transak.transakGetOrderDetails(req);
+      await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
       orderCalls.length.should.equal(1);
       orderCalls[0].url.should.equal('api1/partners/api/v2/order/6f1d2c3b-1a2b-4c5d-8e9f-0a1b2c3d4e5f');
       orderCalls[0].opts.headers['access-token'].should.equal(PARTNER_TOKEN);
@@ -838,29 +901,29 @@ describe('Transak integration', () => {
       req.body.context = 'web';
       req.body.deviceIp = '203.0.113.42';
       req.headers['x-forwarded-for'] = '198.51.100.7';
-      await server.externalServices.transak.transakGetOrderDetails(req);
+      await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
       orderCalls[0].opts.headers['x-user-ip'].should.equal('203.0.113.42');
     });
 
     it('should ignore a body deviceIp for non-web context and use the request IP', async () => {
       req.body.deviceIp = '203.0.113.42';
       req.headers['x-forwarded-for'] = '198.51.100.7';
-      await server.externalServices.transak.transakGetOrderDetails(req);
+      await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
       orderCalls[0].opts.headers['x-user-ip'].should.equal('198.51.100.7');
     });
 
     it('should share the partner token with signedPaymentUrl', async () => {
-      await server.externalServices.transak.transakGetOrderDetails(req);
+      await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
       await server.externalServices.transak.transakGetSignedPaymentUrl({ headers: {}, body: { env: 'sandbox', ...appWidgetBody() } });
       refreshCalls.length.should.equal(1);
     });
 
     it('should refresh and retry once when Transak rejects an older partner token', async () => {
       tokens = ['staleToken', 'freshToken'];
-      await server.externalServices.transak.transakGetOrderDetails(req);
+      await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
       await updatePartnerTokenCache({ $set: { 'result.fetchedAt': Date.now() - 60 * 60 * 1000 } });
       orderStatuses = [401, 200];
-      await server.externalServices.transak.transakGetOrderDetails({ headers: {}, body: { ...req.body } });
+      await server.externalServices.transak.transakGetOrderDetails({ headers: {}, body: { ...req.body } }, server.walletId);
       orderCalls.map(c => c.opts.headers['access-token']).should.deep.equal(['staleToken', 'staleToken', 'freshToken']);
     });
 
@@ -868,7 +931,7 @@ describe('Transak integration', () => {
       it(`should reject orderId ${JSON.stringify(orderId)} without calling Transak`, async () => {
         req.body.orderId = orderId;
         try {
-          await server.externalServices.transak.transakGetOrderDetails(req);
+          await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
           should.fail('should have thrown');
         } catch (err) {
           err.message.should.match(/Invalid Transak orderId|Transak's request missing arguments/);
@@ -881,7 +944,7 @@ describe('Transak integration', () => {
     it('should return error if get returns error', async () => {
       orderError = new Error('Error');
       try {
-        await server.externalServices.transak.transakGetOrderDetails(req);
+        await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
         should.fail('should have thrown');
       } catch (err) {
         loggerError.callCount.should.equal(1);
@@ -893,7 +956,7 @@ describe('Transak integration', () => {
     it('should return error and not leak the response if body is empty', async () => {
       orderBody = undefined;
       try {
-        await server.externalServices.transak.transakGetOrderDetails(req);
+        await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Transak did not return order details');
@@ -903,7 +966,7 @@ describe('Transak integration', () => {
     it('should return error if there is some missing arguments', async () => {
       delete req.body.orderId;
       try {
-        await server.externalServices.transak.transakGetOrderDetails(req);
+        await server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Transak\'s request missing arguments');

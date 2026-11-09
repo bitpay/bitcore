@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
@@ -378,6 +379,28 @@ export class TransakService {
     return call(freshToken);
   }
 
+  /**
+   * True if address is one of the wallet's addresses in BWS. EVM addresses
+   * are matched in any case, since BWS stores them checksummed.
+   */
+  private isWalletAddress(walletId: string, address: string): Promise<boolean> {
+    if (!walletId || !address || typeof address !== 'string') return Promise.resolve(false);
+    const candidates = new Set([address]);
+    if (/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      candidates.add(address.toLowerCase());
+      candidates.add(Web3.utils.toChecksumAddress(address));
+    }
+    return new Promise(resolve => {
+      this.storage.fetchAddressesByWalletId(walletId, [...candidates], (err, addresses) => {
+        if (err) {
+          logger.warn(`Transak order address lookup failed: ${err.message || err}`);
+          return resolve(false);
+        }
+        return resolve(!!addresses?.length);
+      });
+    });
+  }
+
   private sendRequest(method: 'get' | 'post', URL: string, opts: any, errorMessage: string): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request[method](URL, { ...opts, json: true }, (err, data) => {
@@ -613,7 +636,7 @@ export class TransakService {
     });
   }
 
-  transakGetOrderDetails(req): Promise<any> {
+  transakGetOrderDetails(req, walletId: string): Promise<any> {
     return new Promise(async (resolve, reject) => {
       const userIp = this.transakGetUserIp(req);
       let keys;
@@ -659,6 +682,12 @@ export class TransakService {
         }
         if (!data.body) {
           return reject(new ClientError('Transak did not return order details'));
+        }
+        // An order ID alone isn't proof of ownership: only return an order
+        // whose destination address belongs to the requesting wallet.
+        if (success && !(await this.isWalletAddress(walletId, data.body?.data?.walletAddress))) {
+          logger.warn(`Transak order ${orderId} is not for an address of wallet ${walletId}`);
+          return reject(new ClientError('Transak order not found'));
         }
         return resolve(data.body);
       } catch (err) {
