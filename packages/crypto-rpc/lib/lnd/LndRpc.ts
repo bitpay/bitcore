@@ -1,8 +1,25 @@
 import EventEmitter from 'events';
-import Lightning from 'lightning';
+import Lightning, { type AuthenticatedLnd, type UnauthenticatedLnd } from 'lightning';
+
+/** Connection settings for LND */
+export interface LndRpcConfig {
+  chain?: string;
+  host?: string;
+  port?: number | string;
+  /** Base64 or hex serialized macaroon */
+  macaroon?: string;
+  /** Base64 or hex serialized TLS cert */
+  cert?: string;
+  [key: string]: any;
+}
 
 export class LndRpc {
-  constructor(config) {
+  config: LndRpcConfig;
+  rpc: { lnd: AuthenticatedLnd };
+  unauthenticatedRpc: { lnd: UnauthenticatedLnd };
+  emitter: EventEmitter;
+
+  constructor(config: LndRpcConfig) {
     this.config = config;
     const {
       host,
@@ -23,12 +40,12 @@ export class LndRpc {
    * @param {Boolean} unauthenticated (optional) use the unauthenticated rpc (default will use authenticated)
    * @returns {Promise} calls the lightning library method and resolves on success
    */
-  async asyncCall(method, args, unauthenticated) {
+  async asyncCall(method: string, args?: any[], unauthenticated?: boolean) {
     let params = args ? args[0] : {};
     params = unauthenticated ? { ...params, ...this.unauthenticatedRpc } : { ...params, ...this.rpc };
     try {
       return await Lightning[method](params);
-    } catch (err) {
+    } catch (err: any) {
       // some LND methods return event emitters directly, this checks for that and calls the lightning method again
       if (err.message && err.message.includes('TypeError')) {
         return Lightning[method](params);
@@ -48,12 +65,12 @@ export class LndRpc {
     return balanceInfo.chain_balance;
   }
 
-  async getTransaction({ txid }) {
+  async getTransaction({ txid }: { txid: string }) {
     const getInvoiceObject = { id: txid, ...this.rpc };
     return await Lightning.getInvoice(getInvoiceObject);
   }
 
-  async createInvoice({ id, amount, expiry }) {
+  async createInvoice({ id, amount, expiry }: { id?: string; amount?: number; expiry?: string }) {
     const { channels } = await Lightning.getChannels(this.rpc);
     if (!channels.length) {
       throw new Error('No open channels to create invoice on');
@@ -61,25 +78,30 @@ export class LndRpc {
     return await Lightning.createInvoice({ description: id, tokens: amount, expires_at: expiry, ...this.rpc });
   }
 
-  async walletCreate({ passphrase }) {
+  async walletCreate({ passphrase }: { passphrase: string }) {
     const { seed } = await Lightning.createSeed(this.unauthenticatedRpc);
     await Lightning.createWallet({ seed, password: passphrase, ...this.unauthenticatedRpc });
   }
 
-  async walletUnlock({ passphrase }) {
+  async walletUnlock({ passphrase }: { passphrase: string }) {
     await Lightning.unlockWallet({ ...this.unauthenticatedRpc, password: passphrase });
   }
 
-  async getBTCAddress({ format='p2wpkh' }) {
+  async getBTCAddress({ format = 'p2wpkh' }: { format?: 'np2wpkh' | 'p2tr' | 'p2wpkh' }) {
     return await Lightning.createChainAddress({ format, ...this.rpc });
   }
 
-  async createNewAuthenticatedRpc({ cert, macaroon, rpcPort, host }) {
+  async createNewAuthenticatedRpc({ cert, macaroon, rpcPort, host }: {
+    cert?: string;
+    macaroon?: string;
+    rpcPort: number | string;
+    host: string;
+  }) {
     const socket = host + ':' + rpcPort;
     this.rpc = Lightning.authenticatedLndGrpc({ socket, macaroon, cert });
   }
 
-  async openChannel({ amount, pubkey, socket }) {
+  async openChannel({ amount, pubkey, socket }: { amount: number; pubkey: string; socket?: string }) {
     return await Lightning.openChannel({
       ...this.rpc,
       local_tokens: amount,
@@ -105,7 +127,7 @@ export class LndRpc {
     return await Lightning.getFeeRates(this.rpc);
   }
 
-  async getAccountInfo({ address }) {
+  async getAccountInfo({ address }: { address: string }) {
     try {
       return await Lightning.getNode({ ...this.rpc, public_key: address });
     } catch (err) {
