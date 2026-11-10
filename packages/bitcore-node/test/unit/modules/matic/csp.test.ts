@@ -199,7 +199,7 @@ describe('MATIC Chain State Provider', function() {
 
     it('it should return gas', async () => {
       web3Stub.currentProvider.request.resolves({ result: '12345' });
-      const gas = await MATIC.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
+      const gas = await MATIC.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: '0x10' });
       expect(gas).to.equal(12345);
     });
 
