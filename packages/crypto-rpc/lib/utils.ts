@@ -6,16 +6,37 @@ export const toBI = function(val) {
   return (typeof val === 'bigint' || isNaN(val)) ? val : BigInt(val);
 };
 
+// The JavaScript called this.toNum, which in a CommonJS module resolves to
+// exports.toNum, the same function
 export const objBItoNums = (obj) => {
   if (typeof obj === 'object') {
-    return JSON.parse(JSON.stringify(obj, (key, value) => this.toNum(value)));
+    return JSON.parse(JSON.stringify(obj, (key, value) => toNum(value)));
   }
-  return this.toNum(obj);
+  return toNum(obj);
 };
 
 
+/** A bigint, number, or numeric string */
+export type BigIntLike = bigint | number | string;
 
-export const BI = {}; // BigInt utilities namespace
+export interface BigIntUtils {
+  isBigIntLike(value: unknown): boolean;
+  sToBigInt(value: BigIntLike | boolean): bigint;
+  max<T extends BigIntLike>(arr: T[]): T;
+  min<T extends BigIntLike>(arr: T[]): T;
+  divToFloat(numerator: BigIntLike, denominator: BigIntLike, precision?: number | null): number;
+  div(numerator: BigIntLike, denominator: BigIntLike, opts?: { round?: 'ceil' | 'floor' } | null): bigint;
+  mul(...nums: BigIntLike[]): bigint;
+  mulFloor(...nums: BigIntLike[]): bigint;
+  mulCeil(...nums: BigIntLike[]): bigint;
+  avgCeil(arr: BigIntLike[]): bigint;
+  abs(val: bigint): bigint;
+  abs(val: number): number;
+  sortAsc<T extends bigint | number>(arr: T[]): T[];
+  sortDesc<T extends bigint | number>(arr: T[]): T[];
+}
+
+export const BI = {} as BigIntUtils; // BigInt utilities namespace
 
 function isValidDenominator(val) {
   return BI.isBigIntLike(val) && BigInt(val) !== 0n;
@@ -138,10 +159,10 @@ BI.div = function(numerator, denominator, opts) {
  */
 BI.mul = function(...nums) {
   if (!nums.length || !nums.every(BI.isBigIntLike)) throw new Error('Input must contain only BigInt-like values');
-  const precision = nums.reduce((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
+  const precision = nums.reduce<number>((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
 
   if (precision == 0) { // all numbers are integers
-    return nums.reduce((acc, cur) => acc * BigInt(cur), 1n);
+    return nums.reduce<bigint>((acc, cur) => acc * BigInt(cur), 1n);
   }
   
   let productScaled = 1n;
@@ -166,10 +187,10 @@ BI.mul = function(...nums) {
  */
 BI.mulFloor = function(...nums) {
   if (!nums.length || !nums.every(BI.isBigIntLike)) throw new Error('Input must contain only BigInt-like values');
-  const precision = nums.reduce((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
+  const precision = nums.reduce<number>((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
 
   if (precision == 0) {
-    return nums.reduce((acc, cur) => acc * BigInt(cur), 1n);
+    return nums.reduce<bigint>((acc, cur) => acc * BigInt(cur), 1n);
   }
 
   let productScaled = 1n;
@@ -194,10 +215,10 @@ BI.mulFloor = function(...nums) {
  */
 BI.mulCeil = function(...nums) {
   if (!nums.length || !nums.every(BI.isBigIntLike)) throw new Error('Input must contain only BigInt-like values');
-  const precision = nums.reduce((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
+  const precision = nums.reduce<number>((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
 
   if (precision == 0) { // All nums are integers, so can just convert all to bigints
-    return nums.reduce((acc, cur) => acc * BigInt(cur), 1n);
+    return nums.reduce<bigint>((acc, cur) => acc * BigInt(cur), 1n);
   }
 
   let productScaled = 1n;
@@ -218,7 +239,7 @@ BI.avgCeil = function(arr) {
   if (arr.length === 0) {
     return 0n; // avoids division by zero
   }
-  const sum = arr.reduce((sum, i) => sum + BigInt(i), 0n);
+  const sum = arr.reduce<bigint>((sum, i) => sum + BigInt(i), 0n);
   return BI.div(sum, BigInt(arr.length), { round: 'ceil' });
 };
 

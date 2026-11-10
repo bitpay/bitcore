@@ -10,6 +10,47 @@ import { SolRpc } from './sol/SolRpc';
 import { SplRpc } from './sol/SplRpc';
 import { XrpRpc } from './xrp/XrpRpc';
 
+/** Any chain or token client CryptoRpc can hold */
+export type ChainRpc = BtcRpc | BchRpc | DogeRpc | LtcRpc | LndRpc | XrpRpc | EthRpc | MaticRpc | Erc20Rpc | SolRpc | SplRpc;
+
+export interface TokenConfig {
+  /** Token standard, e.g. 'ERC20' or 'SPL' */
+  type: string;
+  [key: string]: any;
+}
+
+export interface CryptoRpcConfig {
+  /** The chain to connect to, e.g. 'BTC', 'ETH', 'SOL' */
+  chain: string;
+  /** Treat an unlisted chain as EVM compatible and use the ETH client */
+  isEVM?: boolean;
+  /** e.g. 'http', 'https', 'ws', or 'wss' */
+  protocol?: string;
+  host?: string;
+  port?: number | string;
+  /** Used as port when port is not set */
+  rpcPort?: number | string;
+  user?: string;
+  /** Used as user when user is not set */
+  rpcUser?: string;
+  pass?: string;
+  /** Used as pass when pass is not set */
+  rpcPass?: string;
+  /** Token clients to build alongside the chain client, keyed by currency */
+  tokens?: { [currency: string]: TokenConfig };
+  /** Chain-specific settings are passed through to the client */
+  [key: string]: any;
+}
+
+/**
+ * Arguments for the dispatching methods. currency picks the client (the
+ * configured chain when omitted); the rest goes to that client's method.
+ */
+export interface CurrencyParams {
+  currency?: string;
+  [key: string]: any;
+}
+
 const RpcClasses = {
   BTC: BtcRpc,
   BCH: BchRpc,
@@ -56,6 +97,9 @@ const TokenClasses = {
 };
 
 export class CryptoRpc {
+  chain: string;
+  config: CryptoRpcConfig;
+  rpcs: { [currency: string]: ChainRpc };
 
   /**
    * Constructor for CryptoRpcProvider class.
@@ -72,7 +116,7 @@ export class CryptoRpc {
    * @param {string} [config.rpcPass] - The password for authenticated RPC connection (alternative).
    * @param {Object} [config.tokens] - Optional tokens configuration.
    */
-  constructor(config) {
+  constructor(config: CryptoRpcConfig) {
     this.chain = config.chain;
     if (!RpcClasses[this.chain] && !config.isEVM) {
       throw new Error('Invalid chain specified');
@@ -97,104 +141,108 @@ export class CryptoRpc {
     }
   }
 
-  has(currency) {
+  has(currency: string) {
     return !!this.rpcs[currency];
   }
 
-  get(currency = this.chain) {
-    return this.rpcs[currency];
+  /**
+   * Returns the client for a currency. The type parameter lets a caller who
+   * knows the chain name its client, e.g. get<BtcRpc>('BTC').
+   */
+  get<T = any>(currency: string = this.chain): T {
+    return this.rpcs[currency] as T;
   }
 
-  cmdlineUnlock(params) {
+  cmdlineUnlock(params: CurrencyParams) {
     return this.get(params.currency).cmdlineUnlock(params);
   }
 
-  getBalance(params) {
+  getBalance(params: CurrencyParams) {
     return this.get(params.currency).getBalance(params);
   }
 
-  sendToAddress(params) {
+  sendToAddress(params: CurrencyParams) {
     return this.get(params.currency).sendToAddress(params);
   }
 
-  walletLock(params) {
+  walletLock(params: CurrencyParams) {
     return this.get(params.currency).walletLock(params);
   }
 
-  unlockAndSendToAddress(params) {
+  unlockAndSendToAddress(params: CurrencyParams) {
     return this.get(params.currency).unlockAndSendToAddress(params);
   }
 
-  unlockAndSendToAddressMany(params) {
+  unlockAndSendToAddressMany(params: CurrencyParams) {
     return this.get(params.currency).unlockAndSendToAddressMany(params);
   }
 
-  estimateFee(params) {
+  estimateFee(params: CurrencyParams) {
     return this.get(params.currency).estimateFee(params);
   }
 
-  estimateMaxPriorityFee(params) {
+  estimateMaxPriorityFee(params: CurrencyParams) {
     const rpc = this.get(params.currency);
     return rpc.estimateMaxPriorityFee ? rpc.estimateMaxPriorityFee(params) : undefined;
   }
 
-  getBestBlockHash(params) {
+  getBestBlockHash(params: CurrencyParams) {
     return this.get(params.currency).getBestBlockHash(params);
   }
 
-  getTransaction(params) {
+  getTransaction(params: CurrencyParams) {
     return this.get(params.currency).getTransaction(params);
   }
 
-  getTransactions(params) {
+  getTransactions(params: CurrencyParams) {
     return this.get(params.currency).getTransactions(params);
   }
 
-  getTransactionCount(params) {
+  getTransactionCount(params: CurrencyParams) {
     return this.get(params.currency).getTransactionCount(params);
   }
 
-  getRawTransaction(params) {
+  getRawTransaction(params: CurrencyParams) {
     return this.get(params.currency).getRawTransaction(params);
   }
 
-  sendRawTransaction(params) {
+  sendRawTransaction(params: CurrencyParams) {
     return this.get(params.currency).sendRawTransaction(params);
   }
 
-  decodeRawTransaction(params) {
+  decodeRawTransaction(params: CurrencyParams) {
     return this.get(params.currency).decodeRawTransaction(params);
   }
 
-  getBlock(params) {
+  getBlock(params: CurrencyParams) {
     return this.get(params.currency).getBlock(params);
   }
 
-  getBlockHash(params) {
+  getBlockHash(params: CurrencyParams) {
     return this.get(params.currency).getBlockHash(params);
   }
 
-  getConfirmations(params) {
+  getConfirmations(params: CurrencyParams) {
     return this.get(params.currency).getConfirmations(params);
   }
 
-  getTip(params) {
+  getTip(params: CurrencyParams) {
     return this.get(params.currency).getTip(params);
   }
 
-  getTxOutputInfo(params) {
+  getTxOutputInfo(params: CurrencyParams) {
     return this.get(params.currency).getTxOutputInfo(params);
   }
 
-  validateAddress(params) {
+  validateAddress(params: CurrencyParams) {
     return this.get(params.currency).validateAddress(params);
   }
 
-  getAccountInfo(params) {
+  getAccountInfo(params: CurrencyParams) {
     return this.get(params.currency).getAccountInfo(params);
   }
 
-  getServerInfo(params) {
+  getServerInfo(params: CurrencyParams) {
     return this.get(params.currency).getServerInfo(params);
   }
 };
