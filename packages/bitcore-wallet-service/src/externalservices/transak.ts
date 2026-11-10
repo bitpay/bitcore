@@ -86,7 +86,9 @@ const ORDER_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
 // Transak's error message, if any, for logs. Never the whole body.
 function transakErrorDetail(data): string {
   const message = data?.body?.error?.message ?? data?.body?.message;
-  return typeof message === 'string' ? ` (${message.slice(0, 200)})` : '';
+  if (message == null) return '';
+  const text = typeof message === 'string' ? message : JSON.stringify(message);
+  return ` (${text.slice(0, 200)})`;
 }
 
 export class TransakService {

@@ -53,6 +53,7 @@ describe('Transak integration', () => {
   let refreshDelay: number;
   let sessionStatuses: number[];
   let sessionError: Error | null;
+  let sessionErrorBody: any;
   let orderStatuses: number[];
   let orderError: Error | null;
   let orderBody: any;
@@ -104,6 +105,7 @@ describe('Transak integration', () => {
     refreshDelay = 0;
     sessionStatuses = [];
     sessionError = null;
+    sessionErrorBody = { error: { message: 'unauthorized' } };
     orderStatuses = [];
     orderError = null;
     orderBody = 'data';
@@ -133,7 +135,7 @@ describe('Transak integration', () => {
           const statusCode = sessionStatuses.shift() ?? 200;
           return cb(null, {
             statusCode,
-            body: statusCode === 200 ? { data: { widgetUrl: 'https://global.transak.com/?session=abc' } } : { error: { message: 'unauthorized' } }
+            body: statusCode === 200 ? { data: { widgetUrl: 'https://global.transak.com/?session=abc' } } : sessionErrorBody
           });
         }
         return cb(null, { body: 'data' });
@@ -714,6 +716,24 @@ describe('Transak integration', () => {
       const logged = loggerWarn.args.map(a => String(a[0])).join('\n');
       logged.should.contain('(unauthorized)');
       logged.should.not.contain(PARTNER_TOKEN);
+    });
+
+    it('should log a non-string Transak error message as JSON', async () => {
+      const loggerWarn = logger.warn as sinon.SinonStub;
+      sessionStatuses = [400];
+      sessionErrorBody = { error: { message: { code: 'INVALID_PARAMS', fields: ['fiatAmount'] } } };
+      await server.externalServices.transak.transakGetSignedPaymentUrl(req).catch(() => null);
+      const logged = loggerWarn.args.map(a => String(a[0])).join('\n');
+      logged.should.contain('({"code":"INVALID_PARAMS","fields":["fiatAmount"]})');
+    });
+
+    it('should log no detail when Transak sends no error message', async () => {
+      const loggerWarn = logger.warn as sinon.SinonStub;
+      sessionStatuses = [502];
+      sessionErrorBody = 'Bad Gateway';
+      const err = await server.externalServices.transak.transakGetSignedPaymentUrl(req).catch(e => e);
+      err.message.should.equal('Failed to get Transak signed payment URL');
+      loggerWarn.args.map(a => String(a[0])).join('\n').should.match(/status code 502: \S+$/m);
     });
 
     it('should forward defaultPaymentMethod when the app sends it instead of paymentMethod', async () => {
