@@ -14,6 +14,9 @@ export const FEE_MINIMUMS = {
   BASE: {
     priority: 1
   },
+  ARC: {
+    priority: 0 // Arc accepts a zero tip; the base-fee floor is separate.
+  },
   SOL: {
     priority: 0
   }

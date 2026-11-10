@@ -11,6 +11,7 @@ import log from '../src/lib/log';
 import oldCredentials from './data/legacyCredentialsExports';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
+import { CoinGeckoService } from '@bitpay-labs/bitcore-wallet-service/ts_build/src/externalservices/coingecko';
 import Client, { Credentials } from '../src';
 import { Request } from '../src/lib/request';
 import { Verifier } from '../src/lib/verifier';
@@ -3015,6 +3016,28 @@ describe('client API', function() {
         done();
       });
     });
+  });
+
+  it('should quote and create Arc send-max proposals with numeric and BigInt fee rates', async () => {
+    await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'arc', chain: 'arc' });
+    await clients[0].createAddress();
+    sandbox.stub(blockchainExplorerMock, 'getBalance').callsArgWith(1, null, {
+      balance: 2e18, confirmed: 2e18, unconfirmed: 0
+    });
+    sandbox.stub(blockchainExplorerMock, 'estimateFeeV2').callsArgWith(1, null, 30000000000);
+    sandbox.stub(blockchainExplorerMock, 'estimatePriorityFee').callsArgWith(1, null, 0);
+    for (const [txType, feePerKb] of [[0, 25000000000], [0, 25000000000n],
+      [undefined, 25000000000n], [2, 25000000000]] as const) {
+      const info = await clients[0].getSendMaxInfo({ feePerKb: Number(feePerKb), txType });
+      info.fee.should.equal((txType === 2 ? 30000000000 : Number(feePerKb)) * 21000);
+      info.amount.should.equal(2e18 - info.fee);
+      const opts = { feePerKb, txType, sendMax: true,
+        outputs: [{ toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: null, gasLimit: 21000 }] };
+      const txp = await clients[0].createTxProposal(opts);
+      txp.amount.should.equal(info.amount);
+      txp.fee.should.equal(info.fee);
+      Number(txp.feePerKb).should.equal(Number(feePerKb));
+    }
   });
 
   describe('Address Creation', () => {
@@ -7056,6 +7079,15 @@ describe('client API', function() {
         addr = await clients[0].createAddress();
         should.exist(addr);
         addrs.add(addr.address);
+        const arcAddressesByNetwork = new Map();
+        for (const network of ['livenet', 'testnet']) {
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'arc', chain: 'arc', network, key });
+          walletCnt++;
+          const arcAddress = await clients[0].createAddress();
+          should.exist(arcAddress);
+          addrs.add(arcAddress.address);
+          arcAddressesByNetwork.set(network, arcAddress.address);
+        }
         {
           const account = 1;
           await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'btc', chain: 'btc', key, account });
@@ -7103,6 +7135,15 @@ describe('client API', function() {
         const retVal = await Client.serverAssistedImport({ words, includeTestnetWallets: true, includeLegacyWallets: true }, helpers.newClient(app));
         const { key: k, clients: c } = retVal;
         c.length.should.equal(walletCnt);
+        const arcClients = c.filter(client => client.credentials.chain === 'arc');
+        arcClients.should.have.length(2);
+        arcClients.map(client => client.credentials.network).sort().should.deep.equal(['livenet', 'testnet']);
+        for (const arcClient of arcClients) {
+          arcClient.credentials.coin.should.equal('arc');
+          should.not.exist(arcClient.credentials.token);
+          const arcAddresses = await arcClient.getMainAddresses({});
+          arcAddresses[0].address.should.equal(arcAddressesByNetwork.get(arcClient.credentials.network));
+        }
         const recoveryClient = c[0];
         await recoveryClient.openWallet();
         recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7113,6 +7154,39 @@ describe('client API', function() {
         addrs.has(list[0].address).should.be.true;
       });
 
+
+      it('should recover native Arc wallets without importing the USDC token view', async function() {
+        const usdcAddress = CWC.Constants.ARC.USDC_CONTRACT_ADDRESS;
+        let injectedPreferences = 0;
+        const getTokens = sandbox.stub(CoinGeckoService.prototype, 'coinGeckoGetTokens').resolves([]);
+        const get = Request.prototype.get;
+        sandbox.stub(Request.prototype, 'get').callsFake(async function(url, ...args) {
+          const response = await get.call(this, url, ...args);
+          for (const result of Array.isArray(response.body) ? response.body : []) {
+            if (result.status?.wallet?.chain === 'arc') {
+              result.status.preferences.arcTokenAddresses = [usdcAddress];
+              injectedPreferences++;
+            }
+          }
+          return response;
+        });
+
+        for (const network of ['livenet', 'testnet']) {
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'arc', chain: 'arc', network });
+          const walletId = clients[0].credentials.walletId;
+          const words = keys[0].get(null, true).mnemonic;
+          const previousInjections = injectedPreferences;
+          const recovered = await Client.serverAssistedImport({ words, includeTestnetWallets: true }, helpers.newClient(app));
+          injectedPreferences.should.be.greaterThan(previousInjections);
+          recovered.clients.should.have.length(1);
+          const nativeClient = recovered.clients[0];
+          nativeClient.credentials.coin.should.equal('arc');
+          nativeClient.credentials.walletId.should.equal(walletId);
+          nativeClient.credentials.network.should.equal(network);
+          should.not.exist(nativeClient.credentials.token);
+        }
+        getTokens.called.should.equal(false);
+      });
 
       it('should be able to gain access to eth tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {

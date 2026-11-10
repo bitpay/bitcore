@@ -71,6 +71,7 @@ const Bitcore_ = {
   arb: Bitcore,
   base: Bitcore,
   op: Bitcore,
+  arc: Bitcore,
   xrp: Bitcore,
   doge: BitcoreDoge,
   ltc: BitcoreLtc,
@@ -604,6 +605,7 @@ export class WalletService implements IWalletService {
    * @param {number} [opts.tssVersion] TSS version to use. Supplying this with n > 1 and a multisig chain (e.g. btc) will tell the wallet to use
    *                                   threshold insead of on-chain multisig. Otherwise, n > 1 and a non-multisig chain will default to TSS_KEYGEN_SCHEME_VERSION
    * @param {string} [opts.tssKeyId] TSS key session id. This is the id of the TSS key generation session that will be used to create the wallet.
+   * @param {string} [opts.tssKeygenCopayerId] The ID of the copayer creating the wallet. Required for TSS version >= 1.3.
    */
   async createWallet(opts, cb) {
     let pubKey;
@@ -672,6 +674,17 @@ export class WalletService implements IWalletService {
       opts.tssVersion = opts.tssVersion || keySession.schemeVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
       if (!(opts.tssVersion >= Constants.TSS_KEYGEN_SCHEME_VERSION_MIN && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
         return cb(new ClientError('Invalid TSS version'));
+      }
+
+      if (opts.tssVersion >= 1.3) {
+        if (!opts.tssKeygenCopayerId) {
+          return cb(new ClientError('Copayer ID is required for TSS version >= 1.3'));
+        }
+        // This is only a sanity check to prevent problems down the line. If this is somehow
+        // spoofed, there are more strict authorization checks later in the wallet creation flow.
+        if (keySession.participants.indexOf(opts.tssKeygenCopayerId) !== 0) {
+          return cb(new ClientError('Only the TSS session leader can create a wallet'));
+        }
       }
 
       // TSS wallets behave like a single-sig
@@ -1038,7 +1051,11 @@ export class WalletService implements IWalletService {
     this._notify(type, data, {}, cb);
   }
 
-  _addCopayerToWallet(wallet: Wallet, opts, cb) {
+  _addCopayerToWallet(
+    wallet: Wallet,
+    opts: JoinWalletOpts,
+    cb: (err: ClientError | null, result?: { copayerId: string | null; wallet: Wallet }) => void
+  ) {
     const copayer = Copayer.create({
       coin: wallet.coin,
       chain: wallet.chain, // chain === coin for stored clients
@@ -1194,20 +1211,11 @@ export class WalletService implements IWalletService {
 
   /**
    * Joins a wallet in creation.
-   * @param {Object} opts
-   * @param {string} opts.walletId The wallet id.
-   * @param {string} opts.coin The expected coin for this wallet (btc, bch, eth, doge, ltc). Default: btc
-   * @param {string} opts.chain The expected chain for this wallet (btc, bch, eth, doge, ltc). Default: btc
-   * @param {string} opts.name The copayer name.
-   * @param {string} opts.xPubKey Extended Public Key for this copayer
-   * @param {string} opts.hardwareSourcePublicKey Public key from a hardware device for this copayer
-   * @param {string} opts.clientDerivedPublicKey Public key from the client for this wallet
-   * @param {string} opts.requestPubKey Public Key used to check requests from this copayer.
-   * @param {string} opts.copayerSignature S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
-   * @param {string} [opts.customData] Custom data for this copayer.
-   * @param {boolean} [opts.dryRun] Simulate the action but do not change server state.
    */
-  joinWallet(opts, cb) {
+  joinWallet(
+    opts: JoinWalletOpts,
+    cb: (err: ClientError | null, result?: { copayerId: string | null; wallet: Wallet }) => void
+  ) {
     // xPubKey is the canonical copayer identity in the current protocol. Alternate public-key
     // fields are ancillary metadata; supporting an xPubKey-less copayer requires a versioned
     // end-to-end identity protocol rather than a local identity fallback.
@@ -1226,6 +1234,9 @@ export class WalletService implements IWalletService {
       opts.chain = opts.coin; // chain === coin for stored clients
     }
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
+    if (opts.tssKeygenChain != null && !Utils.checkValueInCollection(opts.tssKeygenChain, Constants.CHAINS)) {
+      return cb(new ClientError('Invalid TSS keygen chain'));
+    }
 
     // xPubKey is parsed and validated for every join; ancillary fields never suppress it.
     // A future update will re-add conditional logic which allows opts.hardwareSourcePublicKey
@@ -1286,8 +1297,16 @@ export class WalletService implements IWalletService {
 
         if (wallet.tssKeyId) {
           const keySession = await storage.fetchTssKeyGenSession({ id: wallet.tssKeyId });
-          const copayerId = Copayer.xPubToCopayerId(opts.chain, opts.xPubKey);
-          if (!keySession.participants.includes(copayerId)) {
+          // A sibling wallet on another network (e.g. livenet -> testnet) has an xPubKey serialized for that network,
+          // but the keygen session's copayer IDs were derived from the xPubKey serialized for the session's network.
+          const idChain = opts.tssKeygenChain || opts.chain;
+          const copayerIds = new Set([
+            Copayer.xPubToCopayerId(idChain, opts.xPubKey), // this is probably a duplicate of one of the next two entries, but just in case.
+            Copayer.xPubToCopayerId(idChain, Utils.convertXPubKeyForNetwork(opts.xPubKey, idChain, 'livenet')),
+            Copayer.xPubToCopayerId(idChain, Utils.convertXPubKeyForNetwork(opts.xPubKey, idChain, 'testnet'))
+          ]);
+
+          if (!keySession?.participants.some(id => copayerIds.has(id))) {
             return cb(Errors.TSS_NON_PARTICIPANT);
           }
           return this._addCopayerToWallet(wallet, opts, cb);
@@ -1312,6 +1331,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.opTokenAddresses - Linked token addresses
    * @param {string} opts.baseTokenAddresses - Linked token addresses
    * @param {string} opts.arbTokenAddresses - Linked token addresses
+   * @param {string[]} opts.arcTokenAddresses - Linked Arc ERC20 token addresses
    * @param {string} opts.solTokenAddresses - Linked token addresses
    * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
@@ -1384,6 +1404,14 @@ export class WalletService implements IWalletService {
         name: 'arbTokenAddresses',
         isValid(value) {
           return Array.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
+        }
+      },
+      {
+        name: 'arcTokenAddresses',
+        isValid(value) {
+          return Array.isArray(value) && value.every(address =>
+            Validation.validateAddress('arc', 'mainnet', address) &&
+            address.toLowerCase() !== Constants.ARC.USDC_CONTRACT_ADDRESS);
         }
       },
       {
@@ -1485,6 +1513,13 @@ export class WalletService implements IWalletService {
             oldPref = oldPref || {} as Preferences;
             oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
             preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
+          }
+
+          if (opts.arcTokenAddresses) {
+            oldPref = oldPref || {} as Preferences;
+            oldPref.arcTokenAddresses = oldPref.arcTokenAddresses || [];
+            preferences.arcTokenAddresses = _.uniq(oldPref.arcTokenAddresses.concat(opts.arcTokenAddresses)
+              .map(address => address.toLowerCase()));
           }
 
           if (opts.solTokenAddresses) {
@@ -2484,7 +2519,8 @@ export class WalletService implements IWalletService {
               feePerKb: opts.feePerKb,
               excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
               returnInputs: true,
-              numSignatures: opts.numSignatures
+              numSignatures: opts.numSignatures,
+              txType: opts.txType
             },
             (err, info) => {
               if (err) return next(err);
@@ -4177,7 +4213,7 @@ export class WalletService implements IWalletService {
         return cb(err);
       }
       wallet.beRegistered = true;
-      return this.storage.storeWallet(wallet, err => cb(err, true));
+      return this.storage.storeWalletRegistration(wallet, err => cb(err, true));
     });
   }
 
@@ -5838,3 +5874,30 @@ export const UPGRADES = {
 } as const;
 
 type Upgrade = typeof UPGRADES[keyof typeof UPGRADES];
+
+export interface JoinWalletOpts {
+  /** The wallet id. */
+  walletId: string;
+  /** The expected coin for this wallet (btc, bch, eth, doge, ltc). Default: btc */
+  coin?: string;
+  /** The expected chain for this wallet (btc, bch, eth, doge, ltc). Default: btc */
+  chain?: string;
+  /** The copayer name. */
+  name: string;
+  /** Extended Public Key for this copayer */
+  xPubKey: string;
+  /** Public key from a hardware device for this copayer */
+  hardwareSourcePublicKey?: string;
+  /** Public key from the client for this wallet */
+  clientDerivedPublicKey?: string;
+  /** Public Key used to check requests from this copayer. */
+  requestPubKey: string;
+  /** Signature proving knowledge of the wallet secret for this copayer. */
+  copayerSignature: string;
+  /** Custom data for this copayer. */
+  customData?: string;
+  /** Simulate the action but do not change server state. */
+  dryRun?: boolean;
+  /** The chain used for TSS key generation. */
+  tssKeygenChain?: string;
+};

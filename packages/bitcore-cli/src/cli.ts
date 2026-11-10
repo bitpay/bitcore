@@ -224,8 +224,8 @@ export function runCli() {
           prompt.intro(`Status for ${Utils.colorTextByChain(wallet.chain, walletName)}`);
           const status = await commands.status.walletStatus({ wallet, opts });
           cmdParams.status = status;
-          if (wallet.isMultiSig() && !wallet.isComplete()) {
-            prompt.outro(Utils.boldText('This multisig wallet is not fully set up yet. You need to wait for all copayers to join.'));
+          if ((wallet.isMultiSig() || wallet.isTss()) && !wallet.isComplete()) {
+            prompt.outro(Utils.boldText('This multi-party wallet is not fully set up yet. You need to wait for all copayers to join.'));
             return;
           }
           prompt.outro(Utils.boldText('Welcome to the Bitcore CLI!'));
@@ -344,6 +344,9 @@ export function runCli() {
                 break;
               case 'changepassword':
                 await commands.changepassword.changePassword(cmdParams);
+                break;
+              case 'createsiblingwallet':
+                await commands.createsiblingwallet.createSiblingWallet(cmdParams);
                 break;
               default:
               case 'exit':

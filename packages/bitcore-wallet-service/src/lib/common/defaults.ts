@@ -194,6 +194,34 @@ export const Defaults = {
         defaultValue: 2000000000
       }
     ],
+    // Fallbacks must meet Arc's testnet gas-price floor. Live estimates still take precedence.
+    arc: [
+      {
+        name: 'urgent',
+        nbBlocks: 1,
+        defaultValue: 20000000000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 2,
+        defaultValue: 20000000000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 3,
+        defaultValue: 20000000000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 4,
+        defaultValue: 20000000000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 4,
+        defaultValue: 20000000000
+      }
+    ],
     xrp: [
       {
         name: 'normal',
@@ -362,6 +390,7 @@ export const Defaults = {
     arb: 1000000000000, // 50 Gwei,
     base: 1000000000000, // 50 Gwei,
     op: 1000000000000, // 50 Gwei,
+    arc: 1000000000000,
     xrp: 1000000000000,
     doge: 100000000 * 100,
     ltc: 10000 * 1000, // 10k sat/b
@@ -376,6 +405,7 @@ export const Defaults = {
     arb: 0,
     base: 0,
     op: 0,
+    arc: 0,
     xrp: 0,
     doge: 0,
     ltc: 0,
@@ -390,6 +420,7 @@ export const Defaults = {
     arb: 1 * 1e18, // 1 eth
     base: 1 * 1e18, // 1 eth
     op: 1 * 1e18, // 1 eth
+    arc: 1 * 1e18, // 1 USDC
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
     ltc: 0.05 * 1e8
