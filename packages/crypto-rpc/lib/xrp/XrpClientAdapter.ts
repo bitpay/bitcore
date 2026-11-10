@@ -16,7 +16,17 @@ const SUPPORTED_TRANSACTION_RESULT_CODES = {
  * Migration guide: https://xrpl.org/docs/references/xrpljs2-migration-guide
  * ripple-lib ref: https://github.com/XRPLF/xrpl.js/blob/1.x/docs/index.md
  */
+export interface XrpGetTransactionsOptions {
+  minLedgerVersion?: number;
+  maxLedgerVersion?: number;
+  types?: string[];
+  initiated?: boolean;
+  includeRawTransactions?: boolean;
+  excludeFailures?: boolean;
+}
+
 export class XrpClientAdapter extends xrpl.Client {
+  // @ts-expect-error xrpl's Client.getServerInfo() returns void and caches networkID/buildVersion; this ripple-lib style override returns the server_info response instead
   async getServerInfo() {
     return await this.request({
       id: 1,
@@ -24,7 +34,7 @@ export class XrpClientAdapter extends xrpl.Client {
     });
   }
 
-  async getLedger({ ledgerVersion }) {
+  async getLedger({ ledgerVersion }: { ledgerVersion: number | string }) {
     return await this.request({
       command: 'ledger',
       ledger_index: ledgerVersion
@@ -50,14 +60,14 @@ export class XrpClientAdapter extends xrpl.Client {
      * @throws {Error} If 'types' includes invalid transaction types.
      * @throws {Error} If the XRPL client request does not return the expected form.
      */
-  async getTransactions(acceptanceAddress, {
+  async getTransactions(acceptanceAddress: string, {
     minLedgerVersion,
     maxLedgerVersion,
     types,
     initiated,
     includeRawTransactions,
     excludeFailures
-  }) {
+  }: XrpGetTransactionsOptions) {
     /**
      * Behavior defaults to 'true', but this error is to document that 'includeRawTransactions: false' is NOT supported
      * Truthiness is not sufficient for this check - it must explicitly be an equality check, & strict equality is prefered
@@ -74,8 +84,8 @@ export class XrpClientAdapter extends xrpl.Client {
       if (!Array.isArray(types)) throw new Error('If types is included, it should be a string array of supported types. See documentation for usage.');
       if (types.length === 0) throw new Error('If types is included, it should include at least one supported type');
 
-      const validTypes = new Set();
-      const invalidTypes = [];
+      const validTypes = new Set<string>();
+      const invalidTypes: string[] = [];
       for (const type of types) {
         const lowercaseType = type.toLowerCase();
         if (SUPPORTED_TRANSACTION_TYPES.has(lowercaseType)) {
@@ -107,7 +117,8 @@ export class XrpClientAdapter extends xrpl.Client {
     }
 
     const filteredTransactions = result.transactions.filter(({ meta, tx }) => {
-      const { Account: initiatingAccount, TransactionType } = tx;
+      // tx and meta are only absent or strings in binary mode, which is not requested here
+      const { Account: initiatingAccount, TransactionType } = tx!;
 
       if (!TYPES.has(TransactionType.toLowerCase())) return false;
 
@@ -121,7 +132,7 @@ export class XrpClientAdapter extends xrpl.Client {
        */
       if (INITIATED !== isTxInitiatedByAcceptanceAddress) return false;
 
-      if (EXCLUDE_FAILURES && meta.TransactionResult !== SUPPORTED_TRANSACTION_RESULT_CODES.tes.SUCCESS) return false;
+      if (EXCLUDE_FAILURES && (meta as xrpl.TransactionMetadata).TransactionResult !== SUPPORTED_TRANSACTION_RESULT_CODES.tes.SUCCESS) return false;
 
       /**
        * If type in types AND tx initiator matches flag AND if excludeFailures, only include successes

@@ -6,8 +6,51 @@ import { XrpClientAdapter } from './XrpClientAdapter';
 
 const passwordPromptAsync = util.promisify(promptly.password);
 
+/** Connection settings for rippled */
+export interface XrpRpcConfig {
+  chain?: string;
+  protocol?: string;
+  host?: string;
+  port?: number | string;
+  /** Default account for getBalance */
+  address?: string;
+  /** Wrap the xrpl v2 client with the ripple-lib v1 style methods (default true) */
+  useClientAdapter?: boolean;
+  /** Disconnect after this long without a call (default 120000) */
+  connectionIdleMs?: number;
+  [key: string]: any;
+}
+
+export interface XrpPayToItem {
+  address: string;
+  amount: number | string;
+  id?: string;
+}
+
+export interface XrpSendResult {
+  txid?: string;
+  error?: unknown;
+}
+
+export interface XrpSendParams {
+  address: string;
+  amount: number | string;
+  /** Accepted for parity with the other chains; XRP signs with secret */
+  passphrase?: string;
+  tag?: number;
+  invoiceID?: string;
+  secret?: string;
+}
+
 export class XrpRpc {
-  constructor(config) {
+  config: XrpRpcConfig;
+  rpc: XrpClientAdapter | xrpl.Client;
+  address: string | undefined;
+  emitter: EventEmitter;
+  connectionIdleTimeout: NodeJS.Timeout | null;
+  connectionIdleMs: number;
+
+  constructor(config: XrpRpcConfig) {
     this.config = config;
     const {
       protocol,
@@ -26,9 +69,9 @@ export class XrpRpc {
     this.rpc.on('error', () => {}); // ignore rpc connection errors as we reconnect if nec each request
   }
 
-  async asyncCall(method, args) {
+  async asyncCall(method: string, args?: any): Promise<any> {
     // clear idle timer if exists
-    clearTimeout(this.connectionIdleTimeout);
+    clearTimeout(this.connectionIdleTimeout ?? undefined);
     // reset idle timer
     this.connectionIdleTimeout = setTimeout(async () => {
       try {
@@ -49,11 +92,11 @@ export class XrpRpc {
     return result;
   }
 
-  async asyncRequest(method, args) {
+  async asyncRequest(method: string, args?: object): Promise<any> {
     return this.asyncCall('request', Object.assign({ command: method }, args));
   }
 
-  async unlockAndSendToAddress({ address, amount, secret }) {
+  async unlockAndSendToAddress({ address, amount, secret }: { address: string; amount: number | string; secret?: string }) {
     if (secret === undefined) {
       secret = await passwordPromptAsync('> ');
     }
@@ -61,20 +104,20 @@ export class XrpRpc {
     return await this.sendToAddress({ address, amount, secret });
   }
 
-  async sendToAddress({ address, amount, passphrase, tag, invoiceID, secret }) {
+  async sendToAddress({ address, amount, passphrase, tag, invoiceID, secret }: XrpSendParams) {
     const rawTx = await this.signTransaction({ address, amount, passphrase, tag, invoiceID, secret });
     const txHash = await this.sendRawTransaction({ rawTx });
     return txHash;
   }
 
-  async signTransaction({ address, amount, tag, invoiceID, secret }) {
+  async signTransaction({ address, amount, tag, invoiceID, secret }: XrpSendParams) {
     if (!secret) {
-      const err = new Error('Secret not provided');
+      const err: Error & { conclusive?: boolean } = new Error('Secret not provided');
       err.conclusive = true; // used by server
       throw err;
     }
     const wallet = xrpl.Wallet.fromSeed(secret);
-    const payment = {
+    const payment: xrpl.Payment = {
       TransactionType: 'Payment',
       Account: wallet.address,
       Amount: xrpl.xrpToDrops(amount),
@@ -91,10 +134,10 @@ export class XrpRpc {
     return signed.tx_blob;
   }
 
-  async sendRawTransactionMany({ rawTxArray }) {
-    const resultArray = [];
+  async sendRawTransactionMany({ rawTxArray }: { rawTxArray: string[] }) {
+    const resultArray: Array<XrpSendResult & { rawTx: string }> = [];
     for (const rawTx of rawTxArray) {
-      const emitData = { rawTx };
+      const emitData: XrpSendResult & { rawTx: string } = { rawTx };
       try {
         const txHash = await this.sendRawTransaction({ rawTx });
         emitData.txid = txHash;
@@ -109,16 +152,16 @@ export class XrpRpc {
     return resultArray;
   }
 
-  async unlockAndSendToAddressMany({ payToArray, secret }) {
+  async unlockAndSendToAddressMany({ payToArray, secret }: { payToArray: XrpPayToItem[]; secret?: string }) {
     if (secret === undefined) {
       secret = await passwordPromptAsync('> ');
     }
 
-    const resultArray = [];
+    const resultArray: Array<XrpSendResult & XrpPayToItem> = [];
 
     for (const payment of payToArray) {
       const { address, amount, id } = payment;
-      const emitData = { address, amount, id };
+      const emitData: XrpSendResult & XrpPayToItem = { address, amount, id };
       this.emitter.emit('attempt', emitData);
       try {
         const txid = await this.sendToAddress({ address, amount, secret });
@@ -137,11 +180,11 @@ export class XrpRpc {
   }
 
 
-  async getRawTransaction({ txid }) {
+  async getRawTransaction({ txid }: { txid: string }) {
     try {
       const { result } = await this.asyncRequest('tx', { transaction: txid, binary: true });
       return result.tx;
-    } catch (err) {
+    } catch (err: any) {
       if (err && err.data && err.data.error === 'txnNotFound') {
         return null;
       }
@@ -149,7 +192,7 @@ export class XrpRpc {
     }
   }
 
-  async sendRawTransaction({ rawTx }) {
+  async sendRawTransaction({ rawTx }: { rawTx: string }) {
     const { result } = await this.asyncCall('submit', rawTx);
     const { accepted, engine_result_message, tx_json } = result;
     if (accepted) {
@@ -159,7 +202,7 @@ export class XrpRpc {
     }
   }
 
-  async decodeRawTransaction({ rawTx }) {
+  async decodeRawTransaction({ rawTx }: { rawTx: string }) {
     const txJSON = xrpl.decode(rawTx);
 
     if (txJSON.TxnSignature) {
@@ -174,7 +217,7 @@ export class XrpRpc {
     return result.drops.minimum_fee;
   }
 
-  async getBalance({ address, ledgerIndex }) {
+  async getBalance({ address, ledgerIndex }: { address?: string; ledgerIndex?: number | string }) {
     const balance = await this.asyncCall('getXrpBalance', [address || this.address, { ledger_index: ledgerIndex }]);
     return parseFloat(balance);
   }
@@ -184,7 +227,7 @@ export class XrpRpc {
     return tip.hash;
   }
 
-  async getTransaction({ txid }) {
+  async getTransaction({ txid }: { txid: string }) {
     try {
       const { result } = await this.asyncRequest('tx', { transaction: txid });
       if (!result) {
@@ -202,7 +245,7 @@ export class XrpRpc {
       const { result: txBlock } = await this.asyncRequest('ledger', { ledger_index: result.ledger_index });
       result.blockHash = txBlock.ledger_hash;
       return result;
-    } catch (err) {
+    } catch (err: any) {
       if (err && err.data && err.data.error === 'txnNotFound') {
         return null;
       }
@@ -217,11 +260,11 @@ export class XrpRpc {
    * @param {object} params.options See https://xrpl.org/docs/references/http-websocket-apis/public-api-methods/account-methods/account_tx/
    * @returns 
    */
-  async getTransactions({ address, options }) {
+  async getTransactions({ address, options }: { address: string; options?: object }) {
     try {
       const { result } = await this.asyncRequest('account_tx', { account: address, ...options });
       return result;
-    } catch (err) {
+    } catch (err: any) {
       if (err && err.data && err.data.error === 'actNotFound') {
         return [];
       }
@@ -238,7 +281,12 @@ export class XrpRpc {
    * @param {boolean} [params.expand=true] - Whether to expand transactions
    * @returns 
    */
-  async getBlock({ hash, index, transactions = true, expand = true } = {}) {
+  async getBlock({ hash, index, transactions = true, expand = true }: {
+    hash?: string;
+    index?: number | string;
+    transactions?: boolean;
+    expand?: boolean;
+  } = {}) {
     try {
       if (index === 'latest') {
         index = 'validated';
@@ -250,7 +298,7 @@ export class XrpRpc {
         ({ result } = await this._getBlockByIndex({ index, transactions, expand }));
       }
       return result;
-    } catch (err) {
+    } catch (err: any) {
       if (err && err.data && err.data.error === 'lgrNotFound') {
         return null;
       }
@@ -258,7 +306,7 @@ export class XrpRpc {
     }
   }
 
-  _getBlockByHash({ hash, transactions = true, expand = true }) {
+  _getBlockByHash({ hash, transactions = true, expand = true }: { hash: string; transactions?: boolean; expand?: boolean }) {
     return this.asyncRequest('ledger', {
       ledger_hash: hash,
       transactions,
@@ -266,7 +314,11 @@ export class XrpRpc {
     });
   }
 
-  _getBlockByIndex({ index = 'validated', transactions = true, expand = true }) {
+  _getBlockByIndex({ index = 'validated', transactions = true, expand = true }: {
+    index?: number | string;
+    transactions?: boolean;
+    expand?: boolean;
+  }) {
     return this.asyncRequest('ledger', {
       ledger_index: index,
       transactions,
@@ -274,7 +326,7 @@ export class XrpRpc {
     });
   }
 
-  async getConfirmations({ txid }) {
+  async getConfirmations({ txid }: { txid: string }) {
     return (await this.getTransaction({ txid })).confirmations;
   }
 
@@ -291,15 +343,15 @@ export class XrpRpc {
     return null;
   }
 
-  async validateAddress({ address }) {
+  async validateAddress({ address }: { address: string }) {
     return xrpl.isValidAddress(address);
   }
 
-  async getAccountInfo({ address }) {
+  async getAccountInfo({ address }: { address: string }) {
     try {
       const { result } = await this.asyncRequest('account_info', { account: address });
       return result;
-    } catch (error) {
+    } catch (error: any) {
       if (error.data && error.data.error && error.data.error === 'actNotFound') {
         error.conclusive = true;
       }
