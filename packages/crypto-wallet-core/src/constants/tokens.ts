@@ -47,11 +47,11 @@ export const ETH_TOKEN_OPTS = {
     name: 'SHIBA INU',
     symbol: 'SHIB'
   },
-  '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c': {
+  '0x1abaea1f7c830bd89acc67ec4af516284b1bc33c': {
     name: 'Euro Coin',
     symbol: 'EUROC',
     decimals: 6,
-    address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c'
+    address: '0x1abaea1f7c830bd89acc67ec4af516284b1bc33c'
   },
   '0x4d224452801aced8b2f0aebe155379bb5d594381': {
     name: 'ApeCoin',
@@ -71,11 +71,11 @@ export const ETH_TOKEN_OPTS = {
     decimals: 6,
     address: '0xdac17f958d2ee523a2206206994597c13d831ec7'
   },
-  '0x68749665FF8D2d112Fa859AA293F07A622782F38': {
+  '0x68749665ff8d2d112fa859aa293f07a622782f38': {
     name: 'Tether Gold',
     symbol: 'XAUT',
     decimals: 6,
-    address: '0x68749665FF8D2d112Fa859AA293F07A622782F38'
+    address: '0x68749665ff8d2d112fa859aa293f07a622782f38'
   }
 };
 
