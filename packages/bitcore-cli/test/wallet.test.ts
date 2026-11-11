@@ -412,7 +412,10 @@ describe('Wallet', function() {
         sandbox.stub(wallet, 'chain').get(() => 'arc');
         sandbox.stub(wallet, 'network').get(() => network);
         const abi = new Web3().eth.abi;
-        const request = sandbox.stub(Web3.providers.HttpProvider.prototype, 'request').callsFake(async payload => ({
+        const request = sandbox.stub(Web3.providers.HttpProvider.prototype, 'request').callsFake(async (payload: {
+          id: string | number;
+          params: [{ data: string }, ...unknown[]];
+        }) => ({
           jsonrpc: '2.0',
           id: payload.id,
           result: payload.params[0].data === '0x95d89b41'

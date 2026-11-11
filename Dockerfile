@@ -29,4 +29,4 @@ WORKDIR /bitcore
 ADD . .
 
 # npm checks root devEngines before installing dependencies.
-RUN npm ci --foreground-scripts
+RUN npm ci --include=optional --foreground-scripts

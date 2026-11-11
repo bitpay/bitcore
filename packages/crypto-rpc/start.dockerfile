@@ -16,7 +16,7 @@ WORKDIR /bitcore
 COPY . .
 
 # npm checks root devEngines before installing dependencies.
-RUN npm ci --foreground-scripts
+RUN npm ci --include=optional --foreground-scripts
 
 WORKDIR /bitcore/packages/crypto-rpc
 ENV PATH="/bitcore/packages/crypto-rpc/test/docker/solc-v0.4.24:${PATH}"

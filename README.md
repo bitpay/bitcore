@@ -76,6 +76,17 @@ The root `compile` script chains workspace commands with `&&` to stop on the
 first failure. Keep dependencies before their consumers when adding a compile
 step: npm does not calculate build order, and running across all workspaces
 continues after individual failures.
+
+Keep optional dependencies enabled in CI and Docker builds with
+`npm ci --include=optional`. Packages such as SWC, esbuild, and cbor-extract
+use optional dependencies for their platform-specific native binaries.
+The root lockfile must retain their entries for every supported platform,
+including Linux x64 and ARM64; `npm ci` does not repair missing lock entries.
+When repairing the lockfile, use the pinned Node/npm versions in a clean
+checkout without root or workspace `node_modules`, and review the diff for
+unintended dependency upgrades. Validate the result inside the target Linux
+image, since a successful macOS install does not verify Linux binaries.
+
 To recompile later without reinstalling — after pulling changes or editing a
 package directly — run:
 

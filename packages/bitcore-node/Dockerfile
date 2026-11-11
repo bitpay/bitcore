@@ -16,7 +16,7 @@ WORKDIR /bitcore
 COPY . .
 
 # npm checks root devEngines before installing dependencies.
-RUN npm ci --foreground-scripts
+RUN npm ci --include=optional --foreground-scripts
 
 # Start the server
 WORKDIR /bitcore/packages/bitcore-node

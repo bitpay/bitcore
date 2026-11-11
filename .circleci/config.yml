@@ -79,7 +79,7 @@ jobs:
           name: npm ci
           command: |
             nvm use default
-            npm ci --foreground-scripts
+            npm ci --include=optional --foreground-scripts
       - run:
           name: Verify shared build tools
           command: |
