@@ -599,7 +599,7 @@ describe('SOL Tests', () => {
         const recorder = recordRpcCalls(solRpc, { respond });
         let tx;
         try {
-          tx = await solRpc.getTransaction({ txid });
+          tx = await solRpc.getTransaction({ txid, includeInnerInstructions: true });
         } finally {
           recorder.restore();
         }

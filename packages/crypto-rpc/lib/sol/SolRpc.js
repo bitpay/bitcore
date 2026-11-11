@@ -460,8 +460,10 @@ export class SolRpc {
    * 
    * @param {Object} params - Parameters for retrieving the transaction.
    * @param {string} params.txid - The transaction ID of the transaction to retrieve.
+   * @param {boolean} [params.includeInnerInstructions] - Also return innerInstructions, which costs a second (jsonParsed)
+   *   fetch for a tx that has any. Defaults to the client's includeInnerInstructions config, which defaults to false.
    */
-  async getTransaction({ txid }) {
+  async getTransaction({ txid, includeInnerInstructions = Boolean(this.config.includeInnerInstructions) }) {
     if (!txid || !this.isBase58(txid)) {
       return null;
     }
@@ -484,13 +486,17 @@ export class SolRpc {
     parsedTransaction.slot = Number(slot);
 
     // Only the jsonParsed encoding parses inner instructions (instructions run by another program), and it's also where
-    // a lookup-table tx's accounts come from when loadedAddresses couldn't be used, so fetch it at most once for both
+    // a lookup-table tx's accounts come from when loadedAddresses couldn't be used, so fetch it at most once for both.
+    // Inner instructions are opt-in so callers that don't read them (bitcore-node) don't pay for the second fetch.
     const hasInnerInstructions = Array.isArray(meta?.innerInstructions) && meta.innerInstructions.length > 0;
+    const needsInnerInstructions = includeInnerInstructions && hasInnerInstructions;
     const needsLookupTableAccounts = lookupTablesUsed && !accountsLoaded;
-    const parsedTx = hasInnerInstructions || needsLookupTableAccounts
+    const parsedTx = needsInnerInstructions || needsLookupTableAccounts
       ? await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send()
       : null;
-    parsedTransaction.innerInstructions = this.#parseInnerInstructions(parsedTx?.meta?.innerInstructions);
+    if (includeInnerInstructions) {
+      parsedTransaction.innerInstructions = this.#parseInnerInstructions(parsedTx?.meta?.innerInstructions);
+    }
 
     if (needsLookupTableAccounts) {
       return {
