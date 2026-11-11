@@ -104,7 +104,7 @@ describe('SolRpc.getTransaction inner instructions (recorded mainnet tx)', funct
 
   before(async function() {
     replay = await startReplayServer(JSON.parse(fs.readFileSync(fixturePath, 'utf8')));
-    const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port: replay.port, wsPort: 1 });
+    const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port: replay.port, wsPort: 1, includeInnerInstructions: true });
     tx = await solRpc.getTransaction({ txid: MAINNET_TXID });
   });
 
@@ -143,5 +143,31 @@ describe('SolRpc.getTransaction inner instructions (recorded mainnet tx)', funct
   it('still returns the base64 meta and the lookup-table account keys', function() {
     expect(tx.meta.preBalances.every(balance => typeof balance === 'bigint')).to.be.true;
     expect(tx.accountKeys).to.be.an('array').that.is.not.empty;
+  });
+});
+
+describe('SolRpc.getTransaction without inner instructions requested (recorded mainnet tx)', function() {
+  let replay;
+  let solRpc;
+
+  beforeEach(async function() {
+    replay = await startReplayServer(JSON.parse(fs.readFileSync(fixturePath, 'utf8')));
+    solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port: replay.port, wsPort: 1 });
+  });
+
+  afterEach(function() {
+    replay.server.close();
+  });
+
+  it('makes only the base64 fetch and leaves innerInstructions out by default', async function() {
+    const tx = await solRpc.getTransaction({ txid: MAINNET_TXID });
+    expect(tx).not.to.have.property('innerInstructions');
+    expect(replay.requests.filter(key => key.startsWith('getTransaction:'))).to.deep.equal(['getTransaction:base64']);
+  });
+
+  it('returns innerInstructions when the call asks for them', async function() {
+    const tx = await solRpc.getTransaction({ txid: MAINNET_TXID, includeInnerInstructions: true });
+    expect(tx.innerInstructions[instructionKeys.TRANSFER_SOL]).to.have.lengthOf(1);
+    expect(replay.requests.filter(key => key.startsWith('getTransaction:'))).to.deep.equal(['getTransaction:base64', 'getTransaction:jsonParsed']);
   });
 });
