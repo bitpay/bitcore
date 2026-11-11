@@ -13,7 +13,7 @@ Use the following steps to Install BWS from the npmjs repository and run it with
 
 ```sh
 npm install @bitpay-labs/bitcore-wallet-service
-cd bitcore-wallet-service
+cd node_modules/@bitpay-labs/bitcore-wallet-service
 ```
 
 To change configuration before running, see the Configuration section.
@@ -24,12 +24,16 @@ npm start
 
 ## Install BWS from github source
 
-Use the following steps to Install BWS from github source and run it with defaults.
+BWS is developed as part of the Bitcore monorepo. Use the following steps to
+install it from github source and run it with defaults; this installs and
+links every backend package from one root install (see the root
+[README.md](../../README.md#development) for details), not just BWS on its
+own.
 
 ```sh
 git clone https://github.com/bitpay/bitcore.git
 cd bitcore
-npm install
+npm ci
 ```
 
 To change configuration before running, see the Configuration section.

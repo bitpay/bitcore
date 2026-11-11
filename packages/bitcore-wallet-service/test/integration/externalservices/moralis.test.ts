@@ -13,7 +13,11 @@ import helpers from '../helpers';
 const should = chai.should();
 
 describe('Moralis integration', () => {
-  let server;
+  let server: WalletService;
+  // Throughout this file, `.resolves({ raw: ... } as any)` fixtures give the Moralis SDK
+  // stubs only the fields the code under test actually reads, not the SDK's full (and much
+  // larger) real response shape -- casting each one keeps the fixtures honestly partial
+  // without inventing unused fields just to satisfy the SDK's types.
   let wallet;
   let fakeRequest;
   let lastGet;
@@ -83,7 +87,7 @@ describe('Moralis integration', () => {
 
     it('should resolve response.raw and pass through the request params', async () => {
       const stub = sinon.stub(Moralis.EvmApi.token, 'getWalletTokenBalances')
-        .resolves({ raw: [{ token_address: '0xtoken1', balance: '100' }] });
+        .resolves({ raw: [{ token_address: '0xtoken1', balance: '100' }] } as any);
 
       const data = await server.moralisGetWalletTokenBalances(req);
 
@@ -224,7 +228,7 @@ describe('Moralis integration', () => {
     it('should resolve response.raw and pass through the request params', async () => {
       req = { headers: {}, body: { address: '0xabc', chain: '0x1', toBlock: 100 } };
       const stub = sinon.stub(Moralis.EvmApi.balance, 'getNativeBalance')
-        .resolves({ raw: { balance: '1000000000000000000' } });
+        .resolves({ raw: { balance: '1000000000000000000' } } as any);
 
       const data = await server.moralisGetNativeBalance(req);
 
@@ -240,7 +244,7 @@ describe('Moralis integration', () => {
         body: { address: '0xabc', chain: '0x1', include: 'percent_change', exchange: 'uniswapv2', toBlock: 100 }
       };
       const stub = sinon.stub(Moralis.EvmApi.token, 'getTokenPrice')
-        .resolves({ raw: { usdPrice: 5 } });
+        .resolves({ raw: { usdPrice: 5 } } as any);
 
       const data = await server.moralisGetTokenPrice(req);
 
@@ -266,7 +270,7 @@ describe('Moralis integration', () => {
         }
       };
       const stub = sinon.stub(Moralis.EvmApi.token, 'getMultipleTokenPrices')
-        .resolves({ raw: [{ tokenAddress: '0xaaa', usdPrice: 1 }] });
+        .resolves({ raw: [{ tokenAddress: '0xaaa', usdPrice: 1 }] } as any);
 
       const data = await server.moralisGetMultipleERC20TokenPrices(req);
 
@@ -346,7 +350,7 @@ describe('Moralis integration', () => {
 
     it('should resolve response.raw and pass through the request params', async () => {
       const stub = sinon.stub(Moralis.EvmApi.transaction, 'getTransactionVerbose')
-        .resolves({ raw: { hash: '0xhash', logs: [] } });
+        .resolves({ raw: { hash: '0xhash', logs: [] } } as any);
 
       const data = await server.moralisGetTransactionVerbose(req);
 
@@ -383,7 +387,7 @@ describe('Moralis integration', () => {
 
     it('should resolve response.raw and default to mainnet', async () => {
       const stub = sinon.stub(Moralis.SolApi.account, 'getPortfolio')
-        .resolves({ raw: { tokens: [] } });
+        .resolves({ raw: { tokens: [] } } as any);
 
       const data = await server.moralisGetSolWalletPortfolio(req);
 
@@ -392,7 +396,7 @@ describe('Moralis integration', () => {
     });
 
     it('should prefer network over chain when both are provided', async () => {
-      const stub = sinon.stub(Moralis.SolApi.account, 'getPortfolio').resolves({ raw: {} });
+      const stub = sinon.stub(Moralis.SolApi.account, 'getPortfolio').resolves({ raw: {} } as any);
       req.body.network = 'testnet';
       req.body.chain = 'devnet';
 
@@ -401,7 +405,7 @@ describe('Moralis integration', () => {
     });
 
     it('should map hex-encoded and numeric chain ids to the matching network', async () => {
-      const stub = sinon.stub(Moralis.SolApi.account, 'getPortfolio').resolves({ raw: {} });
+      const stub = sinon.stub(Moralis.SolApi.account, 'getPortfolio').resolves({ raw: {} } as any);
 
       req.body.chain = '0x66';
       await server.moralisGetSolWalletPortfolio(req);

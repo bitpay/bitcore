@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Not a published or workspace package. Exists only to give this directory its own Node package boundary so npx keeps its cwd for Hardhat. See README.md."
+}

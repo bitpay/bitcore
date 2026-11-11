@@ -8,6 +8,10 @@
   "bin": {
     "bitcore-client": "./bin/wallet"
   },
+  "files": [
+    "bin",
+    "ts_build"
+  ],
   "engines": {
     "node": ">=18.0.0"
   },
@@ -21,9 +25,9 @@
     "clean": "rm -rf ./ts_build",
     "pub": "npm run compile && npm publish",
     "watch": "tsc --watch",
-    "precompile": "cd ../bitcore-node && npm run clean && npm run build:prod",
-    "compile": "npm run clean && npm run build",
-    "test": "npm run compile && mcr mocha ts_build/test",
+    "compile": "npm run clean && npm run build:prod",
+    "test:types": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run compile && npm run test:types && npm run build && mcr mocha ts_build/test",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
@@ -59,6 +63,7 @@
     "@types/request": "2.48.1",
     "@types/request-promise-native": "1.0.15",
     "@types/secp256k1": "3.5.0",
+    "@types/sinon": "^22.0.0",
     "chai": "5.1.2",
     "mocha": "11.1.0",
     "sinon": "19.0.2",

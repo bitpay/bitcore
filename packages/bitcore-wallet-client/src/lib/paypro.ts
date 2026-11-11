@@ -22,7 +22,8 @@ const MAX_FEE_PER_KB = 500000;
 
 export class PayPro {
   // static request: request;
-  static r = superagent;
+  // loose typing b/c tests substitube lightweight fake request client
+  static r: any = superagent;
   constructor() {}
   // var PayPro = {
   //

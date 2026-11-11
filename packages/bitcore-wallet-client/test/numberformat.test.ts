@@ -34,20 +34,20 @@ describe('Transaction proposal number formats', function() {
   });
 
   it('should preserve create amounts without requesting a number conversion', async function() {
-    const post = sandbox.stub(client.request, 'post').resolves({ body: txp });
+    const post = sandbox.stub(client.request, 'post').resolves({ body: txp, header: {} });
     const check = sandbox.stub(Verifier, 'checkProposalCreation').returns(true);
     const args = { outputs: [{ ...txp.outputs[0] }] };
 
     const result = await client.createTxProposal(args);
 
     post.firstCall.args[0].should.equal('/v3/txproposals/');
-    post.firstCall.args[1].outputs[0].amount.should.equal('70000000000000010');
+    (post.firstCall.args[1] as typeof args).outputs[0].amount.should.equal('70000000000000010');
     result.outputs[0].amount.should.equal('70000000000000010');
     check.calledOnce.should.equal(true);
   });
 
   it('should omit the format by default and pass an explicit one through', async function() {
-    const post = sandbox.stub(client.request, 'post').resolves({ body: txp });
+    const post = sandbox.stub(client.request, 'post').resolves({ body: txp, header: {} });
     const build = sandbox.stub(Utils, 'buildTx').returns({ uncheckedSerialize: () => 'unsigned-transaction' } as any);
     const sign = sandbox.stub(Utils, 'signMessage').returns('proposal-signature');
 
@@ -63,7 +63,7 @@ describe('Transaction proposal number formats', function() {
   });
 
   it('should verify proposals requested without a format or with an explicit one', async function() {
-    const get = sandbox.stub(client.request, 'get').resolves({ body: [txp] });
+    const get = sandbox.stub(client.request, 'get').resolves({ body: [txp], header: {} });
     sandbox.stub(client, 'getPayProV2').resolves(null);
     const check = sandbox.stub(Verifier, 'checkTxProposal').returns(true);
 
@@ -78,8 +78,8 @@ describe('Transaction proposal number formats', function() {
 
   it('should keep pending proposal amounts through getStatus and pushSignatures', async function() {
     const status = { wallet: { status: 'complete' }, pendingTxps: [txp] };
-    const get = sandbox.stub(client.request, 'get').resolves({ body: status });
-    const post = sandbox.stub(client.request, 'post').resolves({ body: txp });
+    const get = sandbox.stub(client.request, 'get').resolves({ body: status, header: {} });
+    const post = sandbox.stub(client.request, 'post').resolves({ body: txp, header: {} });
     sandbox.stub(client, 'getPayProV2').resolves(null);
     const check = sandbox.stub(Verifier, 'checkTxProposal').returns(true);
 
@@ -98,7 +98,8 @@ describe('Transaction proposal number formats', function() {
   it('should request pending proposals in bulk status without a format', async function() {
     const status = { wallet: { status: 'complete' }, pendingTxps: [txp] };
     const get = sandbox.stub(client.bulkClient, 'get').resolves({
-      body: [{ walletId: 'wallet', success: true, status }]
+      body: [{ walletId: 'wallet', success: true, status }],
+      header: {}
     });
 
     const result = await client.bulkClient.getStatusAll([client.credentials], {});
@@ -108,7 +109,7 @@ describe('Transaction proposal number formats', function() {
   });
 
   it('should omit the format for prepare and signing regardless of the displayed total type', async function() {
-    const post = sandbox.stub(client.request, 'post').resolves({ body: txp });
+    const post = sandbox.stub(client.request, 'post').resolves({ body: txp, header: {} });
     sandbox.stub(client, 'getPayProV2').resolves(null);
     sandbox.stub(Verifier, 'checkTxProposal').returns(true);
 

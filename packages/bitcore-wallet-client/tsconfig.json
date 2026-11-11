@@ -20,9 +20,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "target": "ES2020",
-    "typeRoots": [
-      "./node_modules/@types"
-    ],
+    "types": ["node", "mocha"],
     "baseUrl": ".",
     "paths": {
       "*": [

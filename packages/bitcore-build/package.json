@@ -4,7 +4,7 @@
   "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",
   "scripts": {
-    "test": "gulp test",
+    "test": "node --test test/*.test.cjs",
     "pub": "npm publish"
   },
   "repository": {

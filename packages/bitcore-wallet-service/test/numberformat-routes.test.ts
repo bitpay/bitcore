@@ -12,6 +12,19 @@ import { registerWalletRoutes } from '../src/lib/routes/wallets';
 
 const should = chai.should();
 
+// These tests inspect Express's runtime route registry and invoke the
+// selected two-argument handler directly, without the middleware dispatcher.
+type RegisteredRoute = {
+  path: string;
+  methods: Record<string, boolean>;
+  stack: Array<{ handle: (req: express.Request, res: express.Response) => unknown }>;
+};
+
+function findRoute(router: express.Router, method: string, path: string) {
+  const layers = router.stack as unknown as Array<{ route?: RegisteredRoute }>;
+  return layers.find(layer => layer.route?.path === path && layer.route.methods[method]);
+}
+
 describe('Transaction number format routes', function() {
   const routes = [
     ['get', '/v2/txproposals/', 'getPendingTxs'],
@@ -53,7 +66,7 @@ describe('Transaction number format routes', function() {
     for (const format of ['number', 'string', 'hex', undefined]) {
       it(`should accept ${format ?? 'unspecified'} on ${method.toUpperCase()} ${path}`, async function() {
         const { router, server, response } = setup();
-        const route = router.stack.find(layer => layer.route?.path === path && layer.route.methods[method]);
+        const route = findRoute(router, method, path);
         const request: any = { query: { numberFormat: format }, body: {}, params: { id: 'proposal' }, headers: {} };
 
         await route.route.stack[0].handle(request, response);
@@ -68,7 +81,7 @@ describe('Transaction number format routes', function() {
     for (const format of ['invalid', 'bigint', 'raw']) {
       it(`should return 400 without executing ${method.toUpperCase()} ${path} for ${format}`, async function() {
         const { router, server, response, context } = setup();
-        const route = router.stack.find(layer => layer.route?.path === path && layer.route.methods[method]);
+        const route = findRoute(router, method, path);
         const request: any = { query: { numberFormat: format }, body: {}, params: { id: 'proposal' }, headers: {} };
 
         await route.route.stack[0].handle(request, response);

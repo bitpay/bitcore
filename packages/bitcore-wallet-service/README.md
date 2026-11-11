@@ -20,6 +20,12 @@ More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
 ## Getting Started
 
+BWS is developed as part of the Bitcore monorepo. Clone the repo and install
+from the root — this installs and links every backend package (including
+this one) and compiles it automatically; see the root
+[README.md](../../README.md#development) for the exact Node/npm versions and
+other monorepo development commands.
+
 ```sh
 git clone https://github.com/bitpay/bitcore.git
 cd bitcore

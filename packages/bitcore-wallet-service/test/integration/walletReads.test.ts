@@ -102,7 +102,7 @@ describe('Wallet reads', function() {
       // the token address each balance call saw, read when it was made
       const seen = [];
       const getBalance = blockchainExplorer.getBalance;
-      sinon.stub(blockchainExplorer, 'getBalance').callsFake((w, cb) => {
+      sinon.stub(blockchainExplorer, 'getBalance').callsFake((w: any, cb) => {
         seen.push(w.tokenAddress || null);
         return getBalance(w, cb);
       });

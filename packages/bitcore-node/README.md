@@ -16,12 +16,22 @@ Currently supporting:
 
 ### Checkout the repo
 
+Bitcore Node is developed as part of the Bitcore monorepo; it is not
+installed on its own from a checkout. Clone the repo and install from the
+root, which installs and links every backend package (including this one)
+and compiles this package's TypeScript output automatically. See the root
+[README.md](../../README.md#development) for the exact Node/npm versions and
+other monorepo development commands.
 
 ```sh
 git clone git@github.com:bitpay/bitcore.git
-git checkout master
-npm install
+cd bitcore
+npm ci
 ```
+
+(Installing this package on its own as a dependency — `npm install
+@bitpay-labs/bitcore-node` — still works normally for ordinary consumers; it
+just doesn't give you this repo's own source to develop against.)
 
 ## Setup Guide
 

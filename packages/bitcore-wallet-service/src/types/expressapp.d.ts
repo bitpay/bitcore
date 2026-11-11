@@ -1,5 +1,29 @@
 import express from 'express';
 import { WalletService } from 'src/lib/server';
+import { Copayer } from '../lib/model';
+import type { TssKeyGenModel } from '../lib/model/tsskeygen';
+import type { TssSigGenModel } from '../lib/model/tsssign';
+
+// Declares properties that auth/route middleware genuinely attaches to the
+// request object at runtime (context.ts, walletdata.ts, authRequest.ts,
+// authTssRequest.ts)
+declare global {
+  namespace Express {
+    // compression middleware adds flush() to streaming responses.
+    interface Response {
+      flush(): void;
+    }
+
+    interface Request {
+      redirectedUrl?: string;
+      isSupportStaff?: boolean;
+      walletId?: string;
+      copayerId?: string;
+      copayer?: Copayer;
+      session?: TssKeyGenModel | TssSigGenModel | null;
+    }
+  }
+}
 
 export interface ApiCredentials { copayerId: string; signature: string; session: string }
 export interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }

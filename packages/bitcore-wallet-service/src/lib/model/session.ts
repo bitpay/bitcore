@@ -4,7 +4,7 @@ import { Common } from '../common';
 const Defaults = Common.Defaults;
 
 export interface ISession {
-  id: number;
+  id: string;
   version: number;
   createdOn: number;
   updatedOn: number;
@@ -12,7 +12,7 @@ export interface ISession {
   walletId: string;
 }
 export class Session {
-  id: number;
+  id: string;
   version: number;
   createdOn: number;
   updatedOn: number;
