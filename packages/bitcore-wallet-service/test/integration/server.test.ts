@@ -5011,6 +5011,60 @@ describe('Wallet service', function() {
           });
 
           if (coin === 'btc') {
+            it('should fail with INSUFFICIENT_FUNDS when send max has no spendable funds', function(done) {
+              helpers.stubUtxos(server, wallet, ['500sat'], { coin }).then(function() {
+                const txOpts = Object.assign({
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: null,
+                  }],
+                  sendMax: true,
+                }, flags);
+                server.createTx(txOpts, function(err, txp) {
+                  should.exist(err);
+                  should.not.exist(txp);
+                  err.code.should.equal('INSUFFICIENT_FUNDS');
+                  done();
+                });
+              });
+            });
+
+            it('should fail with INSUFFICIENT_FUNDS when fee is set with empty inputs', function(done) {
+              helpers.stubUtxos(server, wallet, ['500sat'], { coin }).then(function() {
+                const txOpts = Object.assign({
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1000,
+                  }],
+                  inputs: [],
+                  fee: 0,
+                }, flags);
+                server.createTx(txOpts, function(err, txp) {
+                  should.exist(err);
+                  should.not.exist(txp);
+                  err.code.should.equal('INSUFFICIENT_FUNDS');
+                  done();
+                });
+              });
+            });
+
+            it('should keep the fee/inputs message when fee is set without inputs', function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }).then(function() {
+                const txOpts = Object.assign({
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1000,
+                  }],
+                  fee: 1000,
+                }, flags);
+                server.createTx(txOpts, function(err, txp) {
+                  should.exist(err);
+                  err.message.should.equal('fee can only be set when inputs are specified');
+                  done();
+                });
+              });
+            });
+
             it('should use the specified feeLevel when calculating send max', function(done) {
               helpers.stubUtxos(server, wallet, [1, 2], { coin }).then(function() {
                 const getSendMaxInfo = sinon.spy(server, 'getSendMaxInfo');

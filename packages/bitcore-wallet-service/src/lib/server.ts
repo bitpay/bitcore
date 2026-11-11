@@ -2474,6 +2474,7 @@ export class WalletService implements IWalletService {
 
           const error = ChainService.checkUtxos(wallet.chain, opts);
           if (error) {
+            if (Array.isArray(opts.inputs)) return next(Errors.INSUFFICIENT_FUNDS);
             return next(new ClientError('fee can only be set when inputs are specified'));
           }
           next();
@@ -2506,6 +2507,7 @@ export class WalletService implements IWalletService {
             },
             (err, info) => {
               if (err) return next(err);
+              if (Array.isArray(info.inputs) && !info.inputs.length) return next(Errors.INSUFFICIENT_FUNDS);
               opts.outputs[0].amount = info.amount;
               opts.inputs = info.inputs;
               return next();
