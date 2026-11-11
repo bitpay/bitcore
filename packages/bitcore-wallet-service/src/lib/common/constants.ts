@@ -38,6 +38,7 @@ export const Constants = {
     WBTC: 'wbtc',
     EUROC: 'euroc',
     USDT: 'usdt',
+    XAUT: 'xaut',
     WETH: 'weth',
     SOL: 'sol',
     ARC: 'arc'

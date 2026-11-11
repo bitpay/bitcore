@@ -70,6 +70,12 @@ export const ETH_TOKEN_OPTS = {
     symbol: 'USDT',
     decimals: 6,
     address: '0xdac17f958d2ee523a2206206994597c13d831ec7'
+  },
+  '0x68749665FF8D2d112Fa859AA293F07A622782F38': {
+    name: 'Tether Gold',
+    symbol: 'XAUT',
+    decimals: 6,
+    address: '0x68749665FF8D2d112Fa859AA293F07A622782F38'
   }
 };
 
