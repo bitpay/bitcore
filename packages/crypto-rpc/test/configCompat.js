@@ -2,6 +2,10 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import Lightning from 'lightning';
 import { CryptoRpc } from '../index.js';
+import { BtcRpc } from '../lib/btc/BtcRpc.js';
+import { DogeRpc } from '../lib/doge/DogeRpc.js';
+import { LtcRpc } from '../lib/ltc/LtcRpc.js';
+import { XrpRpc } from '../lib/xrp/XrpRpc.js';
 
 // bitpay sets both the P2P port and the RPC port on BTC-family nodes, with credentials under rpcUser/rpcPass
 const bitpayStyle = { host: '127.0.0.1', protocol: 'http', port: 20000, rpcPort: 20001, rpcUser: 'rpcuser', rpcPass: 'rpcpass' };
@@ -48,6 +52,21 @@ describe('CryptoRpc config', function() {
         expect(rpc).to.include({ port: 8332, user: 'user', pass: 'pass' });
       });
     }
+  });
+
+  describe('chain clients built directly, without CryptoRpc', function() {
+    // Only the legacy keys, as the standalone crypto-rpc's constructors took them
+    const legacyOnly = { host: '127.0.0.1', protocol: 'http', rpcPort: 20001, rpcUser: 'rpcuser', rpcPass: 'rpcpass' };
+
+    for (const RpcClass of [BtcRpc, LtcRpc, DogeRpc]) {
+      it(`${RpcClass.name} connects with rpcPort, rpcUser and rpcPass`, function() {
+        expect(new RpcClass(legacyOnly).rpc).to.include({ port: 20001, user: 'rpcuser', pass: 'rpcpass' });
+      });
+    }
+
+    it('XrpRpc connects with rpcPort', function() {
+      expect(new XrpRpc({ host: '127.0.0.1', protocol: 'ws', rpcPort: 6005 }).rpc.url).to.equal('ws://127.0.0.1:6005');
+    });
   });
 
   describe('XRP connection settings', function() {
