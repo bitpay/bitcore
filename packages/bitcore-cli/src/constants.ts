@@ -85,6 +85,12 @@ const COIN = {
     minDecimals: 2,
     maxDecimals: 2,
   },
+  XAUT: {
+    name: 'Tether Gold',
+    toSatoshis: 1e6,
+    minDecimals: 2,
+    maxDecimals: 6,
+  },
 } as const;
 
 const PUBLIC_API = {

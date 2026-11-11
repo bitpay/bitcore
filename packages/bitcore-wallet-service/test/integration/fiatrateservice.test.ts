@@ -507,6 +507,16 @@ describe('Fiat rate service', function() {
           rate: 156
         }
       ];
+      const xaut = [
+        {
+          code: 'USD',
+          rate: 4000
+        },
+        {
+          code: 'EUR',
+          rate: 3700
+        }
+      ];
 
       request.get
         .withArgs({
@@ -580,6 +590,12 @@ describe('Fiat rate service', function() {
           json: true
         })
         .yields(null, null, eth);
+      request.get
+        .withArgs({
+          url: 'https://bitpay.com/api/rates/XAUT?p=bws',
+          json: true
+        })
+        .yields(null, null, xaut);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -698,8 +714,19 @@ describe('Fiat rate service', function() {
                                                             should.not.exist(err);
                                                             res.fetchedOn.should.equal(100);
                                                             res.rate.should.equal(150);
-                                                            clock.restore();
-                                                            done();
+                                                            service.getRate(
+                                                              {
+                                                                code: 'USD',
+                                                                coin: 'xaut'
+                                                              },
+                                                              function(err, res) {
+                                                                should.not.exist(err);
+                                                                res.fetchedOn.should.equal(100);
+                                                                res.rate.should.equal(4000);
+                                                                clock.restore();
+                                                                done();
+                                                              }
+                                                            );
                                                           }
                                                         );
                                                       }

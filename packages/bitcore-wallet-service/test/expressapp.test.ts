@@ -737,6 +737,37 @@ describe('ExpressApp', function() {
         });
       });
 
+      describe('Transak routes', function() {
+        it('/v1/service/transak/orderDetails should check the order against the authenticated wallet', function(done) {
+          const transakGetOrderDetails = sinon.stub().resolves({ data: { status: 'COMPLETED' } });
+          const server = {
+            walletId: 'authenticatedWalletId',
+            externalServices: { transak: { transakGetOrderDetails } },
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/transak/orderDetails',
+              method: 'post',
+              json: { env: 'sandbox', orderId: 'order1', walletId: 'someOtherWalletId' },
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.data.status.should.equal('COMPLETED');
+              transakGetOrderDetails.calledOnce.should.equal(true);
+              transakGetOrderDetails.firstCall.args[1].should.equal('authenticatedWalletId');
+              done();
+            });
+          });
+        });
+      });
+
       describe('Moralis routes (wallet-authenticated or public)', function() {
         const whitelistedOrigin = 'https://whitelisted-dapp.example';
         let originalMoralisConfig;

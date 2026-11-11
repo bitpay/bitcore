@@ -489,6 +489,7 @@ export class PushNotificationsService {
       ape: 'APE',
       euroc: 'EUROC',
       usdt: 'USDT',
+      xaut: 'XAUT',
       weth: 'WETH',
       'usdc.e': 'USDC.e',
       sol: 'SOL'

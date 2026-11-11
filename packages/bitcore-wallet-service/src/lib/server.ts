@@ -188,7 +188,7 @@ export class WalletService implements IWalletService {
       sardine: new SardineService(),
       simplex: new SimplexService(),
       thorswap: new ThorswapService(),
-      transak: new TransakService(),
+      transak: new TransakService(this.storage, this.lock),
       coinGecko: new CoinGeckoService(this.storage),
     };
   }

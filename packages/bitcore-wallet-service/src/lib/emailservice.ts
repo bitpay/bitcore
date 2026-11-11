@@ -355,6 +355,7 @@ export class EmailService {
       weth: 'WETH',
       'usdc.e': 'USDC.e',
       sol: 'SOL',
+      xaut: 'XAUT',
     };
 
     const data = JSON.parse(JSON.stringify(notification.data)) as Notification['data'];

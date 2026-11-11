@@ -71,6 +71,8 @@ export interface BuildWalletTxsStreamResult {
   dispose?: () => void | Promise<unknown>;
 }
 
+// Balance (2^128 - 1 wei) given to the sender via state override so blind gas estimates never fail on insufficient funds
+const BLIND_ESTIMATE_BALANCE = '0xffffffffffffffffffffffffffffffff';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -932,13 +934,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       return Number(gasLimit);
     }
 
-    let _value;
-    if (data) {
-      // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
-      // We want this method to give a blind fee estimation, though, so we should not include the value
-      // unless it's needed for estimating smart contract execution.
-      _value = Utils.toHex(value);
-    }
+    // Passing `value` makes eth_estimateGas fail with an insufficient funds error if `from` can't cover it.
+    // We want a blind estimate, so override the sender's balance for this call only (state override, 3rd param).
+    // Also, don't pass `gasPrice` or `gasFeeCap`; those are checked against the balance as well.
+    const fromAddr = from && from.toLowerCase();
+    const stateOverride = fromAddr ? { [fromAddr]: { balance: BLIND_ESTIMATE_BALANCE } } : undefined;
 
     const opts = {
       method: 'eth_estimateGas',
@@ -946,10 +946,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         {
           data,
           to: to && to.toLowerCase(),
-          from: from && from.toLowerCase(),
-          // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
-          value: _value
-        }
+          from: fromAddr,
+          value: Utils.toHex(value ?? 0)
+        },
+        'latest',
+        ...(stateOverride ? [stateOverride] : [])
       ],
       jsonrpc: '2.0',
       id: 'bitcore-' + Date.now()
