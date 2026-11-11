@@ -258,29 +258,33 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   }
 
   async processBlock(block: BitcoinBlockType): Promise<any> {
-    await this.blockModel.addBlock({
-      chain: this.chain,
-      network: this.network,
-      forkHeight: this.chainConfig.forkHeight,
-      parentChain: this.chainConfig.parentChain,
-      initialSyncComplete: this.initialSyncComplete,
-      block,
-      initialHeight: this.chainConfig.syncStartHeight
-    });
+    await this.write(() =>
+      this.blockModel.addBlock({
+        chain: this.chain,
+        network: this.network,
+        forkHeight: this.chainConfig.forkHeight,
+        parentChain: this.chainConfig.parentChain,
+        initialSyncComplete: this.initialSyncComplete,
+        block,
+        initialHeight: this.chainConfig.syncStartHeight
+      })
+    );
   }
 
   async processTransaction(tx: BitcoinTransaction): Promise<any> {
     const now = new Date();
-    await TransactionStorage.batchImport({
-      chain: this.chain,
-      network: this.network,
-      txs: [tx],
-      height: SpentHeightIndicators.pending,
-      mempoolTime: now,
-      blockTime: now,
-      blockTimeNormalized: now,
-      initialSyncComplete: true
-    });
+    await this.write(() =>
+      TransactionStorage.batchImport({
+        chain: this.chain,
+        network: this.network,
+        txs: [tx],
+        height: SpentHeightIndicators.pending,
+        mempoolTime: now,
+        blockTime: now,
+        blockTimeNormalized: now,
+        initialSyncComplete: true
+      })
+    );
   }
 
   async syncDone() {
@@ -320,7 +324,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   }
 
   async sync() {
-    if (this.isSyncing) {
+    if (this.isSyncing || !this.canWrite()) {
       return false;
     }
 
@@ -352,8 +356,11 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
         }
       }
 
-      logger.info(`${timestamp()} | Starting multi-thread sync | Chain: ${chain} | Network: ${network}`);
       this.isSyncing = false;
+      if (!this.canWrite()) {
+        return false;
+      }
+      logger.info(`${timestamp()} | Starting multi-thread sync | Chain: ${chain} | Network: ${network}`);
       return this.multiThreadSync.sync();
     }
 
@@ -386,7 +393,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     const prefetchSize = chainConfig.prefetchSize ?? 10;
 
     let headers = await this.getHeadersForSync();
-    while (headers.length > 0) {
+    while (headers.length > 0 && this.canWrite()) {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let height = tip?.height ?? (chainConfig.syncStartHeight || 0);
       const startingHeight = height;
@@ -405,7 +412,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
         prefetchMap.set(headers[i].hash, this.getBlock(headers[i].hash));
       }
 
-      for (let i = 0; i < headers.length; i++) {
+      for (let i = 0; i < headers.length && this.canWrite(); i++) {
         const header = headers[i];
         try {
           const block = await (prefetchMap.get(header.hash) || this.getBlock(header.hash));
@@ -438,6 +445,10 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
         }
       }
       headers = await this.getHeadersForSync();
+    }
+    if (!this.canWrite()) {
+      this.isSyncing = false;
+      return false;
     }
 
     logger.info(`${timestamp()} | Sync completed | Chain: ${chain} | Network: ${network}`);
