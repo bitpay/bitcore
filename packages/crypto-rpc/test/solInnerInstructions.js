@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages.js';
 import { SolRpc } from '../lib/sol/SolRpc.js';
 import { instructionKeys, parseJsonParsedInstructions } from '../lib/sol/transaction-parser.js';
 
@@ -169,5 +170,32 @@ describe('SolRpc.getTransaction without inner instructions requested (recorded m
     const tx = await solRpc.getTransaction({ txid: MAINNET_TXID, includeInnerInstructions: true });
     expect(tx.innerInstructions[instructionKeys.TRANSFER_SOL]).to.have.lengthOf(1);
     expect(replay.requests.filter(key => key.startsWith('getTransaction:'))).to.deep.equal(['getTransaction:base64', 'getTransaction:jsonParsed']);
+  });
+});
+
+describe('SolRpc.getTransaction when the jsonParsed fetch comes back empty', function() {
+  let replay;
+
+  before(async function() {
+    // A node that has the tx in base64 but returns null for it as jsonParsed, e.g. one behind a load balancer that's lagging
+    const exchanges = JSON.parse(fs.readFileSync(fixturePath, 'utf8')).map(exchange =>
+      exchange.request.params?.[1]?.encoding === 'jsonParsed' ? { ...exchange, response: { ...exchange.response, result: null } } : exchange
+    );
+    replay = await startReplayServer(exchanges);
+  });
+
+  after(function() {
+    replay.server.close();
+  });
+
+  it('throws rather than returning {}, which would read as no inner instructions', async function() {
+    const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port: replay.port, wsPort: 1 });
+    let error;
+    try {
+      await solRpc.getTransaction({ txid: MAINNET_TXID, includeInnerInstructions: true });
+    } catch (err) {
+      error = err;
+    }
+    expect(error?.message).to.equal(SOL_ERROR_MESSAGES.INNER_INSTRUCTIONS_UNAVAILABLE);
   });
 });
