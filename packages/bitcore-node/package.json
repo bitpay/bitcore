@@ -44,6 +44,7 @@
     "api:debug": "npm run tsc && node --inspect build/src/workers/api.js --DEBUG true",
     "api:cluster": "npm run tsc && node build/src/workers/api.js --CLUSTER true",
     "pruning": "npm run tsc && node build/src/workers/pruning.js --EXIT true",
+    "walletstats": "npm run tsc && node build/src/workers/walletStats.js",
     "p2p": "npm run tsc && node build/src/workers/p2p.js",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
