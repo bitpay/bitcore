@@ -5,5 +5,6 @@ export const SOL_ERROR_MESSAGES = {
   NON_BASE58_PARAM: 'SolanaError: Provided parameters includes non-base58 string.',
   TOKEN_ACCOUNT_NOT_FOUND: 'SolanaError: Account could not be found corresponding to provided address',
   PROVIDED_TOKEN_ADDRESS_IS_SOL: 'SolanaError: Provided address is a SOL address but should be a token address',
-  SOL_ACCT_NOT_FOUND: 'Provided address does not correspond to an account on the Solana blockchain'
+  SOL_ACCT_NOT_FOUND: 'Provided address does not correspond to an account on the Solana blockchain',
+  INNER_INSTRUCTIONS_UNAVAILABLE: 'The jsonParsed transaction was not returned, so its inner instructions could not be read'
 };
