@@ -33,7 +33,7 @@
     "bip38": "1.4.0",
     "json-stable-stringify": "1.0.1",
     "preconditions": "2.2.3",
-    "sjcl": "1.0.8",
+    "sjcl": "1.0.9",
     "superagent": "5.2.2",
     "typescript": "5.7.3",
     "uuid": "^11.1.0"
