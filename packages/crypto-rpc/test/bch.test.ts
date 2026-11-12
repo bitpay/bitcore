@@ -29,11 +29,11 @@ describe('BCH Tests', function() {
 
   before(async function() {
     this.timeout(60000);
-    rpcs = new CryptoRpc(config, currencyConfig);
+    rpcs = new CryptoRpc(config);
     bitcoin = rpcs.get(currency);
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
-    } catch (e) {
+    } catch (e: any) {
       console.warn('wallet already encrypted');
     }
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -43,12 +43,12 @@ describe('BCH Tests', function() {
 
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
-    expect(blockHash).to.have.lengthOf('64');
+    expect(blockHash).to.have.lengthOf(64);
   });
 
 
   it('should convert fee to satoshis per kilobyte with estimateFee', async () => {
-    sinon.stub(bitcoin.rpc, 'estimateFee').callsFake((cb) => {
+    sinon.stub(bitcoin.rpc, 'estimateFee').callsFake((cb: any) => {
       cb(null, { result: 0.00001234 });
     });
     const fee = await bitcoin.estimateFee();
@@ -110,7 +110,7 @@ describe('BCH Tests', function() {
   });
 
   it('should be able to send many transactions', async () => {
-    const payToArray = [];
+    const payToArray: any[] = [];
     const transaction1 = {
       address: 'bchreg:qrmap3fwpufpzk8j936aetfupppezngfeut6kqqds6',
       amount: 10000
@@ -135,8 +135,8 @@ describe('BCH Tests', function() {
     const maxValue = 1e8;
     const eventEmitter = rpcs.rpcs.BCH.emitter;
     let eventCounter = 0;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('success', (emitData) => {
         eventCounter++;
         emitResults.push(emitData);
@@ -178,8 +178,8 @@ describe('BCH Tests', function() {
       },
     ];
     const eventEmitter = rpcs.rpcs.BCH.emitter;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('failure', (emitData) => {
         emitResults.push(emitData);
         resolve();

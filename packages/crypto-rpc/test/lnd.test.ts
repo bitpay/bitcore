@@ -1,16 +1,16 @@
 import fs from 'fs';
 import { expect } from 'chai';
 import assert from 'assert';
-import { CryptoRpc } from '../index';
+import { CryptoRpc, type CryptoRpcConfig } from '../index';
 
 
-const config1 = {
+const config1: CryptoRpcConfig = {
   chain: 'LNBTC',
   rpcPort: '11009',
   host: '172.29.0.5',
   cert: ''
 };
-const config2 = {
+const config2: CryptoRpcConfig = {
   chain: 'LNBTC',
   rpcPort: '11010',
   host: '172.29.0.10',
@@ -52,7 +52,7 @@ describe('LND Tests', function() {
     try {
       await lightning1.walletCreate({ passphrase });
       await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (err) {
+    } catch (err: any) {
       if (!err[2] || !err[2].err.message.includes('wallet already exists')) {
         throw err;
       }
@@ -70,7 +70,7 @@ describe('LND Tests', function() {
     try {
       await lightning2.walletCreate({ passphrase });
       await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (err) {
+    } catch (err: any) {
       if (!err[2] || !err[2].err.message.includes('wallet already exists')) {
         throw err;
       }
@@ -82,12 +82,12 @@ describe('LND Tests', function() {
 
     // set up btc node
     const { currencyConfig } = btcConfig;
-    const bitcoinRpcs = new CryptoRpc(btcConfig, currencyConfig);
+    const bitcoinRpcs = new CryptoRpc(btcConfig);
     bitcoin = bitcoinRpcs.get('BTC');
     try {
       await bitcoin.asyncCall('createwallet', ['wallet0']);
       await bitcoin.asyncCall('encryptWallet', ['password']);
-    } catch (err) {
+    } catch (err: any) {
       if (err.message.includes('Database already exists')) {
         await bitcoin.walletUnlock({ passphrase: btcConfig.currencyConfig.unlockPassword, time: 1000 });
       } else {
@@ -109,7 +109,7 @@ describe('LND Tests', function() {
         if (walletInfo1.is_synced_to_chain && walletInfo2.is_synced_to_chain) {
           syncing = false;
         }
-      } catch (err) {
+      } catch (err: any) {
         if (err[2] && err[2].err.message.includes('wallet locked')) {
           await lightning1.walletUnlock({ passphrase });
           await lightning2.walletUnlock({ passphrase });
@@ -159,7 +159,8 @@ describe('LND Tests', function() {
   });
 
   it('should be able to create an invoice', async () => {
-    const expiryDate = new Date() + 15 * 60 * 100;
+    // Date + number concatenates the date string and the number
+    const expiryDate = String(new Date()) + 15 * 60 * 100;
     invoice = await lightning2.createInvoice({ id: 'lndinvoicetest', amount: 1000, expiry: expiryDate });
     expect(invoice.description).to.equal('lndinvoicetest');
     expect(invoice.tokens).to.equal(1000);

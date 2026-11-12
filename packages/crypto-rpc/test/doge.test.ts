@@ -2,6 +2,7 @@ import sinon from 'sinon';
 import assert from 'assert';
 import { expect } from 'chai';
 import { CryptoRpc } from '../index';
+import type { DogeRpc } from '../lib/doge/DogeRpc';
 
 const config = {
   chain: 'DOGE',
@@ -24,13 +25,13 @@ describe('DOGE Tests', function() {
   let blockHash = '';
   const currency = 'DOGE';
   const { currencyConfig } = config;
-  const rpcs = new CryptoRpc(config, currencyConfig);
+  const rpcs = new CryptoRpc(config);
   const bitcoin = rpcs.get(currency);
 
   before(async () => {
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
-    } catch (e) {
+    } catch (e: any) {
       console.warn('wallet already encrypted');
     }
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -40,12 +41,12 @@ describe('DOGE Tests', function() {
 
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
-    expect(blockHash).to.have.lengthOf('64');
+    expect(blockHash).to.have.lengthOf(64);
   });
 
 
   it('should convert fee to satoshis per kilobyte with estimateFee', async () => {
-    sinon.stub(bitcoin.rpc, 'estimateSmartFee').callsFake((nBlocks, cb) => {
+    sinon.stub(bitcoin.rpc, 'estimateSmartFee').callsFake((nBlocks, cb: any) => {
       cb(null, { result: { 'feerate': 0.00001234, 'blocks': 2 } });
     });
     const fee = await bitcoin.estimateFee({ nBlocks: 2 });
@@ -107,7 +108,7 @@ describe('DOGE Tests', function() {
   });
 
   it('should be able to send many transactions', async () => {
-    const payToArray = [];
+    const payToArray: any[] = [];
     const transaction1 = {
       address: 'mzVk8WuGZGvFP6qfrbeAyu7oFFRFaMg5oB',
       amount: 10000
@@ -130,10 +131,10 @@ describe('DOGE Tests', function() {
     payToArray.push(transaction4);
     const maxOutputs = 2;
     const maxValue = 1e8;
-    const eventEmitter = rpcs.rpcs.DOGE.emitter;
+    const eventEmitter = (rpcs.rpcs.DOGE as DogeRpc).emitter;
     let eventCounter = 0;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('success', (emitData) => {
         eventCounter++;
         emitResults.push(emitData);
@@ -174,9 +175,9 @@ describe('DOGE Tests', function() {
         amount: 1
       },
     ];
-    const eventEmitter = rpcs.rpcs.DOGE.emitter;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const eventEmitter = (rpcs.rpcs.DOGE as DogeRpc).emitter;
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('failure', (emitData) => {
         emitResults.push(emitData);
         resolve();

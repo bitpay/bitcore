@@ -90,7 +90,7 @@ describe('utils', function() {
       });
 
       it('should throw on a null input', function() {
-        expect(() => BI.max(null)).to.throw('Input must be an array');
+        expect(() => BI.max(null as any)).to.throw('Input must be an array');
       });
       
       it('should throw on an array of invalid types', function() {
@@ -99,8 +99,8 @@ describe('utils', function() {
 
       it('should throw on an array with NaN, null, undefined, empty string', function() {
         expect(() => BI.max([1n, 2, '3', 2n, '1', NaN])).to.throw('Array must contain only BigInt-like values');
-        expect(() => BI.max([1n, 2, '3', 2n, '1', null])).to.throw('Array must contain only BigInt-like values');
-        expect(() => BI.max([1n, 2, '3', 2n, '1', undefined])).to.throw('Array must contain only BigInt-like values');
+        expect(() => BI.max([1n, 2, '3', 2n, '1', null as any])).to.throw('Array must contain only BigInt-like values');
+        expect(() => BI.max([1n, 2, '3', 2n, '1', undefined as any])).to.throw('Array must contain only BigInt-like values');
         expect(() => BI.max([1n, 2, '3', 2n, '1', ''])).to.throw('Array must contain only BigInt-like values');
       });
     });
@@ -119,7 +119,7 @@ describe('utils', function() {
       });
 
       it('should throw on a null input', function() {
-        expect(() => BI.min(null)).to.throw('Input must be an array');
+        expect(() => BI.min(null as any)).to.throw('Input must be an array');
       });
       
       it('should throw on an array of invalid types', function() {
@@ -128,8 +128,8 @@ describe('utils', function() {
 
       it('should throw on an array with NaN, null, undefined, empty string', function() {
         expect(() => BI.min([1n, 2, '3', 2n, '1', NaN])).to.throw('Array must contain only BigInt-like values');
-        expect(() => BI.min([1n, 2, '3', 2n, '1', null])).to.throw('Array must contain only BigInt-like values');
-        expect(() => BI.min([1n, 2, '3', 2n, '1', undefined])).to.throw('Array must contain only BigInt-like values');
+        expect(() => BI.min([1n, 2, '3', 2n, '1', null as any])).to.throw('Array must contain only BigInt-like values');
+        expect(() => BI.min([1n, 2, '3', 2n, '1', undefined as any])).to.throw('Array must contain only BigInt-like values');
         expect(() => BI.min([1n, 2, '3', 2n, '1', ''])).to.throw('Array must contain only BigInt-like values');
       });
     });
@@ -153,15 +153,15 @@ describe('utils', function() {
 
       it('should throw on invalid numerator', function() {
         expect(() => BI.divToFloat('', 3n)).to.throw('Invalid numerator');
-        expect(() => BI.divToFloat(null, 3n)).to.throw('Invalid numerator');
-        expect(() => BI.divToFloat(undefined, 3n)).to.throw('Invalid numerator');
+        expect(() => BI.divToFloat(null as any, 3n)).to.throw('Invalid numerator');
+        expect(() => BI.divToFloat(undefined as any, 3n)).to.throw('Invalid numerator');
         expect(() => BI.divToFloat('invalid', 3n)).to.throw('Invalid numerator');
       });
 
       it('should throw on invalid denominator', function() {
         expect(() => BI.divToFloat(1n, '')).to.throw('Invalid denominator');
-        expect(() => BI.divToFloat(1n, null)).to.throw('Invalid denominator');
-        expect(() => BI.divToFloat(1n, undefined)).to.throw('Invalid denominator');
+        expect(() => BI.divToFloat(1n, null as any)).to.throw('Invalid denominator');
+        expect(() => BI.divToFloat(1n, undefined as any)).to.throw('Invalid denominator');
         expect(() => BI.divToFloat(1n, 'invalid')).to.throw('Invalid denominator');
       });
 
@@ -206,15 +206,15 @@ describe('utils', function() {
 
       it('should throw on invalid numerator', function() {
         expect(() => BI.div('', 3n)).to.throw('Invalid numerator');
-        expect(() => BI.div(null, 3n)).to.throw('Invalid numerator');
-        expect(() => BI.div(undefined, 3n)).to.throw('Invalid numerator');
+        expect(() => BI.div(null as any, 3n)).to.throw('Invalid numerator');
+        expect(() => BI.div(undefined as any, 3n)).to.throw('Invalid numerator');
         expect(() => BI.div('invalid', 3n)).to.throw('Invalid numerator');
       });
 
       it('should throw on invalid denominator', function() {
         expect(() => BI.div(1n, '')).to.throw('Invalid denominator');
-        expect(() => BI.div(1n, null)).to.throw('Invalid denominator');
-        expect(() => BI.div(1n, undefined)).to.throw('Invalid denominator');
+        expect(() => BI.div(1n, null as any)).to.throw('Invalid denominator');
+        expect(() => BI.div(1n, undefined as any)).to.throw('Invalid denominator');
         expect(() => BI.div(1n, 'invalid')).to.throw('Invalid denominator');
       });
 
@@ -258,8 +258,8 @@ describe('utils', function() {
 
       it('should throw on invalid inputs', function() {
         expect(() => BI.mul()).to.throw('Input must contain only BigInt-like values');
-        expect(() => BI.mul(2n, null)).to.throw('Input must contain only BigInt-like values');
-        expect(() => BI.mul(2n, undefined)).to.throw('Input must contain only BigInt-like values');
+        expect(() => BI.mul(2n, null as any)).to.throw('Input must contain only BigInt-like values');
+        expect(() => BI.mul(2n, undefined as any)).to.throw('Input must contain only BigInt-like values');
         expect(() => BI.mul(2n, 'x')).to.throw('Input must contain only BigInt-like values');
       });
 
@@ -292,8 +292,8 @@ describe('utils', function() {
 
       it('should throw on invalid inputs', function() {
         expect(() => BI.mulFloor()).to.throw('Input must contain only BigInt-like values');
-        expect(() => BI.mulFloor(2n, null)).to.throw('Input must contain only BigInt-like values');
-        expect(() => BI.mulFloor(2n, undefined)).to.throw('Input must contain only BigInt-like values');
+        expect(() => BI.mulFloor(2n, null as any)).to.throw('Input must contain only BigInt-like values');
+        expect(() => BI.mulFloor(2n, undefined as any)).to.throw('Input must contain only BigInt-like values');
         expect(() => BI.mulFloor(2n, 'x')).to.throw('Input must contain only BigInt-like values');
       });
 
@@ -326,8 +326,8 @@ describe('utils', function() {
 
       it('should throw on invalid inputs', function() {
         expect(() => BI.mulCeil()).to.throw('Input must contain only BigInt-like values');
-        expect(() => BI.mulCeil(2n, null)).to.throw('Input must contain only BigInt-like values');
-        expect(() => BI.mulCeil(2n, undefined)).to.throw('Input must contain only BigInt-like values');
+        expect(() => BI.mulCeil(2n, null as any)).to.throw('Input must contain only BigInt-like values');
+        expect(() => BI.mulCeil(2n, undefined as any)).to.throw('Input must contain only BigInt-like values');
         expect(() => BI.mulCeil(2n, 'x')).to.throw('Input must contain only BigInt-like values');
       });
 

@@ -29,7 +29,7 @@ describe('LTC Tests', function() {
   let bitcoin;
   
   before(function() {
-    rpcs = new CryptoRpc(config, currencyConfig);
+    rpcs = new CryptoRpc(config);
     bitcoin = rpcs.get(currency);
   });
 
@@ -38,7 +38,7 @@ describe('LTC Tests', function() {
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
       await new Promise(resolve => setTimeout(resolve, 5000));
-    } catch (e) {
+    } catch (e: any) {
       console.warn('wallet already encrypted');
     }
     expect(await bitcoin.isWalletEncrypted()).to.eq(true);
@@ -71,11 +71,11 @@ describe('LTC Tests', function() {
 
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
-    expect(blockHash).to.have.lengthOf('64');
+    expect(blockHash).to.have.lengthOf(64);
   });
 
   it('should convert fee to satoshis per kilobyte with estimateFee', async () => {
-    sinon.stub(bitcoin.rpc, 'estimateSmartFee').callsFake((nBlocks, cb) => {
+    sinon.stub(bitcoin.rpc, 'estimateSmartFee').callsFake((nBlocks, cb: any) => {
       cb(null, { result: { 'feerate': 0.00001234, 'blocks': 2 } });
     });
     const fee = await bitcoin.estimateFee({ nBlocks: 2 });
@@ -118,7 +118,7 @@ describe('LTC Tests', function() {
   });
 
   it('should be able to send many transactions', async () => {
-    const payToArray = [];
+    const payToArray: any[] = [];
     const transaction1 = {
       address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
       amount: 10000
@@ -143,8 +143,8 @@ describe('LTC Tests', function() {
     const maxValue = 1e8;
     const eventEmitter = rpcs.rpcs.LTC.emitter;
     let eventCounter = 0;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('success', (emitData) => {
         eventCounter++;
         emitResults.push(emitData);
@@ -182,8 +182,8 @@ describe('LTC Tests', function() {
       { address: 'funkyColdMedina', amount: 1 }
     ];
     const eventEmitter = rpcs.rpcs.LTC.emitter;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('failure', (emitData) => {
         emitResults.push(emitData);
         resolve();

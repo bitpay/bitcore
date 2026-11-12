@@ -34,19 +34,19 @@ describe('XRP Tests', function() {
   it('should be able to get best block hash', async () => {
     try {
       blockHash = await rpcs.getBestBlockHash({ currency });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
 
-    expect(blockHash).to.have.lengthOf('64');
+    expect(blockHash).to.have.lengthOf(64);
   });
 
   it('should estimate fee', async () => {
     let fee;
     try {
       fee = await xrpRPC.estimateFee();
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
     assert.isTrue(fee === '10');
   });
@@ -62,8 +62,8 @@ describe('XRP Tests', function() {
     it(`should get block ${bcase.description}`, async () => {
       try {
         block = await rpcs.getBlock({ currency, ...bcase.params });
-      } catch (err) {
-        expect(err).to.not.exist();
+      } catch (err: any) {
+        expect(err).to.not.exist;
       }
 
       expect(block).to.have.property('ledger');
@@ -92,8 +92,8 @@ describe('XRP Tests', function() {
     let unknownBlock;
     try {
       unknownBlock = await rpcs.getBlock({ currency, hash: '1723099E269C77C4BDE86C83FA6415D71CF20AA5CB4A94E5C388ED97123FB55B' });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
     expect(unknownBlock).to.be.null;
   });
@@ -102,8 +102,8 @@ describe('XRP Tests', function() {
     let balance;
     try {
       balance = await rpcs.getBalance({ currency, address: config.address });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
     expect(balance).to.eq(100000000000);
     assert(balance != undefined);
@@ -114,13 +114,13 @@ describe('XRP Tests', function() {
     let beforeToBalance;
     try {
       beforeToBalance = await rpcs.getBalance({ currency, address: config.currencyConfig.sendTo });
-    } catch (err) {
+    } catch (err: any) {
       beforeToBalance = 0;
     }
     try {
       txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb' });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
 
     expect(txid).to.have.lengthOf(64);
@@ -132,7 +132,7 @@ describe('XRP Tests', function() {
 
 
   it('should be able to send many transactions', async () => {
-    const payToArray = [];
+    const payToArray: any[] = [];
     const transaction1 = {
       address: 'r38UsJxHSJKajC8qcNmofxJvCESnzmx7Ke',
       amount: 10000
@@ -155,8 +155,8 @@ describe('XRP Tests', function() {
     payToArray.push(transaction4);
     const eventEmitter = rpcs.rpcs.XRP.emitter;
     let eventCounter = 0;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('success', (emitData) => {
         eventCounter++;
         emitResults.push(emitData);
@@ -195,8 +195,8 @@ describe('XRP Tests', function() {
       { address: 'funkyColdMedina', amount: 1 }
     ];
     const eventEmitter = rpcs.rpcs.XRP.emitter;
-    const emitResults = [];
-    const emitPromise = new Promise(resolve => {
+    const emitResults: any[] = [];
+    const emitPromise = new Promise<void>(resolve => {
       eventEmitter.on('failure', (emitData) => {
         emitResults.push(emitData);
         resolve();
@@ -218,8 +218,8 @@ describe('XRP Tests', function() {
     let tx;
     try {
       tx = await rpcs.getTransaction({ currency, txid });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
     expect(tx).to.have.property('Account');
     expect(tx).to.have.property('Amount');
@@ -238,8 +238,8 @@ describe('XRP Tests', function() {
     let unknownTx;
     try {
       unknownTx = await rpcs.getTransaction({ currency, txid });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
     expect(unknownTx === null);
   });
@@ -248,8 +248,8 @@ describe('XRP Tests', function() {
     let tx;
     try {
       tx = await rpcs.getRawTransaction({ currency, txid });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
     expect(tx.length).to.be.greaterThan(300);
   });
@@ -258,8 +258,8 @@ describe('XRP Tests', function() {
     let tx;
     try {
       tx = await rpcs.getRawTransaction({ currency, txid: 'E08D6E9754025BA2534A78707605E0601F03ACE063687A0CA1BDDACFCD1698C7' });
-    } catch (err) {
-      expect(err).to.not.exist();
+    } catch (err: any) {
+      expect(err).to.not.exist;
     }
     expect(tx === null);
   });
