@@ -895,11 +895,20 @@ describe('SOL Tests', () => {
         }
 
         it('fetches a finalized tx with inner instructions a second time as jsonParsed, and its status and the tip once each', async () => {
-          const recorder = await record(() => solRpc.getTransaction({ txid: txids.innerInstructions }));
+          const recorder = await record(() => solRpc.getTransaction({ txid: txids.innerInstructions, includeInnerInstructions: true }));
           expect(recorder.methods().filter(m => m === 'getTransaction')).to.have.lengthOf(2);
           expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses', 'getSlot', 'getTransaction']);
           expect(recorder.calls.filter(({ method }) => method === 'getTransaction').map(({ args }) => args[1].encoding)).to.deep.equal(['base64', 'jsonParsed']);
           expect(historySearches(recorder)).to.deep.equal([true]);
+        });
+
+        it('fetches a tx with inner instructions once when they are not requested', async () => {
+          let tx;
+          const recorder = await record(async () => {
+            tx = await solRpc.getTransaction({ txid: txids.innerInstructions });
+          });
+          expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses', 'getSlot']);
+          expect(tx).not.to.have.property('innerInstructions');
         });
 
         it('fetches a tx that is no longer in the recent status cache, its status and the tip once each', async () => {
