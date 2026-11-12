@@ -3,6 +3,7 @@ import { SolKit, SolanaProgram } from '@bitpay-labs/crypto-wallet-core';
 import { pipe } from '@solana/functional';
 import bs58 from 'bs58';
 import { SOL_ERROR_MESSAGES } from './error_messages.js';
+import { createSolanaHttpTransport } from './http-transport.js';
 import { addressesByLookupTableAddress } from './lookup-tables.js';
 import { parseInstructions } from './transaction-parser.js';
 
@@ -24,6 +25,7 @@ export class SolRpc {
    * @param {string} config.host - The host URL or IP address.
    * @param {number} [config.port] - The port number
    * @param {number} [config.wsPort] - The WS port number
+   * @param {Function} [config.fetch] - fetch implementation for HTTP RPC requests (defaults to node-fetch)
    */
   constructor(config) {
     this.config = config;
@@ -43,7 +45,8 @@ export class SolRpc {
   }
 
   initRpcConnection() {
-    return SolKit.createSolanaRpc(this.rpcUrl);
+    // node-fetch instead of native fetch: Node 24's fetch leaks sockets under sustained RPC load (see bitpay 4a0bdbd386e)
+    return SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(this.rpcUrl, { fetch: this.config.fetch }));
   }
 
   initRpcSubscriptions() {

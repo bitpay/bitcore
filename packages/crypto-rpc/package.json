@@ -28,10 +28,13 @@
   "dependencies": {
     "@bitpay-labs/crypto-wallet-core": "^11.11.5",
     "@solana-program/address-lookup-table": "0.7.0",
+    "@solana/fast-stable-stringify": "2.1.0",
+    "@solana/rpc-spec-types": "2.1.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
     "lightning": "10.0.1",
+    "node-fetch": "2.7.0",
     "promptly": "0.2.0"
   },
   "devDependencies": {
