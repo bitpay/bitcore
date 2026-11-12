@@ -9,13 +9,9 @@ const passwordPromptAsync = util.promisify(promptly.password);
 export class XrpRpc {
   constructor(config) {
     this.config = config;
-    const {
-      protocol,
-      host,
-      port,
-      address,
-      useClientAdapter = true
-    } = config;
+    const { protocol, host, address, useClientAdapter = true } = config;
+    // bitpay passes rpcPort; bitcore-node passes only port
+    const port = config.rpcPort || config.port;
     const connectionString = `${protocol}://${host}:${port}`;
     // Use client adapter to include implementations of ripple-lib Client methods as an extension to the xrpl Client
     this.rpc = useClientAdapter ? new XrpClientAdapter(connectionString) : new xrpl.Client(connectionString);
