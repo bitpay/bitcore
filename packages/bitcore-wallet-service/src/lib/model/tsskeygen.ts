@@ -1,3 +1,4 @@
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
 import { Common } from '../common';
 
@@ -5,6 +6,22 @@ const $ = singleton();
 
 const { Defaults } = Common;
 
+
+/**
+ * True for a party or round number that is safe to use as an array index and as a MongoDB path segment:
+ * a non-negative safe integer that is a number (never a string such as "00" or "1", which Mongo would alias).
+ */
+export function isCanonicalIndex(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && !Object.is(value, -0);
+}
+
+/**
+ * True for a hex-encoded compressed or uncompressed secp256k1 public key that is a point on the curve.
+ * BitcoreLib.PublicKey.isValid alone accepts strings of the wrong length, so the format is checked first.
+ */
+export function isWellFormedPubKey(value: unknown): value is string {
+  return typeof value === 'string' && /^(0[23][0-9a-f]{64}|04[0-9a-f]{128})$/i.test(value) && BitcoreLib.PublicKey.isValid(value);
+}
 
 export interface ITssKeyMessageObject {
   broadcastMessages: Array<{
