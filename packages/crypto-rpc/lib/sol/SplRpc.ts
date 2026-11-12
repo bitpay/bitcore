@@ -1,11 +1,29 @@
 import { SolKit, SolanaProgram } from '@bitpay-labs/crypto-wallet-core';
-import { SolRpc } from './SolRpc';
+import { SolRpc, SolRpcConfig, SolSendToAddressParams, SolTransactionVersion } from './SolRpc';
 import { SOL_ERROR_MESSAGES } from './error_messages';
 
-const { Token: SolToken } = SolanaProgram;
+// Untyped for the same Kit version split described in SolRpc
+const { Token: SolToken }: { Token: any } = SolanaProgram;
+
+export interface SplSendToAddressParams extends SolSendToAddressParams {
+  /** The amount of SPL tokens to send, in the token's base units */
+  amount: number | bigint;
+  mintAddress: string;
+  decimals: number | string;
+  /** The ATA of the 'address' wallet for the mint; derived when not provided, and the fee payer pays for its creation */
+  destinationAta?: string;
+  /** The ATA of the 'fromAccountKeypair.address' wallet for the mint; derived when not provided, and the fee payer pays for its creation */
+  sourceAta?: string;
+}
+
+export interface SplSendToAddressResult {
+  txid: string | null;
+  destinationAta: string;
+  sourceAta: string;
+}
 
 export class SplRpc extends SolRpc {
-  constructor(config) {
+  constructor(config: SolRpcConfig) {
     super(config);
   }
 
@@ -24,9 +42,10 @@ export class SplRpc extends SolRpc {
    * @param {string} params.decimals
    * @param {string} [params.destinationAta] - The address of the ATA associated with the 'address' wallet for the provided 'mint'. If not provided, is derived - fee payer pays for address creation
    * @param {string} [params.sourceAta] - The address of the ATA associated with the 'fromAccountKeypair.address' wallet for the provided mint. If not provided, is derived - fee payer pays for address creation
-   * @returns {Promise<string>} The transaction hash.
+   * @returns {Promise<SplSendToAddressResult>} The transaction hash and the ATAs used.
    * @throws {Error} If the transaction confirmation returns an error.
    */
+  // @ts-expect-error returns the txid with the ATAs, where SolRpc.sendToAddress returns the txid alone
   async sendToAddress({ 
     address: addressStr,
     amount,
@@ -38,17 +57,17 @@ export class SplRpc extends SolRpc {
     decimals,
     destinationAta,
     sourceAta
-  }) {
+  }: SplSendToAddressParams): Promise<SplSendToAddressResult> {
     try {
-      const VALID_TX_VERSIONS = ['legacy', 0];
+      const VALID_TX_VERSIONS: SolTransactionVersion[] = ['legacy', 0];
       if (!VALID_TX_VERSIONS.includes(version)) {
         throw new Error('Invalid transaction version');
       }
       // To ensure sender's signature is in place
       const feePayerKeypairSigner = fromAccountKeypairSigner;
 
-      const destinationAtaAddress = destinationAta ? SolKit.address(destinationAta) : await this.getOrCreateAta({ owner: SolKit.address(addressStr), mint: mintAddress, feePayer: feePayerKeypairSigner });
-      const sourceAtaAddress = sourceAta ? SolKit.address(sourceAta) : await this.getOrCreateAta({ owner: fromAccountKeypairSigner.address, mint: mintAddress, feePayer: feePayerKeypairSigner });
+      const destinationAtaAddress: string = destinationAta ? SolKit.address(destinationAta) : await this.getOrCreateAta({ owner: SolKit.address(addressStr), mint: mintAddress, feePayer: feePayerKeypairSigner });
+      const sourceAtaAddress: string = sourceAta ? SolKit.address(sourceAta) : await this.getOrCreateAta({ owner: fromAccountKeypairSigner.address, mint: mintAddress, feePayer: feePayerKeypairSigner });
 
       let transactionMessage = await this._createBaseTransactionMessage({ version, feePayerKeypairSigner, nonceAddressStr, priority });
       transactionMessage = SolKit.appendTransactionMessageInstructions(
@@ -79,20 +98,24 @@ export class SplRpc extends SolRpc {
    * @param {string} params.mint
    * @param {SolKit.KeyPairSigner<string>} params.feePayer
    */
-  async getOrCreateAta({ owner, mint, feePayer }) {
+  async getOrCreateAta({ owner, mint, feePayer }: { owner: string; mint: string; feePayer: SolKit.KeyPairSigner }): Promise<string> {
     const createAtaResult = await this.createAta({ ownerAddress: owner, mintAddress: mint, feePayer });
     return createAtaResult.ataAddress;
   }
 
   /**
-   * 
-   * @param {string} address 
+   * @param {Object} params
+   * @param {string} params.address - The token account (ATA) address
+   * @returns {Promise<SolKit.TokenAmount>} The token balance, with amount, decimals, uiAmount and uiAmountString
    */
-  async getBalance({ address }) {
+  // @ts-expect-error returns the token amount object, where SolRpc.getBalance returns a number of lamports
+  async getBalance({ address }: { address: string }): Promise<SolKit.TokenAmount> {
     try {
-      const { value } = await this.rpc.getTokenAccountBalance(address).send();
+      const { value } = await this.rpc.getTokenAccountBalance(address as SolKit.Address).send();
       return value;
-    } catch (err) {
+    } catch (err: any) {
+      // TODO(bitcore-dln): isSolanaError is never called here, so this branch runs for every error
+      // @ts-expect-error the uncalled guard is always truthy; calling it would change which errors get mapped
       if (SolKit.isSolanaError) {
         if (err.context?.__code === -32602) {
           if (err.message?.toLowerCase().includes('could not find account')) {

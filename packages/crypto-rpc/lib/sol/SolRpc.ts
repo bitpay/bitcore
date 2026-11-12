@@ -3,20 +3,156 @@ import { SolKit, SolanaProgram } from '@bitpay-labs/crypto-wallet-core';
 import { pipe } from '@solana/functional';
 import bs58 from 'bs58';
 import { SOL_ERROR_MESSAGES } from './error_messages';
-import { createSolanaHttpTransport } from './http-transport';
-import { addressesByLookupTableAddress } from './lookup-tables';
-import { parseInstructions, parseJsonParsedInstructions } from './transaction-parser';
+import { SolanaHttpFetch, createSolanaHttpTransport } from './http-transport';
+import { LoadedAddresses, addressesByLookupTableAddress } from './lookup-tables';
+import { Instructions, parseInstructions, parseJsonParsedInstructions } from './transaction-parser';
 
+// crypto-wallet-core's Kit (2.1) and the Kit that @solana-program/* are typed against (2.3) brand addresses and
+// signers differently, so a signer or address from one is a type error in the other. The program builders are
+// used untyped here until the two agree; transaction-parser keeps their types since it only hands them raw data.
 const {
   ComputeBudget: SolComputeBudget,
   System: SolSystem,
   Token: SolToken
-} = SolanaProgram;
+}: { ComputeBudget: any; System: any; Token: any } = SolanaProgram;
 
 const transactionDecoder = SolKit.getTransactionDecoder();
 const compiledTransactionMessageDecoder = SolKit.getCompiledTransactionMessageDecoder();
 
+export interface SolRpcConfig {
+  chain?: string;
+  /** The network protocol (e.g., 'http', 'https', 'wss') */
+  protocol: string;
+  /** The host URL or IP address */
+  host: string;
+  /** The port number */
+  port?: number;
+  /** Preferred over port when set */
+  rpcPort?: number;
+  /** The WS port number */
+  wsPort?: number;
+  /** fetch implementation for HTTP RPC requests (defaults to node-fetch) */
+  fetch?: SolanaHttpFetch;
+  /** Default for getTransaction's includeInnerInstructions; false when unset */
+  includeInnerInstructions?: boolean;
+}
+
+export type SolRpcClient = SolKit.Rpc<SolKit.SolanaRpcApi>;
+export type SolRpcSubscriptionsClient = SolKit.RpcSubscriptions<SolKit.SolanaRpcSubscriptionsApi>;
+
+export type SolTransactionVersion = 'legacy' | 0;
+export type SolCommitment = 'confirmed' | 'finalized';
+export type SolTransactionDetails = 'full' | 'accounts' | 'signatures' | 'none';
+
+/**
+ * A transaction message as Kit builds it. Kit's own message types change with every lifetime and signer added, and
+ * crypto-wallet-core's Kit is a different version from the one @solana-program/* are typed against, so the messages
+ * are passed around loosely here.
+ */
+export type SolTransactionMessage = any;
+
+export interface SolSendToAddressParams {
+  /** The public key of the recipient */
+  address: string;
+  /** The amount of lamports to send */
+  amount: number | bigint;
+  /** The keypair of the sender; use Kit's `createKeyPairSignerFromPrivateKeyBytes` */
+  fromAccountKeypair: SolKit.KeyPairSigner;
+  /** The keypair of the transaction fee payer; fromAccountKeypair when not included */
+  feePayerKeypair?: SolKit.KeyPairSigner;
+  /** The public key of the nonce account */
+  nonceAddress?: string;
+  /** The public key of the nonce account's authority; nonceAddress when not included */
+  nonceAuthorityAddress?: string;
+  /** 'legacy' or 0 for versioned; default 'legacy' */
+  txType?: SolTransactionVersion;
+  /** Whether to add a priority fee to the transaction; default false */
+  priority?: boolean;
+}
+
+export interface SolGetTransactionsParams {
+  /** Account address to get transactions for */
+  address: string;
+  /** Start searching backwards from this transaction signature; default is the top of the highest max confirmed block */
+  before?: string;
+  commitment?: SolCommitment;
+  /** Maximum signatures to return, 1-1000; default 1000 */
+  limit?: number;
+  minContextSlot?: bigint;
+  /** Search backwards until this transaction signature, if found before limit reached */
+  until?: string;
+}
+
+export interface SolGetBlockParams {
+  /** Not supported: throws */
+  hash?: string;
+  /** The slot of the block to retrieve */
+  height?: number | bigint;
+  /** See https://solana.com/docs/rpc/http/getblock, 'transactionDetails'; default 'signatures' */
+  transactionDetails?: SolTransactionDetails;
+}
+
+export interface SolLifetimeConstraint {
+  blockhash?: string;
+  lastValidBlockHeight?: bigint;
+  nonce?: string;
+}
+
+/** A transaction as decodeRawTransaction returns it; getTransaction adds the chain context */
+export interface SolDecodedTransaction {
+  /** null when the fee payer has not signed yet */
+  txid: string | null;
+  status: SolKit.Commitment | null | undefined;
+  confirmations: number | null | undefined;
+  version: 'legacy' | number;
+  instructions: Instructions;
+  feePayerAddress: string;
+  lifetimeConstraint?: SolLifetimeConstraint;
+  accountKeys: readonly string[];
+  lookupTablesUsed: boolean;
+}
+
+export interface SolTransaction extends Omit<SolDecodedTransaction, 'lookupTablesUsed'> {
+  blockTime: number;
+  slot: number;
+  /** Only when requested; inner instructions carry the index of the top-level instruction they ran under */
+  innerInstructions?: Instructions;
+  /** The raw transaction meta from the node */
+  meta: any;
+}
+
+export interface SolTokenAccount {
+  mint: string;
+  state: string;
+  pubkey: string;
+  amount: number | null | undefined;
+  /** Token accounts owned by this one, to maxDepth */
+  atas: SolTokenAccount[];
+}
+
+export interface SolAccountInfo {
+  lamports: number;
+  atas: SolTokenAccount[];
+  owner: string | undefined;
+  space: number | undefined;
+}
+
+export interface SolCreateAtaResult {
+  action: 'RETRIEVED' | 'CREATED';
+  ataAddress: string;
+  signature?: string;
+  message: string;
+}
+
 export class SolRpc {
+  config: SolRpcConfig;
+  rpcUrl: string;
+  rpcSubscriptionUrl: string;
+  rpc: SolRpcClient;
+  rpcSubscriptions: SolRpcSubscriptionsClient | null;
+  emitter: EventEmitter;
+  _versionedConfig: { commitment: 'confirmed'; maxSupportedTransactionVersion: 0 };
+
   /**
    * Constructs a new instance of the SolRPC class.
    * 
@@ -27,7 +163,7 @@ export class SolRpc {
    * @param {number} [config.wsPort] - The WS port number
    * @param {Function} [config.fetch] - fetch implementation for HTTP RPC requests (defaults to node-fetch)
    */
-  constructor(config) {
+  constructor(config: SolRpcConfig) {
     this.config = config;
     let { rpcPort } = this.config;
     const { protocol, host, port, wsPort: rpcSubscriptionsPort } = this.config;
@@ -56,20 +192,23 @@ export class SolRpc {
   async cleanup() {
     // Close WebSocket connections and remove subscriptions
     if (this.rpcSubscriptions) {
+      // TODO(bitcore-dln): Kit's RpcSubscriptions is a proxy that turns any property into a pending subscription
+      // request, so eventNames(), listeners() and disconnect() below do nothing and no socket is closed
+      const rpcSubscriptions: any = this.rpcSubscriptions;
       // Remove all subscription listeners first
-      const subscriptionEvents = this.rpcSubscriptions.eventNames();
+      const subscriptionEvents = rpcSubscriptions.eventNames();
       if (typeof subscriptionEvents === 'object') {
         for (const event of Object.keys(subscriptionEvents)) {
           // Get listeners and ensure it's an array
-          const listeners = Array.from(this.rpcSubscriptions.listeners(event) || []);
+          const listeners = Array.from(rpcSubscriptions.listeners(event) || []);
           for (const listener of listeners) {
-            this.rpcSubscriptions.removeListener(event, listener);
+            rpcSubscriptions.removeListener(event, listener);
           }
         }
       }
 
       // Then disconnect the WebSocket
-      await this.rpcSubscriptions.disconnect();
+      await rpcSubscriptions.disconnect();
     }
 
     // Remove all listeners from the emitter
@@ -92,7 +231,7 @@ export class SolRpc {
    * @param {string} params.address - The public key of the address to check the balance for.
    * @returns {Promise<number|null>} The balance of the specified address in lamports.
    */
-  async getBalance({ address }) {
+  async getBalance({ address }: { address: string }): Promise<number | null> {
     if (!this.validateAddress({ address })) {
       return null;
     }
@@ -123,9 +262,9 @@ export class SolRpc {
     nonceAddress: nonceAddressStr,
     txType: version = 'legacy',
     priority,
-  }) {
+  }: SolSendToAddressParams): Promise<string | null> {
     try {
-      const VALID_TX_VERSIONS = ['legacy', 0];
+      const VALID_TX_VERSIONS: SolTransactionVersion[] = ['legacy', 0];
       if (!VALID_TX_VERSIONS.includes(version)) {
         throw new Error('Invalid transaction version');
       }
@@ -162,9 +301,14 @@ export class SolRpc {
    * @param {boolean} [params.priority=false] - Whether to add a priority fee to the transaction.
    * @throws {Error} If the transaction confirmation returns an error.
    */
-  async _createBaseTransactionMessage({ version, feePayerKeypairSigner, nonceAddressStr, priority }) {
+  async _createBaseTransactionMessage({ version, feePayerKeypairSigner, nonceAddressStr, priority }: {
+    version: SolTransactionVersion;
+    feePayerKeypairSigner: SolKit.KeyPairSigner;
+    nonceAddressStr?: string;
+    priority?: boolean;
+  }): Promise<SolTransactionMessage> {
     // Create transaction message and add fee payer signer
-    let transactionMessage = pipe(
+    let transactionMessage: SolTransactionMessage = pipe(
       SolKit.createTransactionMessage({ version }),
       tx => SolKit.setTransactionMessageFeePayerSigner(feePayerKeypairSigner, tx),
     );
@@ -181,11 +325,11 @@ export class SolRpc {
 
   // Explicit return types: the inferred ones name Kit internals that declaration emit cannot reference
   _sendAndConfirmNonceTransactionFactory(): ReturnType<typeof SolKit.sendAndConfirmDurableNonceTransactionFactory> {
-    return SolKit.sendAndConfirmDurableNonceTransactionFactory({ rpc: this.rpc, rpcSubscriptions: this.rpcSubscriptions });
+    return SolKit.sendAndConfirmDurableNonceTransactionFactory({ rpc: this.rpc, rpcSubscriptions: this.rpcSubscriptions! });
   }
 
   _sendAndConfirmTransactionFactory(): ReturnType<typeof SolKit.sendAndConfirmTransactionFactory> {
-    return SolKit.sendAndConfirmTransactionFactory({ rpc: this.rpc, rpcSubscriptions: this.rpcSubscriptions });
+    return SolKit.sendAndConfirmTransactionFactory({ rpc: this.rpc, rpcSubscriptions: this.rpcSubscriptions! });
   }
 
   /**
@@ -196,8 +340,12 @@ export class SolRpc {
    * @param { 'confirmed' | 'finalized' } [params.commitment] Default 'confirmed'
    * @returns {Promise<string>} txid
    */
-  async _sendAndConfirmTransaction({ transferTransactionMessage, nonceAddressStr, commitment = 'confirmed' }) {
-    let signedTransactionMessage;
+  async _sendAndConfirmTransaction({ transferTransactionMessage, nonceAddressStr, commitment = 'confirmed' }: {
+    transferTransactionMessage: SolTransactionMessage;
+    nonceAddressStr?: string;
+    commitment?: SolCommitment;
+  }): Promise<string | null> {
+    let signedTransactionMessage: any;
     try {
       const transactionMessage = await this.#appendComputeUnitLimitInstruction(transferTransactionMessage);
       signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
@@ -213,7 +361,7 @@ export class SolRpc {
       return txid;
     } catch (err) {
       // Intercept known race condition bug for durable nonce transactions: https://github.com/anza-xyz/kit/issues/53
-      if (err.message.includes('is no longer valid. It has advanced to')) {
+      if ((err as Error).message.includes('is no longer valid. It has advanced to')) {
         return signedTransactionMessage ? SolKit.getSignatureFromTransaction(signedTransactionMessage) : null;
       }
       throw err;
@@ -227,8 +375,12 @@ export class SolRpc {
    * @param {import('@solana/kit').ITransactionMessageWithFeePayerSigner<any>} input.transactionMessage
    * @private
    */
-  async #setTransactionMessageLifetime({ nonceAddressStr, nonceAuthorityAddressStr, transactionMessage }) {
-    let transactionMessageWithLifetime;
+  async #setTransactionMessageLifetime({ nonceAddressStr, nonceAuthorityAddressStr, transactionMessage }: {
+    nonceAddressStr?: string;
+    nonceAuthorityAddressStr: string;
+    transactionMessage: SolTransactionMessage;
+  }): Promise<SolTransactionMessage> {
+    let transactionMessageWithLifetime: SolTransactionMessage;
     if (nonceAddressStr) {
       const nonceAccountAddress = SolKit.address(nonceAddressStr);
       const nonceAuthorityAddress = SolKit.address(nonceAuthorityAddressStr);
@@ -246,7 +398,7 @@ export class SolRpc {
     return transactionMessageWithLifetime;
   }
 
-  async #appendComputeUnitLimitInstruction(transactionMessage) {
+  async #appendComputeUnitLimitInstruction(transactionMessage: SolTransactionMessage): Promise<SolTransactionMessage> {
     const getComputeUnitEstimate = SolKit.getComputeUnitEstimateForTransactionMessageFactory({ rpc: this.rpc });
     const estimatedComputeUnits = await getComputeUnitEstimate(transactionMessage);
     const transactionMessageWithComputeUnitLimit = SolKit.appendTransactionMessageInstruction(
@@ -261,7 +413,7 @@ export class SolRpc {
    * @param {import('@solana/kit').KeyPairSigner<string>} payerAndAuthority
    * @param {import('@solana/kit').KeyPairSigner<string>} nonceAccount
    */
-  async createNonceAccount(payerAndAuthority, nonceAccount) {
+  async createNonceAccount(payerAndAuthority: SolKit.KeyPairSigner, nonceAccount: SolKit.KeyPairSigner): Promise<string> {
     try {
       // Get the min balance for rent exception
       const space = 80n;
@@ -316,7 +468,7 @@ export class SolRpc {
    * @returns {Promise<number>} The estimated fee in lamports.
    * @throws Will throw an error on raw tx estimation if the fee estimation fails or tx cannot be decoded.
    */
-  async estimateFee({ rawTx, nBlocks = 10 }) {
+  async estimateFee({ rawTx, nBlocks = 10 }: { rawTx?: string | Uint8Array; nBlocks?: number }): Promise<number> {
     if (rawTx) {
       // Recommended. Directly estimate fee based on the provided raw transaction size.
       return await this.estimateTransactionFee({ rawTx });
@@ -356,8 +508,8 @@ export class SolRpc {
    * @returns {Promise<number>} The estimated fee in lamports.
    * @throws Will throw an error if the fee estimation fails or tx cannot be decoded.
    */
-  async estimateTransactionFee({ rawTx }) {
-    let tx;
+  async estimateTransactionFee({ rawTx }: { rawTx: string | Uint8Array }): Promise<number> {
+    let tx: SolKit.Transaction;
     try {
       if (typeof rawTx === 'string') {
         rawTx = Buffer.from(rawTx, 'base64');
@@ -370,7 +522,7 @@ export class SolRpc {
     }
 
     const base64EncodedMessage = Buffer.from(tx.messageBytes).toString('base64');
-    const { value } = await this.rpc.getFeeForMessage(base64EncodedMessage).send();
+    const { value } = await this.rpc.getFeeForMessage(base64EncodedMessage as SolKit.TransactionMessageBytesBase64).send();
 
     if (value === null) {
       throw new Error('Failed to estimate transaction fee');
@@ -388,7 +540,7 @@ export class SolRpc {
    * @param {number} [params.percentile=25] - The percentile (0-100) of fees to consider for maximum priority fee estimation.
    * @returns {Promise<number|null>} The estimated maximum priority fee or null if no fees are available.
    */
-  async estimateMaxPriorityFee({ percentile = 25 }) {
+  async estimateMaxPriorityFee({ percentile = 25 }: { percentile?: number; config?: unknown }): Promise<number | null> {
     const recentFees = await this.rpc.getRecentPrioritizationFees().send();
     if (!recentFees || recentFees.length === 0) {
       return null;
@@ -418,7 +570,11 @@ export class SolRpc {
    * @param {Object} params.config - Configuration options for retrieving prioritization fees.
    * @throws Will throw an error if adding the priority fee fails for reasons other than 'Method not found'.
    */
-  async addPriorityFee({ transactionMessage, minPriorityFee, config }) {
+  async addPriorityFee({ transactionMessage, minPriorityFee, config }: {
+    transactionMessage: SolTransactionMessage;
+    minPriorityFee?: number;
+    config?: unknown;
+  }): Promise<SolTransactionMessage> {
     try {
       const priorityFee = await this.estimateMaxPriorityFee({ config });
       if (priorityFee == null) {
@@ -435,7 +591,7 @@ export class SolRpc {
 
       return transactionWithPriorityFee;
     } catch (err) {
-      if (err && err.message !== 'failed to get recent prioritization fees: Method not found') {
+      if (err && (err as Error).message !== 'failed to get recent prioritization fees: Method not found') {
         this.emitter.emit('failure', err);
         throw err;
       }
@@ -451,7 +607,7 @@ export class SolRpc {
    * 
    * @returns {Promise<string|null>} The hash of the best block or null if the tip is not available.
    */
-  async getBestBlockHash() {
+  async getBestBlockHash(): Promise<string | null> {
     const tip = await this.getTip();
     if (!tip) {
       return null;
@@ -467,7 +623,10 @@ export class SolRpc {
    * @param {boolean} [params.includeInnerInstructions] - Also return innerInstructions, which costs a second (jsonParsed)
    *   fetch for a tx that has any. Defaults to the client's includeInnerInstructions config, which defaults to false.
    */
-  async getTransaction({ txid, includeInnerInstructions = Boolean(this.config.includeInnerInstructions) }) {
+  async getTransaction({ txid, includeInnerInstructions = Boolean(this.config.includeInnerInstructions) }: {
+    txid: string;
+    includeInnerInstructions?: boolean;
+  }): Promise<SolTransaction | null> {
     if (!txid || !this.isBase58(txid)) {
       return null;
     }
@@ -483,11 +642,14 @@ export class SolRpc {
 
     // The response has the tx's slot and the accounts it loaded from lookup tables, so decoding doesn't fetch them again
     const {
-      decoded: { lookupTablesUsed, ...parsedTransaction },
+      decoded: { lookupTablesUsed, ...decodedTransaction },
       accountsLoaded
     } = await this.#decodeTransaction({ rawTx: transactionBytes, slot, loadedAddresses: meta?.loadedAddresses });
-    parsedTransaction.blockTime = Number(blockTime);
-    parsedTransaction.slot = Number(slot);
+    const parsedTransaction: Omit<SolTransaction, 'meta'> = {
+      ...decodedTransaction,
+      blockTime: Number(blockTime),
+      slot: Number(slot)
+    };
 
     // Only the jsonParsed encoding parses inner instructions (instructions run by another program), and it's also where
     // a lookup-table tx's accounts come from when loadedAddresses couldn't be used, so fetch it at most once for both.
@@ -509,8 +671,8 @@ export class SolRpc {
     if (needsLookupTableAccounts) {
       return {
         ...parsedTransaction,
-        meta: parsedTx.meta,
-        accountKeys: parsedTx.transaction.message.accountKeys.map(({ pubkey }) => pubkey)
+        meta: parsedTx!.meta,
+        accountKeys: parsedTx!.transaction.message.accountKeys.map(({ pubkey }) => pubkey)
       };
     }
 
@@ -520,21 +682,19 @@ export class SolRpc {
     };
   }
 
-  #parseInnerInstructions(jsonParsedInnerInstructions) {
-    const parsedInnerInstructions = {};
+  #parseInnerInstructions(jsonParsedInnerInstructions: any): Instructions {
+    const parsedInnerInstructions: Instructions = {};
     if (!Array.isArray(jsonParsedInnerInstructions) || jsonParsedInnerInstructions.length === 0) {
       return parsedInnerInstructions;
     }
 
     for (const innerInstructionGroup of jsonParsedInnerInstructions) {
       const parsedInstructionGroup = parseJsonParsedInstructions(innerInstructionGroup.instructions ?? []);
-      for (const [instructionKey, values] of Object.entries(parsedInstructionGroup)) {
-        if (!parsedInnerInstructions[instructionKey]) {
-          parsedInnerInstructions[instructionKey] = [];
-        }
+      for (const [instructionKey, values] of Object.entries(parsedInstructionGroup) as [string, any[]][]) {
+        const parsedValues = parsedInnerInstructions[instructionKey] ||= [];
 
         for (const value of values) {
-          parsedInnerInstructions[instructionKey].push(this.#addInnerInstructionContext({
+          parsedValues.push(this.#addInnerInstructionContext({
             value,
             topLevelInstructionIndex: innerInstructionGroup.index
           }));
@@ -545,7 +705,7 @@ export class SolRpc {
     return parsedInnerInstructions;
   }
 
-  #addInnerInstructionContext({ value, topLevelInstructionIndex }) {
+  #addInnerInstructionContext({ value, topLevelInstructionIndex }: { value: any; topLevelInstructionIndex: number }) {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       return {
         topLevelInstructionIndex,
@@ -567,7 +727,7 @@ export class SolRpc {
    * @param {'confirmed' | 'finalized'} [params.commitment]
    * @param {string} [params.until] - search backwards until this transaction signature, if found before limit reached
    */
-  async getTransactions(params) {
+  async getTransactions(params: SolGetTransactionsParams): Promise<SolTransaction[] | null> {
     const { address: addressStr, ...getSignaturesForAddressConfig } = params;
     if (!this.validateAddress({ address: addressStr })) {
       return null;
@@ -581,7 +741,7 @@ export class SolRpc {
 
     const signatureObjects = await this.#getSignaturesForAddress(addressStr, config);
     const txids = signatureObjects.map(signatureObject => signatureObject.signature);
-    const transactions = [];
+    const transactions: SolTransaction[] = [];
 
     // Fetch transaction details for each signature
     for (const txid of txids) {
@@ -605,7 +765,7 @@ export class SolRpc {
    * @param {string} params.address - The account address to get the transaction count for.
    * @returns {Promise<number|null>} A promise that resolves to the number of confirmed transactions.
    */
-  async getTransactionCount({ address: addressStr }) {
+  async getTransactionCount({ address: addressStr }: { address: string }): Promise<number | null> {
     if (!this.validateAddress({ address: addressStr })) {
       return null;
     }
@@ -631,7 +791,13 @@ export class SolRpc {
    * @param {import("@solana/kit").Slot} [config.minContextSlot]
    * @param {import("@solana/kit").Signature} [config.until]
    */
-  async #getSignaturesForAddress(addressStr, config) {
+  async #getSignaturesForAddress(addressStr: string, config?: {
+    before?: SolKit.Signature;
+    commitment?: SolCommitment;
+    limit?: number;
+    minContextSlot?: SolKit.Slot;
+    until?: SolKit.Signature;
+  }) {
     const address = SolKit.address(addressStr);
     return await this.rpc.getSignaturesForAddress(address, config).send();
   }
@@ -643,7 +809,7 @@ export class SolRpc {
    * @param {string} params.txid - The transaction ID of the transaction to retrieve.
    * @returns {Promise<string|null>} A promise that resolves to the raw transaction as a base64 string or null if not found.
    */
-  async getRawTransaction({ txid }) {
+  async getRawTransaction({ txid }: { txid: string }): Promise<string | null> {
     if (!this.isBase58(txid)) {
       throw new Error(`Invalid txid: ${txid}`);
     }
@@ -664,7 +830,7 @@ export class SolRpc {
    * @returns {Object} if txid is null, it indicates the transaction has not yet been signed by the fee payer
    * // NOTE! decodeRawTransaction does not include transaction meta - it is available in getTransaction though, which wraps this method
    */
-  async decodeRawTransaction({ rawTx }) {
+  async decodeRawTransaction({ rawTx }: { rawTx: string | Uint8Array }): Promise<SolDecodedTransaction> {
     const { decoded } = await this.#decodeTransaction({ rawTx });
     return decoded;
   }
@@ -676,17 +842,21 @@ export class SolRpc {
    * @param {{ writable: string[], readonly: string[] }} [params.loadedAddresses] - The accounts the tx loaded from lookup tables, from its meta
    * @returns {Promise<{ decoded: Object, accountsLoaded: boolean }>} accountsLoaded is true when the lookup-table accounts came from loadedAddresses
    */
-  async #decodeTransaction({ rawTx, slot, loadedAddresses }) {
+  async #decodeTransaction({ rawTx, slot, loadedAddresses }: {
+    rawTx: string | SolKit.ReadonlyUint8Array;
+    slot?: bigint;
+    loadedAddresses?: LoadedAddresses<SolKit.Address> | null;
+  }): Promise<{ decoded: SolDecodedTransaction; accountsLoaded: boolean }> {
     if (typeof rawTx === 'string') {
       rawTx = Buffer.from(rawTx, 'base64');
     }
 
     const decodedTransaction = transactionDecoder.decode(rawTx);
     const compiledTransactionMessage = compiledTransactionMessageDecoder.decode(decodedTransaction.messageBytes);
-    const decompileTransactionMessageConfig = {};
+    const decompileTransactionMessageConfig: SolKit.DecompileTransactionMessageConfig = {};
 
-    let decompiledTransactionMessage;
-    let accountKeys = compiledTransactionMessage.staticAccounts;
+    let decompiledTransactionMessage: SolTransactionMessage;
+    let accountKeys: readonly string[] = compiledTransactionMessage.staticAccounts;
     const lookupTablesUsed = 'addressTableLookups' in compiledTransactionMessage && compiledTransactionMessage.addressTableLookups !== undefined;
     const loadedTables = lookupTablesUsed && loadedAddresses
       ? addressesByLookupTableAddress(compiledTransactionMessage.addressTableLookups, loadedAddresses)
@@ -694,7 +864,7 @@ export class SolRpc {
     if (loadedTables) {
       decompileTransactionMessageConfig.addressesByLookupTableAddress = loadedTables;
       decompiledTransactionMessage = SolKit.decompileTransactionMessage(compiledTransactionMessage, decompileTransactionMessageConfig);
-      accountKeys = [...accountKeys, ...loadedAddresses.writable, ...loadedAddresses.readonly];
+      accountKeys = [...accountKeys, ...loadedAddresses!.writable!, ...loadedAddresses!.readonly!];
     } else if (lookupTablesUsed) {
       try {
         decompiledTransactionMessage = await SolKit.decompileTransactionMessageFetchingLookupTables(compiledTransactionMessage, this.rpc);
@@ -706,7 +876,7 @@ export class SolRpc {
     }
 
     // Retrieve txid
-    let txid = null;
+    let txid: string | null = null;
     const { address: feePayerAddress } = decompiledTransactionMessage.feePayer;
     const feePayerSignatureBytes = decodedTransaction.signatures[feePayerAddress];
     if (feePayerSignatureBytes) {
@@ -714,7 +884,7 @@ export class SolRpc {
       txid = base58Decoder.decode(feePayerSignatureBytes);
     }
 
-    const lifetimeConstraint = {};
+    const lifetimeConstraint: SolLifetimeConstraint = {};
     if (decompiledTransactionMessage.lifetimeConstraint.blockhash) {
       lifetimeConstraint.blockhash = decompiledTransactionMessage.lifetimeConstraint.blockhash;
       lifetimeConstraint.lastValidBlockHeight = decompiledTransactionMessage.lifetimeConstraint.lastValidBlockHeight;
@@ -724,7 +894,7 @@ export class SolRpc {
 
     const instructions = parseInstructions(decompiledTransactionMessage.instructions);
 
-    let status, confirmations;
+    let status: SolDecodedTransaction['status'], confirmations: SolDecodedTransaction['confirmations'];
     try {
       const { status: retrievedStatus, confirmations: retrievedConfirmations } = await this.#getStatusAndConfirmations({ txid, slot });
       status = retrievedStatus;
@@ -734,7 +904,7 @@ export class SolRpc {
       confirmations = null;
     }
 
-    const output = {
+    const output: Omit<SolDecodedTransaction, 'accountKeys' | 'lookupTablesUsed'> = {
       txid,
       status,
       confirmations,
@@ -760,11 +930,11 @@ export class SolRpc {
    * @param {Uint8Array|string} params.rawTx - The raw transaction to be sent.
    * @returns {Promise<string|null>} A promise that resolves to the transaction ID or null if the transaction is invalid.
    */
-  async sendRawTransaction({ rawTx }) {
+  async sendRawTransaction({ rawTx }: { rawTx: string | Uint8Array }): Promise<string> {
     const serializedTransaction = rawTx instanceof Uint8Array ?
       Buffer.from(rawTx).toString('base64')
       : rawTx;
-    const signature = await this.rpc.sendTransaction(serializedTransaction, { encoding: 'base64' }).send();
+    const signature = await this.rpc.sendTransaction(serializedTransaction as SolKit.Base64EncodedWireTransaction, { encoding: 'base64' }).send();
     return signature;
   }
 
@@ -777,16 +947,17 @@ export class SolRpc {
    * @param {'full' | 'accounts' | 'signatures' | 'none'} [params.transactionDetails] See https://solana.com/docs/rpc/http/getblock, 'transactionDetails'; default 'signatures'
    * @throws {Error} If hash is provided instead of height.
    */
-  async getBlock({ hash, height, transactionDetails = 'signatures' }) {
+  async getBlock({ hash, height, transactionDetails = 'signatures' }: SolGetBlockParams): Promise<any> {
     if (typeof height === 'bigint') {
       height = Number(height);
     }
-    if (!(Number.isInteger(height) || height < 0)) {
+    if (!(Number.isInteger(height) || height! < 0)) {
       throw new Error(`height could not be coerced to be an integer or is not positive, height is: ${height}`);
     }
     if (hash) {
       throw new Error('Hash is not supported. Provide a height instead');
     }
+    // @ts-expect-error Kit types the slot as bigint; the number goes over JSON the same way
     const block = await this.rpc.getBlock(height, {
       commitment: this._versionedConfig.commitment,
       maxSupportedTransactionVersion: this._versionedConfig.maxSupportedTransactionVersion,
@@ -800,7 +971,7 @@ export class SolRpc {
    * @param {'full' | 'accounts' | 'signatures' | 'none'} See https://solana.com/docs/rpc/http/getblock, 'transactionDetails'; default 'signatures'
    * @returns 
    */
-  async getLatestFinalizedBlock({ transactionDetails = 'signatures' }) {
+  async getLatestFinalizedBlock({ transactionDetails = 'signatures' }: { transactionDetails?: SolTransactionDetails }) {
     const slot = await this.rpc.getSlot({ commitment: 'finalized' }).send();
     const block = await this.getBlock({ height: slot, transactionDetails });
     return block;
@@ -810,7 +981,7 @@ export class SolRpc {
    * @param {number} [maxBlocksToCheck] default 10
    * @throws {Error} If no signatures found in number of blocks checked
    */
-  async getLatestSignature(maxBlocksToCheck = 10) {
+  async getLatestSignature(maxBlocksToCheck = 10): Promise<{ blockHeight: number; blockTime: number; signature: string }> {
     const slot = await this.rpc.getSlot({ commitment: 'finalized' }).send();
     let block = await this.getBlock({ height: slot, transactionDetails: 'signatures' });
     let blocksChecked = 1;
@@ -836,19 +1007,19 @@ export class SolRpc {
    * @param {string} params.txid - The transaction ID to get confirmations for.
    * @param {bigint} [params.slot] - The tx's slot, if known; used when the status has none
    */
-  async #getStatusAndConfirmations({ txid, slot }) {
+  async #getStatusAndConfirmations({ txid, slot }: { txid: string | null; slot?: bigint }) {
     if (!this.isBase58(txid)) {
       throw new Error('Invalid txid');
     }
 
     const status = await this.#getSignatureStatus({ txid });
-    let confirmations = Number(status.confirmations);
+    let confirmations = Number(status!.confirmations);
     if (!confirmations) {
-      confirmations = await this.#getConfirmationsFromTip({ txid, slot: status.slot ?? slot }) || 0;
+      confirmations = await this.#getConfirmationsFromTip({ txid, slot: status!.slot ?? slot }) || 0;
     }
 
     return {
-      status: status.confirmationStatus,
+      status: status!.confirmationStatus,
       confirmations
     };
   }
@@ -860,7 +1031,7 @@ export class SolRpc {
    * @param {string} params.txid - The transaction ID to get confirmations for.
    * @returns {Promise<number|null>} - The number of confirmations or null if not available.
    */
-  async getConfirmations({ txid }) {
+  async getConfirmations({ txid }: { txid: string }): Promise<number | null> {
     if (!this.isBase58(txid)) {
       throw new Error('Invalid txid');
     }
@@ -879,7 +1050,7 @@ export class SolRpc {
    * @param {bigint} [params.slot]
    * @returns {Promise<number|null>} null if the tx isn't found
    */
-  async #getConfirmationsFromTip({ txid, slot }) {
+  async #getConfirmationsFromTip({ txid, slot }: { txid: string; slot?: bigint }): Promise<number | null> {
     const latestSlot = await this.rpc.getSlot({ commitment: 'confirmed' }).send();
     if (slot) {
       return Number(latestSlot - slot);
@@ -899,7 +1070,7 @@ export class SolRpc {
    * @param {string} params.solAddress
    * @param {string} params.mintAddress 
    */
-  async deriveAta({ solAddress, mintAddress }) {
+  async deriveAta({ solAddress, mintAddress }: { solAddress: string; mintAddress: string }): Promise<string> {
     try {
       const [destinationAta] = await SolToken.findAssociatedTokenPda({
         owner: solAddress,
@@ -908,7 +1079,7 @@ export class SolRpc {
       });
       return destinationAta;
     } catch (err) {
-      if (err.message.toLowerCase().includes('base58')) {
+      if ((err as Error).message.toLowerCase().includes('base58')) {
         throw new Error(SOL_ERROR_MESSAGES.NON_BASE58_PARAM);
       }
       throw err;
@@ -921,10 +1092,10 @@ export class SolRpc {
    * @param {string} params.solAddress
    * @param {string} params.mintAddress 
    */
-  async getConfirmedAta({ solAddress, mintAddress }) {
+  async getConfirmedAta({ solAddress, mintAddress }: { solAddress: string; mintAddress: string }): Promise<string> {
     try {
-      const parsedTokenAccountsByOwner = await this.rpc.getTokenAccountsByOwner(solAddress,
-        { mint: mintAddress },
+      const parsedTokenAccountsByOwner = await this.rpc.getTokenAccountsByOwner(solAddress as SolKit.Address,
+        { mint: mintAddress as SolKit.Address },
         { encoding: 'base64' }
       ).send();
       const ataAddress = parsedTokenAccountsByOwner?.value[0]?.pubkey;
@@ -952,8 +1123,12 @@ export class SolRpc {
    * @param {string} params.mintAddress
    * @param {SolKit.KeyPairSigner} params.feePayer
    */
-  async createAta({ ownerAddress, mintAddress, feePayer }) {
-    let ataAddress;
+  async createAta({ ownerAddress, mintAddress, feePayer }: {
+    ownerAddress: string;
+    mintAddress: string;
+    feePayer: SolKit.KeyPairSigner;
+  }): Promise<SolCreateAtaResult> {
+    let ataAddress: string;
     try {
       ataAddress = await this.getConfirmedAta({ solAddress: ownerAddress, mintAddress });
       if (ataAddress) {
@@ -964,7 +1139,7 @@ export class SolRpc {
         };
       }
     } catch (err) {
-      if (err.message !== SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED) {
+      if ((err as Error).message !== SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED) {
         throw err;
       }
     }
@@ -1005,7 +1180,7 @@ export class SolRpc {
    * @param {string} args.txid 
    * @returns {Promise<Object|null>} null if the tx isn't found
    */
-  async #getSignatureStatus({ txid }) {
+  async #getSignatureStatus({ txid }: { txid: string | null }) {
     if (!this.isBase58(txid)) {
       throw new Error('Invalid txid');
     }
@@ -1019,14 +1194,14 @@ export class SolRpc {
    * Solana slot is synonymous with a blockchains height.
    * @returns {Promise<{ height: bigint; hash: import("@solana/kit").Blockhash | null }>} - An object containing the height (slot) and hash of the current block.
    */
-  async getTip() {
+  async getTip(): Promise<{ height: number; hash: string | null }> {
     const slot = await this.rpc.getSlot({ commitment: 'confirmed' }).send();
     const height = Number(slot);
     const block = await this.getBlock({ height });
     return { height, hash: block?.blockhash ?? null };
   }
 
-  getTxOutputInfo() {
+  getTxOutputInfo(): null {
     return null;
   }
 
@@ -1037,7 +1212,7 @@ export class SolRpc {
    * @param {string} params.address - The address to validate.
    * @returns {boolean} - Returns true if the address is  on , otherwise false.
    */
-  validateAddress({ address }) {
+  validateAddress({ address }: { address: string }): boolean {
     try {
       return SolKit.isAddress(address);
     } catch {
@@ -1052,16 +1227,16 @@ export class SolRpc {
    * @param {number} [maxDepth] - Optional. Maximum nesting depth for recursive ATA discovery. If -1, treated as Infinity. Minimum value is 0.
    * @returns 
    */
-  async getAccountInfo({ address, maxDepth }) {
+  async getAccountInfo({ address, maxDepth }: { address: string; maxDepth?: number }): Promise<SolAccountInfo> {
     // Only account metadata is read from this response; dataSlice: { length: 0 } tells the RPC to omit
     // the account data payload itself. Without it, base64 (unlike base58) has no size limit, so a large
     // account's entire data would be sent over the wire on every call for no reason.
     const accountInfoResponse = await this.rpc
-      .getAccountInfo(address, { encoding: 'base64', dataSlice: { offset: 0, length: 0 } })
+      .getAccountInfo(address as SolKit.Address, { encoding: 'base64', dataSlice: { offset: 0, length: 0 } })
       .send();
 
     const lamports = accountInfoResponse.value ? Number(accountInfoResponse.value.lamports) : 0;
-    let effectiveMaxDepth;
+    let effectiveMaxDepth: number;
     if (maxDepth === -1) {
       effectiveMaxDepth = Infinity;
     } else if (typeof maxDepth === 'number' && maxDepth >= 1) {
@@ -1086,18 +1261,22 @@ export class SolRpc {
    * @param {number} [params.maxDepth=0] - Maximum recursion depth allowed (0 = no recursion, 1 = one level of recursion, etc). Use Infinity for unlimited depth. Minimum value is 0.
    * @returns 
    */
-  async getTokenAccountsByOwner({ address, skipExistenceCheck = false, maxDepth = 0 }) {
+  async getTokenAccountsByOwner({ address, skipExistenceCheck = false, maxDepth = 0 }: {
+    address: string;
+    skipExistenceCheck?: boolean;
+    maxDepth?: number;
+  }): Promise<SolTokenAccount[]> {
     // Only explicit skipExistenceCheck: true should bypass
     if (skipExistenceCheck !== true) {
       // This is only an existence check - dataSlice: { length: 0 } keeps the account data payload out
       // of the response, same reasoning as the getAccountInfo call above.
-      const accountInfoResponse = await this.rpc.getAccountInfo(address, { encoding: 'base64', dataSlice: { offset: 0, length: 0 } }).send();
+      const accountInfoResponse = await this.rpc.getAccountInfo(address as SolKit.Address, { encoding: 'base64', dataSlice: { offset: 0, length: 0 } }).send();
       if (!accountInfoResponse.value) {
         throw new Error(SOL_ERROR_MESSAGES.SOL_ACCT_NOT_FOUND);
       }
     }
 
-    const getTokenAccountsByOwnerResponse = await this.rpc.getTokenAccountsByOwner(address, { programId: SolToken.TOKEN_PROGRAM_ADDRESS }, { encoding: 'jsonParsed' }).send();
+    const getTokenAccountsByOwnerResponse = await this.rpc.getTokenAccountsByOwner(address as SolKit.Address, { programId: SolToken.TOKEN_PROGRAM_ADDRESS }, { encoding: 'jsonParsed' }).send();
     const tokens = getTokenAccountsByOwnerResponse.value;
 
     // RECURSION BASE CASE: when there are no token accounts for this address, stop recursing
@@ -1112,7 +1291,7 @@ export class SolRpc {
       maxDepth = 0;
     }
 
-    const atas = [];
+    const atas: SolTokenAccount[] = [];
     for (const token of tokens) {
       const { mint, state, tokenAmount } = token.account.data.parsed.info;
       const pubkey = token.pubkey;
@@ -1137,7 +1316,7 @@ export class SolRpc {
    * @param {string} address - The address to validate.
    * @returns {boolean} True if the address is valid, false otherwise.
    */
-  isValidAddress(address) {
+  isValidAddress(address: string): boolean {
     try {
       SolKit.address(address);
       return true;
@@ -1152,9 +1331,9 @@ export class SolRpc {
    * @param {string} str - The string to check.
    * @returns {boolean} True if the string is valid Base58, false otherwise.
    */
-  isBase58(str) {
+  isBase58(str: string | null | undefined): str is string {
     try {
-      bs58.decode(str);
+      bs58.decode(str as string);
       return true;
     } catch {
       return false;
@@ -1173,7 +1352,7 @@ export class SolRpc {
    * @param {import('@solana/kit').KeyPairSigner<string>} toKeypair 
    * @param {number} amountInLamports 
    */
-  async #createRawTransaction(fromKeypair, toKeypair, amountInLamports) {
+  async #createRawTransaction(fromKeypair: SolKit.KeyPairSigner, toKeypair: SolKit.KeyPairSigner, amountInLamports: number | bigint) {
     const unsignedTransaction = await this.#createUnsignedTransaction(fromKeypair, toKeypair, amountInLamports);
     const signedTransaction = await SolKit.signTransactionMessageWithSigners(unsignedTransaction);
     return SolKit.getBase64EncodedWireTransaction(signedTransaction);
@@ -1186,7 +1365,7 @@ export class SolRpc {
    * @param {number} amountInLamports
    * @param {0 | 'legacy'} [version]
    */
-  async #createUnsignedTransaction(fromKeypair, toKeypair, amountInLamports, version = 0) {
+  async #createUnsignedTransaction(fromKeypair: SolKit.KeyPairSigner, toKeypair: SolKit.KeyPairSigner, amountInLamports: number | bigint, version: SolTransactionVersion = 0) {
     const { value: recentBlockhash } = await this.rpc.getLatestBlockhash().send();
 
     const transferInstruction = SolSystem.getTransferSolInstruction({
