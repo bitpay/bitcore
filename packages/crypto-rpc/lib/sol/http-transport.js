@@ -15,6 +15,23 @@ function selectAgent(url) {
 }
 
 /**
+ * cut every URL in an error's message and stack down to its origin
+ * node-fetch puts the full request URL in its errors, and provider URLs often carry an API key in the path or query
+ * @param {Error} err - error thrown while sending the request or reading the response
+ * @returns {Error} the same error, with URLs reduced to scheme and host
+ */
+function redactUrls(err) {
+  const toOrigin = text => text.replace(/(https?:\/\/)(?:[^\s/?#@]*@)?([^\s/?#]+)[^\s]*/g, '$1$2');
+  if (err && typeof err.message === 'string') {
+    err.message = toOrigin(err.message);
+  }
+  if (err && typeof err.stack === 'string') {
+    err.stack = toOrigin(err.stack);
+  }
+  return err;
+}
+
+/**
  * create a node-fetch transport with same-turn request coalescing
  * @param {string} url - Solana RPC endpoint
  * @param {Object} [options] - transport configuration
@@ -32,6 +49,20 @@ export function createSolanaHttpTransport(url, options = {}) {
    * @returns {Promise<Object>} JSON-RPC response
    */
   async function sendRequest(payload, signal) {
+    try {
+      return await fetchAndParse(payload, signal);
+    } catch (err) {
+      throw redactUrls(err);
+    }
+  }
+
+  /**
+   * POST the payload and parse the JSON-RPC response
+   * @param {Object} payload - JSON-RPC request
+   * @param {AbortSignal} signal - cancellation signal for the shared request
+   * @returns {Promise<Object>} JSON-RPC response
+   */
+  async function fetchAndParse(payload, signal) {
     const response = await fetch(url, {
       method: 'POST',
       agent: selectAgent,
