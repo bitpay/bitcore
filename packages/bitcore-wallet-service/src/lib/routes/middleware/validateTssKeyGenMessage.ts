@@ -1,13 +1,8 @@
+import { Constants } from '../../common/constants';
+import { Utils } from '../../common/utils';
 import { Errors } from '../../errors/errordefinitions';
-import { isCanonicalIndex } from '../../model/tsskeygen';
 import { error } from '../helpers';
 import type express from 'express';
-
-/**
- * Highest round a client submits. The DKG library's final local result (round 4) is never posted: the client skips it
- *  once the keychain is ready, and the library's "ready" state (5) is not a submitted round either.
- */
-export const MAX_SUBMITTED_ROUND = 3;
 
 const isObject = (value: unknown): value is Record<string, any> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -23,10 +18,10 @@ export function checkTssKeyGenMessage(body: unknown): string | null {
     return 'message must be an object';
   }
   const { partyId, round, broadcastMessages, p2pMessages } = message;
-  if (!isCanonicalIndex(partyId)) {
+  if (!Utils.isCanonicalIndex(partyId)) {
     return 'Invalid partyId';
   }
-  if (!isCanonicalIndex(round) || round > MAX_SUBMITTED_ROUND) {
+  if (!Utils.isCanonicalIndex(round) || round > Constants.TSS_KEYGEN_MAX_SUBMITTED_ROUND) {
     return 'Invalid round';
   }
   if (!Array.isArray(broadcastMessages) || !Array.isArray(p2pMessages)) {
@@ -44,7 +39,7 @@ export function checkTssKeyGenMessage(body: unknown): string | null {
     }
   }
   for (const m of p2pMessages) {
-    if (!isObject(m) || m.from !== partyId || !isCanonicalIndex(m.to) || m.to === m.from) {
+    if (!isObject(m) || m.from !== partyId || !Utils.isCanonicalIndex(m.to) || m.to === m.from) {
       return 'Invalid p2p message';
     }
     if (typeof m.commitment !== 'string' || !isObject(m.payload) ||

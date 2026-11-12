@@ -188,10 +188,12 @@ describe('KeyGen admission request shape validators', function() {
     ['an unsafe integer', 2 ** 53]
   ];
 
+  const validRounds: Array<number> = [0, 1, 2, 3];
+
   describe('message', function() {
     it('should accept well-formed broadcast and p2p messages for every submitted round', function() {
       valid(messageBody());
-      for (const round of [0, 1, 2, 3]) {
+      for (const round of validRounds) {
         valid(p2pBody({ round }));
         valid(messageBody({ round }));
       }

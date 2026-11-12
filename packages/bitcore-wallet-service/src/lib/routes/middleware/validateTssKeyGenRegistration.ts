@@ -1,5 +1,5 @@
+import { Utils } from '../../common/utils';
 import { Errors } from '../../errors/errordefinitions';
-import { isCanonicalIndex, isWellFormedPubKey } from '../../model/tsskeygen';
 import { error } from '../helpers';
 import type express from 'express';
 
@@ -10,10 +10,10 @@ import type express from 'express';
  */
 export function checkTssKeyGenRegistration(body: unknown): string | null {
   const { partyId, partyPubKey } = (body ?? {}) as { partyId?: unknown; partyPubKey?: unknown };
-  if (!isCanonicalIndex(partyId) || partyId === 0) {
+  if (!Utils.isCanonicalIndex(partyId) || partyId === 0) {
     return `Invalid partyId: ${String(partyId).slice(0, 32)}`;
   }
-  if (typeof partyPubKey !== 'string' || !isWellFormedPubKey(partyPubKey.trim())) {
+  if (typeof partyPubKey !== 'string' || !Utils.isValidSecp256k1PublicKey(partyPubKey.trim())) {
     return 'Invalid partyPubKey';
   }
   return null;

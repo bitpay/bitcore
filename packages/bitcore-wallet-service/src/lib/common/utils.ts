@@ -114,6 +114,14 @@ export const Utils = {
   },
 
   /**
+   * True for a numeric, non-negative safe integer, excluding negative zero and numeric strings.
+   * Does not enforce JavaScript's array-index limit or an application-specific upper bound.
+   */
+  isCanonicalIndex(value: unknown): value is number {
+    return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && !Object.is(value, -0);
+  },
+
+  /**
    * Same as isNumber(), but also allows BigInts
    * @param val 
    * @returns {boolean}
@@ -150,6 +158,14 @@ export const Utils = {
       ret = new BitcoreLib.encoding.BufferReader(ret).readReverse();
     }
     return ret;
+  },
+
+  /**
+   * True for a hex-encoded compressed or uncompressed secp256k1 public key that is a point on the curve.
+   * BitcoreLib.PublicKey.isValid alone accepts strings of the wrong length, so the format is checked first.
+   */
+  isValidSecp256k1PublicKey(value: unknown): value is string {
+    return typeof value === 'string' && /^(0[23][0-9a-f]{64}|04[0-9a-f]{128})$/i.test(value) && BitcoreLib.PublicKey.isValid(value);
   },
 
   verifyMessage(message, signature, publicKey) {
