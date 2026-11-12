@@ -157,6 +157,43 @@ describe('SOL HTTP transport', function() {
     expect(error.context.statusCode).to.equal(503);
   });
 
+  describe('provider credentials in the URL', function() {
+    // Provider keys often sit in the URL: a path token, an api-key query param, or user:pass
+    const secretsIn = (host) => `http://user:FAKEPASS@${host}/FAKEPATHTOKEN?api-key=FAKEQUERYKEY`;
+    const sendFrom = async (url) => {
+      try {
+        await SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(url)).getSlot().send();
+      } catch (err) {
+        return err;
+      }
+      throw new Error('expected the request to fail');
+    };
+
+    it('keeps them out of the error when the connection fails', async function() {
+      const closed = http.createServer();
+      await new Promise(resolve => closed.listen(0, '127.0.0.1', resolve));
+      const closedPort = closed.address().port;
+      await new Promise(resolve => closed.close(resolve));
+
+      const error = await sendFrom(secretsIn(`127.0.0.1:${closedPort}`));
+      expect(error.message).to.include(`http://127.0.0.1:${closedPort}`);
+      expect(error.message).to.include('ECONNREFUSED');
+      expect(`${error.message}\n${error.stack}`).not.to.match(/FAKE/);
+      expect(error.code).to.equal('ECONNREFUSED');
+    });
+
+    it('keeps them out of the error when the response body is cut off', async function() {
+      respond = (body, res) => {
+        res.writeHead(200, { 'content-type': 'application/json', 'content-length': '1000' });
+        res.write('{"jsonrpc":"2.0",');
+        res.destroy();
+      };
+      const error = await sendFrom(secretsIn(`127.0.0.1:${port}`));
+      expect(error.message).to.include(`http://127.0.0.1:${port}`);
+      expect(`${error.message}\n${error.stack}`).not.to.match(/FAKE/);
+    });
+  });
+
   it('sends requests through the fetch passed in options', async function() {
     const fetch = sinon.spy(nodeFetch);
     expect(await rpcFor({ fetch }).getSlot().send()).to.equal(18446744073709551615n);
