@@ -32,7 +32,7 @@
   "dependencies": {
     "@bitpay-labs/bitcore-mnemonic": "^11.11.2",
     "@bitpay-labs/crypto-wallet-core": "^11.11.5",
-    "async": "2.5.0",
+    "async": "2.6.4",
     "bcrypt": "5.1.0",
     "commander": "11.1.0",
     "level-js": "4.0.2",
@@ -44,7 +44,7 @@
     "promptly": "3.0.3",
     "request": "2.87.0",
     "request-promise-native": "1.0.5",
-    "secp256k1": "3.7.1",
+    "secp256k1": "3.8.1",
     "source-map-support": "0.5.13"
   },
   "devDependencies": {
