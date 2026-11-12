@@ -23,12 +23,106 @@ export const instructionKeys = {
   UNKNOWN: 'unknownInstruction',
 };
 
+export interface TransferSolInstruction {
+  /** Amount of SOL to transfer in lamports */
+  amount: number;
+  /** Currency type, always "SOL" */
+  currency: 'SOL';
+  /** Destination wallet address */
+  destination: string;
+  /** Source wallet address */
+  source: string;
+}
+
+export interface AdvanceNonceAccountInstruction {
+  /** Address of the nonce account */
+  nonceAccount: string;
+  /** Address of the nonce authority */
+  nonceAuthority: string;
+}
+
+export interface SetComputeUnitLimitInstruction {
+  /** Maximum compute units allowed */
+  computeUnitLimit: number;
+}
+
+export interface SetComputeUnitPriceInstruction {
+  /** Whether this is a priority transaction */
+  priority: true;
+  /** Price in micro-lamports per compute unit */
+  microLamports: number;
+}
+
+export interface MemoInstruction {
+  /** Memo text content */
+  memo: string;
+}
+
+export interface TransferCheckedTokenInstruction {
+  amount: number;
+  authority: string;
+  decimals: number;
+  destination: string;
+  mint: string;
+  source: string;
+}
+
+export interface TransferTokenInstruction {
+  amount: number;
+  authority: string;
+  destination: string;
+  source: string;
+}
+
+export interface CreateAssociatedTokenInstruction {
+  payer: string;
+  associatedTokenAccount: string;
+  owner: string;
+  mint: string;
+  tokenProgram: string;
+}
+
+export interface RecoverNestedAssociatedTokenInstruction {
+  nestedAssociatedTokenAccount: string;
+  nestedMint: string;
+  destinationAssociatedTokenAccount: string;
+  owner: string;
+  mint: string;
+  tokenProgram: string;
+}
+
+/**
+ * Instructions grouped by kind. May also include additional unknown instructions, keyed
+ * `unparsed<Program>Instruction_<discriminator>`. Inner instructions carry a `topLevelInstructionIndex` as well.
+ */
+export interface Instructions {
+  transferSol?: TransferSolInstruction[];
+  advanceNonceAccount?: AdvanceNonceAccountInstruction[];
+  setComputeUnitLimit?: SetComputeUnitLimitInstruction[];
+  setComputeUnitPrice?: SetComputeUnitPriceInstruction[];
+  /** Top-level memos are parsed into an object; jsonParsed inner memos are the plain string */
+  memo?: (MemoInstruction | string)[];
+  transferCheckedToken?: TransferCheckedTokenInstruction[];
+  transferToken?: TransferTokenInstruction[];
+  createAssociatedToken?: CreateAssociatedTokenInstruction[];
+  createAssociatedTokenIdempotent?: CreateAssociatedTokenInstruction[];
+  recoverNestedAssociatedToken?: RecoverNestedAssociatedTokenInstruction[];
+  unknownInstruction?: any[];
+  [key: string]: any[] | undefined;
+}
+
+/** One instruction after parsing: the group it belongs under and what goes in that group */
+export interface ParsedInstruction {
+  key: string;
+  value: any;
+}
+
 /**
  * @param {any[]} instructions 
  * @returns {Instructions}
  */
-export const parseInstructions = (instructions) => {
-  const parsedInstructions = {};
+export const parseInstructions = (instructions: readonly any[]): Instructions => {
+  const parsedInstructions: Instructions = {};
   for (const instruction of instructions) {
     const handledInstruction = parseInstruction(instruction);
     appendParsedInstruction(parsedInstructions, handledInstruction);
@@ -41,8 +135,8 @@ export const parseInstructions = (instructions) => {
  * @param {any[]} instructions
  * @returns {Instructions}
  */
-export const parseJsonParsedInstructions = (instructions) => {
-  const parsedInstructions = {};
+export const parseJsonParsedInstructions = (instructions: readonly any[]): Instructions => {
+  const parsedInstructions: Instructions = {};
   for (const instruction of instructions) {
     const handledInstruction = parseJsonParsedInstruction(instruction);
     appendParsedInstruction(parsedInstructions, handledInstruction);
@@ -50,14 +144,11 @@ export const parseJsonParsedInstructions = (instructions) => {
   return parsedInstructions;
 };
 
-const appendParsedInstruction = (parsedInstructions, handledInstruction) => {
-  if (!parsedInstructions[handledInstruction.key]) {
-    parsedInstructions[handledInstruction.key] = [];
-  }
-  parsedInstructions[handledInstruction.key].push(handledInstruction.value);
+const appendParsedInstruction = (parsedInstructions: Instructions, handledInstruction: ParsedInstruction) => {
+  (parsedInstructions[handledInstruction.key] ||= []).push(handledInstruction.value);
 };
 
-const parseInstruction = (instruction) => {
+const parseInstruction = (instruction: any): ParsedInstruction => {
   try {
     if (instruction.programAddress === SolSystem.SYSTEM_PROGRAM_ADDRESS) {
       return parseSystemProgramInstruction(instruction);
@@ -80,14 +171,14 @@ const parseInstruction = (instruction) => {
       key: instructionKeys.UNKNOWN,
       value: {
         ...instruction,
-        error: err.message,
+        error: (err as Error).message,
         programAddress: instruction.programAddress
       }
     };
   }
 };
 
-const parseJsonParsedInstruction = (instruction) => {
+const parseJsonParsedInstruction = (instruction: any): ParsedInstruction => {
   try {
     if (instruction.programId === SolSystem.SYSTEM_PROGRAM_ADDRESS) {
       return parseJsonParsedSystemProgramInstruction(instruction);
@@ -110,15 +201,15 @@ const parseJsonParsedInstruction = (instruction) => {
       key: instructionKeys.UNKNOWN,
       value: {
         ...normalizeJsonParsedInstruction(instruction),
-        error: err.message
+        error: (err as Error).message
       }
     };
   }
 };
 
-const parseSystemProgramInstruction = (instruction) => {
+const parseSystemProgramInstruction = (instruction: any): ParsedInstruction => {
   const identifiedInstruction = SolSystem.identifySystemInstruction(instruction);
-  const parsedInstruction = {};
+  const parsedInstruction = {} as ParsedInstruction;
   if (identifiedInstruction === SolSystem.SystemInstruction.TransferSol) {
     const parsedTransferSolInstruction = SolSystem.parseTransferSolInstruction(instruction);
     const { accounts, data } = parsedTransferSolInstruction;
@@ -143,15 +234,15 @@ const parseSystemProgramInstruction = (instruction) => {
   return parsedInstruction;
 };
 
-const parseMemoProgramInstruction = (instruction) => {
-  const parsedInstruction = {};
+const parseMemoProgramInstruction = (instruction: any): ParsedInstruction => {
+  const parsedInstruction = {} as ParsedInstruction;
   const parsedMemoInstruction = SolMemo.parseAddMemoInstruction({ ...instruction }); // Only one instruction with MEMO_PROGRAM_ADDRESS
   parsedInstruction.key = instructionKeys.MEMO;
   parsedInstruction.value = parsedMemoInstruction.data;
   return parsedInstruction;
 };
 
-const parseJsonParsedMemoProgramInstruction = (instruction) => {
+const parseJsonParsedMemoProgramInstruction = (instruction: any): ParsedInstruction => {
   const memo = instruction?.parsed;
   return {
     key: instructionKeys.MEMO,
@@ -159,7 +250,7 @@ const parseJsonParsedMemoProgramInstruction = (instruction) => {
   };
 };
 
-const parseAssociatedTokenProgramInstruction = (instruction) => {
+const parseAssociatedTokenProgramInstruction = (instruction: any): ParsedInstruction => {
   // Add data field if missing
   let processedInstruction = instruction;
   if (!instruction.data) {
@@ -202,7 +293,10 @@ const parseAssociatedTokenProgramInstruction = (instruction) => {
     };
   } else if (identifiedTokenInstruction === SolToken.AssociatedTokenInstruction.RecoverNestedAssociatedToken) {
     const parsedRecoverInstruction = SolToken.parseRecoverNestedAssociatedTokenInstruction(processedInstruction);
-    const { accounts } = parsedRecoverInstruction;
+    // TODO(bitcore-dln): @solana-program/token names these accounts nestedAssociatedAccountAddress,
+    // nestedTokenMintAddress, destinationAssociatedAccountAddress, walletAddress and ownerTokenMintAddress, so
+    // every read below is undefined and the instruction ends up in the unknown group with a TypeError
+    const accounts: Record<string, { address: string }> = parsedRecoverInstruction.accounts;
 
     return {
       key: instructionKeys.RECOVER_NESTED_ASSOCIATED_TOKEN,
@@ -223,8 +317,8 @@ const parseAssociatedTokenProgramInstruction = (instruction) => {
   }
 };
 
-const parseTokenProgramInstruction = (instruction) => {
-  const parsedInstruction = {};
+const parseTokenProgramInstruction = (instruction: any): ParsedInstruction => {
+  const parsedInstruction = {} as ParsedInstruction;
   const identifiedTokenInstruction = SolToken.identifyTokenInstruction(instruction);
   if (identifiedTokenInstruction === SolToken.TokenInstruction.Transfer) {
     const parsedTransferTokenInstruction = SolToken.parseTransferInstruction(instruction);
@@ -255,7 +349,7 @@ const parseTokenProgramInstruction = (instruction) => {
   return parsedInstruction;
 };
 
-const parseJsonParsedSystemProgramInstruction = (instruction) => {
+const parseJsonParsedSystemProgramInstruction = (instruction: any): ParsedInstruction => {
   const type = instruction?.parsed?.type;
   const info = instruction?.parsed?.info ?? {};
   if (type === 'transfer') {
@@ -277,14 +371,14 @@ const parseJsonParsedSystemProgramInstruction = (instruction) => {
   };
 };
 
-const parseJsonParsedAssociatedTokenProgramInstruction = (instruction) => {
+const parseJsonParsedAssociatedTokenProgramInstruction = (instruction: any): ParsedInstruction => {
   return {
     key: instructionKeys.UNKNOWN,
     value: normalizeJsonParsedInstruction(instruction)
   };
 };
 
-const parseJsonParsedTokenProgramInstruction = (instruction) => {
+const parseJsonParsedTokenProgramInstruction = (instruction: any): ParsedInstruction => {
   const type = instruction?.parsed?.type;
   const info = instruction?.parsed?.info ?? {};
   if (type === 'transfer') {
@@ -318,8 +412,8 @@ const parseJsonParsedTokenProgramInstruction = (instruction) => {
   };
 };
 
-const parseComputeBudgetProgramInstruction = (instruction) => {
-  const parsedInstruction = {};
+const parseComputeBudgetProgramInstruction = (instruction: any): ParsedInstruction => {
+  const parsedInstruction = {} as ParsedInstruction;
   const identifiedComputeBudgetInstruction = SolComputeBudget.identifyComputeBudgetInstruction(instruction);
   if (identifiedComputeBudgetInstruction === SolComputeBudget.ComputeBudgetInstruction.SetComputeUnitLimit) {
     const parsedSetComputeUnitLimitInstruction = SolComputeBudget.parseSetComputeUnitLimitInstruction(instruction);
@@ -341,77 +435,17 @@ const parseComputeBudgetProgramInstruction = (instruction) => {
   return parsedInstruction;
 };
 
-const parseJsonParsedComputeBudgetProgramInstruction = (instruction) => {
+const parseJsonParsedComputeBudgetProgramInstruction = (instruction: any): ParsedInstruction => {
   return {
     key: instructionKeys.UNKNOWN,
     value: normalizeJsonParsedInstruction(instruction)
   };
 };
 
-const normalizeJsonParsedInstruction = (instruction) => {
+const normalizeJsonParsedInstruction = (instruction: any) => {
   return {
     ...instruction,
     programAddress: instruction.programId
   };
 };
 
-
-/**
- * @typedef {Object} TransferSolInstruction
- * @property {number} amount - Amount of SOL to transfer in lamports
- * @property {'SOL'} currency - Currency type, always "SOL"
- * @property {string} destination - Destination wallet address
- * @property {string} source - Source wallet address
- */
-
-/**
- * @typedef {Object} AdvanceNonceAccountInstruction
- * @property {string} nonceAccount - Address of the nonce account
- * @property {string} nonceAuthority - Address of the nonce authority
- */
-
-/**
- * @typedef {Object} SetComputeUnitLimitInstruction
- * @property {number} computeUnitLimit - Maximum compute units allowed
- */
-
-/**
- * @typedef {Object} SetComputeUnitPriceInstruction
- * @property {true} priority - Whether this is a priority transaction
- * @property {number} microLamports - Price in micro-lamports per compute unit
- */
-
-/**
- * @typedef {Object} MemoInstruction
- * @property {string} memo - Memo text content
- */
-
-/**
- * @typedef {Object} TransferCheckedTokenInstruction
- * @property {number} amount
- * @property {string} authority
- * @property {number} decimals
- * @property {string} destination
- * @property {string} mint
- * @property {string} source
- */
-
-/**
- * @typedef {Object} TransferTokenInstruction
- * @property {number} amount
- * @property {string} authority
- * @property {string} destination
- * @property {string} source
- */
-
-/**
- * May also include additional unknown instructions
- * @typedef {Object} Instructions
- * @property {TransferSolInstruction[]} [transferSol]
- * @property {AdvanceNonceAccountInstruction[]} [advanceNonceAccount]
- * @property {SetComputeUnitLimitInstruction[]} [setComputeUnitLimit]
- * @property {SetComputeUnitPriceInstruction[]} [setComputeUnitPrice]
- * @property {MemoInstruction[]} [memo]
- * @property {TransferCheckedTokenInstruction[]} [transferCheckedToken]
- * @property {TransferTokenInstruction[]} [transferToken]
- */
