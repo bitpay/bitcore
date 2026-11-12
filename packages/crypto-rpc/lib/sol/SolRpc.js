@@ -4,7 +4,7 @@ import { pipe } from '@solana/functional';
 import bs58 from 'bs58';
 import { SOL_ERROR_MESSAGES } from './error_messages.js';
 import { addressesByLookupTableAddress } from './lookup-tables.js';
-import { parseInstructions } from './transaction-parser.js';
+import { parseInstructions, parseJsonParsedInstructions } from './transaction-parser.js';
 
 const {
   ComputeBudget: SolComputeBudget,
@@ -460,8 +460,10 @@ export class SolRpc {
    * 
    * @param {Object} params - Parameters for retrieving the transaction.
    * @param {string} params.txid - The transaction ID of the transaction to retrieve.
+   * @param {boolean} [params.includeInnerInstructions] - Also return innerInstructions, which costs a second (jsonParsed)
+   *   fetch for a tx that has any. Defaults to the client's includeInnerInstructions config, which defaults to false.
    */
-  async getTransaction({ txid }) {
+  async getTransaction({ txid, includeInnerInstructions = Boolean(this.config.includeInnerInstructions) }) {
     if (!txid || !this.isBase58(txid)) {
       return null;
     }
@@ -483,9 +485,24 @@ export class SolRpc {
     parsedTransaction.blockTime = Number(blockTime);
     parsedTransaction.slot = Number(slot);
 
-    if (lookupTablesUsed && !accountsLoaded) {
-      const parsedTx = await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send();
+    // Only the jsonParsed encoding parses inner instructions (instructions run by another program), and it's also where
+    // a lookup-table tx's accounts come from when loadedAddresses couldn't be used, so fetch it at most once for both.
+    // Inner instructions are opt-in so callers that don't read them (bitcore-node) don't pay for the second fetch.
+    const hasInnerInstructions = Array.isArray(meta?.innerInstructions) && meta.innerInstructions.length > 0;
+    const needsInnerInstructions = includeInnerInstructions && hasInnerInstructions;
+    const needsLookupTableAccounts = lookupTablesUsed && !accountsLoaded;
+    const parsedTx = needsInnerInstructions || needsLookupTableAccounts
+      ? await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send()
+      : null;
+    if (needsInnerInstructions && !parsedTx?.meta) {
+      // Returning {} here would read as "no inner instructions" and hide transfers made through another program
+      throw new Error(SOL_ERROR_MESSAGES.INNER_INSTRUCTIONS_UNAVAILABLE);
+    }
+    if (includeInnerInstructions) {
+      parsedTransaction.innerInstructions = this.#parseInnerInstructions(parsedTx?.meta?.innerInstructions);
+    }
 
+    if (needsLookupTableAccounts) {
       return {
         ...parsedTransaction,
         meta: parsedTx.meta,
@@ -496,6 +513,45 @@ export class SolRpc {
     return {
       ...parsedTransaction,
       meta
+    };
+  }
+
+  #parseInnerInstructions(jsonParsedInnerInstructions) {
+    const parsedInnerInstructions = {};
+    if (!Array.isArray(jsonParsedInnerInstructions) || jsonParsedInnerInstructions.length === 0) {
+      return parsedInnerInstructions;
+    }
+
+    for (const innerInstructionGroup of jsonParsedInnerInstructions) {
+      const parsedInstructionGroup = parseJsonParsedInstructions(innerInstructionGroup.instructions ?? []);
+      for (const [instructionKey, values] of Object.entries(parsedInstructionGroup)) {
+        if (!parsedInnerInstructions[instructionKey]) {
+          parsedInnerInstructions[instructionKey] = [];
+        }
+
+        for (const value of values) {
+          parsedInnerInstructions[instructionKey].push(this.#addInnerInstructionContext({
+            value,
+            topLevelInstructionIndex: innerInstructionGroup.index
+          }));
+        }
+      }
+    }
+
+    return parsedInnerInstructions;
+  }
+
+  #addInnerInstructionContext({ value, topLevelInstructionIndex }) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return {
+        topLevelInstructionIndex,
+        ...value
+      };
+    }
+
+    return {
+      topLevelInstructionIndex,
+      value
     };
   }
 
