@@ -5,12 +5,42 @@ import stableStringify from '@solana/fast-stable-stringify';
 import { parseJsonWithBigInts, stringifyJsonWithBigints } from '@solana/rpc-spec-types';
 import nodeFetch from 'node-fetch';
 
+/** JSON-RPC request as Solana Kit hands it to a transport */
+interface JsonRpcPayload {
+  method: string;
+  params?: unknown;
+}
+
+/** The parts of a fetch Response this transport reads; node-fetch's and the WHATWG one both fit */
+export interface SolanaHttpFetchResponse {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: any;
+  body?: any;
+  text(): Promise<string>;
+}
+
+/** A fetch implementation the transport can send through: node-fetch by default, or anything shaped like it */
+export type SolanaHttpFetch = (url: string, init: Record<string, any>) => Promise<SolanaHttpFetchResponse>;
+
+export interface SolanaHttpTransportOptions {
+  /** optional fetch implementation */
+  fetch?: SolanaHttpFetch;
+}
+
+interface PendingRequest {
+  controller: AbortController;
+  consumers: number;
+  promise: Promise<unknown>;
+}
+
 /**
  * select the shared Node agent for each request and redirect
  * @param {URL} url - request destination
  * @returns {http.Agent|https.Agent} agent matching the destination protocol
  */
-function selectAgent(url) {
+function selectAgent(url: URL) {
   return url.protocol === 'http:' ? http.globalAgent : https.globalAgent;
 }
 
@@ -20,8 +50,8 @@ function selectAgent(url) {
  * @param {Error} err - error thrown while sending the request or reading the response
  * @returns {Error} the same error, with URLs reduced to scheme and host
  */
-function redactUrls(err) {
-  const toOrigin = text => text.replace(/(https?:\/\/)(?:[^\s/?#@]*@)?([^\s/?#]+)[^\s]*/g, '$1$2');
+function redactUrls(err: Error) {
+  const toOrigin = (text: string) => text.replace(/(https?:\/\/)(?:[^\s/?#@]*@)?([^\s/?#]+)[^\s]*/g, '$1$2');
   if (err && typeof err.message === 'string') {
     err.message = toOrigin(err.message);
   }
@@ -38,9 +68,9 @@ function redactUrls(err) {
  * @param {Function} [options.fetch] - optional fetch implementation
  * @returns {Function} Solana Kit RPC transport
  */
-export function createSolanaHttpTransport(url, options = {}) {
-  const fetch = options.fetch || nodeFetch;
-  let pendingRequests;
+export function createSolanaHttpTransport(url: string, options: SolanaHttpTransportOptions = {}): SolKit.RpcTransport {
+  const fetch: SolanaHttpFetch = options.fetch || nodeFetch;
+  let pendingRequests: Map<string, PendingRequest> | undefined;
 
   /**
    * send a JSON-RPC payload without losing integer precision
@@ -48,11 +78,11 @@ export function createSolanaHttpTransport(url, options = {}) {
    * @param {AbortSignal} signal - cancellation signal for the shared request
    * @returns {Promise<Object>} JSON-RPC response
    */
-  async function sendRequest(payload, signal) {
+  async function sendRequest(payload: unknown, signal: AbortSignal) {
     try {
       return await fetchAndParse(payload, signal);
     } catch (err) {
-      throw redactUrls(err);
+      throw redactUrls(err as Error);
     }
   }
 
@@ -62,7 +92,7 @@ export function createSolanaHttpTransport(url, options = {}) {
    * @param {AbortSignal} signal - cancellation signal for the shared request
    * @returns {Promise<Object>} JSON-RPC response
    */
-  async function fetchAndParse(payload, signal) {
+  async function fetchAndParse(payload: unknown, signal: AbortSignal) {
     const response = await fetch(url, {
       method: 'POST',
       agent: selectAgent,
@@ -96,17 +126,18 @@ export function createSolanaHttpTransport(url, options = {}) {
    * @param {AbortSignal} [request.signal] - cancellation signal for this caller
    * @returns {Promise<Object>} JSON-RPC response
    */
-  return function transport({ payload, signal }) {
+  return function transport({ payload, signal }: { payload: unknown; signal?: AbortSignal }): Promise<any> {
     if (signal && signal.aborted) {
       return Promise.reject(signal.reason);
     }
+    const { method, params } = payload as JsonRpcPayload;
     if (!pendingRequests) {
       pendingRequests = new Map();
       queueMicrotask(() => {
         pendingRequests = undefined;
       });
     }
-    const key = stableStringify([payload.method, payload.params]);
+    const key = stableStringify([method, params]);
     let pendingRequest = pendingRequests.get(key);
     if (!pendingRequest) {
       const controller = new AbortController();
@@ -128,7 +159,7 @@ export function createSolanaHttpTransport(url, options = {}) {
       /**
        * cancel this consumer and abort the network request when no consumers remain
        */
-      function handleAbort() {
+      const handleAbort = () => {
         if (finished) {
           return;
         }
@@ -141,7 +172,7 @@ export function createSolanaHttpTransport(url, options = {}) {
           }
         });
         reject(signal.reason);
-      }
+      };
 
       signal.addEventListener('abort', handleAbort, { once: true });
       pendingRequest.promise.then((result) => {
