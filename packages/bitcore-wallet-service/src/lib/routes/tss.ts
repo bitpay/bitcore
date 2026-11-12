@@ -3,6 +3,8 @@ import * as Types from '../../types/expressapp';
 import { TssKeyGen, TssSign } from '../tss';
 import { authTssKeyGenRequest, authTssSignRequest } from './middleware/authTssRequest';
 import { createWalletLimiter } from './middleware/createWalletLimiter';
+import { validateTssKeyGenMessage } from './middleware/validateTssKeyGenMessage';
+import { validateTssKeyGenRegistration } from './middleware/validateTssKeyGenRegistration';
 import { verifyTssMessage } from './middleware/verifyTssMessage';
 
 
@@ -22,7 +24,7 @@ export class TssRouter {
     
     /** Key generation methods */
 
-    router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), authTssKeyGenRequest(), verifyTssMessage, async function(req, res) {
+    router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), validateTssKeyGenMessage, authTssKeyGenRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
@@ -35,7 +37,7 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/keygen/:id/register', authTssKeyGenRequest(), async function(req, res) {
+    router.post('/v1/tss/keygen/:id/register', validateTssKeyGenRegistration, authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
         const copayerId = req.headers['x-identity'];

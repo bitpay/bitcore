@@ -60,6 +60,12 @@ export function authTssKeyGenRequest(params: { bypassExpired?: boolean } = {}): 
         throw Errors.TSS_SESSION_EXPIRED;
       }
 
+      const message = body?.message;
+      if (message && (message.partyId >= session.n ||
+        (Array.isArray(message.p2pMessages) && message.p2pMessages.some(m => m.to >= session.n)))) {
+        throw Errors.TSS_INVALID_MESSAGE.withMessage('Party ID is out of range for this session');
+      }
+
       const isRound0Msg = body?.message?.round === 0;
       const awaitingJoiners = session.participants.some(p => !p); // session.participants is initiated with n slots (initally null) that get populated as participants join
       const participantIdx = session.participants.indexOf(copayerId); // equals -1 if the copayer has not joined yet
@@ -85,6 +91,10 @@ export function authTssKeyGenRequest(params: { bypassExpired?: boolean } = {}): 
       
       if (partyId < 0 || partyId >= session.n || !Number.isInteger(partyId)) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
+      }
+
+      if (message && participantIdx > -1 && message.partyId !== participantIdx) {
+        throw Errors.NOT_AUTHORIZED.withMessage('Copayer does not own this partyId');
       }
 
       let pubKey: string = null;
