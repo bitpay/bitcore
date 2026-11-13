@@ -16,7 +16,7 @@ export const TOKEN_2022_PROGRAM_ADDRESS = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXE
 // checking the same result shape, so a change to getAccountInfo's return value only needs to be taught to
 // one assertion, not two copy-pasted ones. This is a plain function with no describe/it of its own, so
 // importing it has no side effects on either file's own test run.
-export const assertAccountInfoShape = result => {
+export const assertAccountInfoShape = (result: any) => {
   expect(result).to.be.an('object').that.is.not.null;
   expect(result).to.have.all.keys('lamports', 'atas', 'owner', 'space');
   expect(result).to.have.property('lamports').that.is.a('number').greaterThanOrEqual(0);
@@ -49,9 +49,9 @@ export const assertAccountInfoShape = result => {
 // asserting solRpc.getAccountInfo()/getTokenAccountsByOwner() still resolve correctly wouldn't catch
 // that, since removing dataSlice doesn't change what those methods return - the account data payload
 // they're now silently paying to fetch is simply unused.
-export function recordGetAccountInfoCalls(rpcClient) {
+export function recordGetAccountInfoCalls(rpcClient: { rpc: any }) {
   const realRpc = rpcClient.rpc;
-  const calls = [];
+  const calls: { args: any[]; response: any }[] = [];
   rpcClient.rpc = new Proxy(realRpc, {
     get(target, prop, _receiver) {
       if (prop !== 'getAccountInfo') {

@@ -1,9 +1,10 @@
 import http from 'http';
+import { AddressInfo } from 'net';
 import { SolKit } from '@bitpay-labs/crypto-wallet-core';
 import { expect } from 'chai';
 import nodeFetch from 'node-fetch';
 import sinon from 'sinon';
-import { createSolanaHttpTransport } from '../lib/sol/http-transport';
+import { SolanaHttpTransportOptions, createSolanaHttpTransport } from '../lib/sol/http-transport';
 import { SolRpc } from '../lib/sol/SolRpc';
 
 describe('SOL HTTP transport', function() {
@@ -21,7 +22,7 @@ describe('SOL HTTP transport', function() {
     requests = [];
     respond = (body, res) => res.end(slotResponse(body.id));
     server = http.createServer((req, res) => {
-      const chunks = [];
+      const chunks: Buffer[] = [];
       req.on('data', chunk => chunks.push(chunk));
       req.on('end', () => {
         const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -43,7 +44,7 @@ describe('SOL HTTP transport', function() {
     await new Promise(resolve => server.close(resolve));
   });
 
-  const rpcFor = (options) => SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(endpoint, options));
+  const rpcFor = (options?: SolanaHttpTransportOptions) => SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(endpoint, options));
 
   it('works as a Kit transport and keeps u64 precision', async function() {
     const slot = await rpcFor().getSlot().send();
@@ -163,7 +164,7 @@ describe('SOL HTTP transport', function() {
     const sendFrom = async (url) => {
       try {
         await SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(url)).getSlot().send();
-      } catch (err) {
+      } catch (err: any) {
         return err;
       }
       throw new Error('expected the request to fail');
@@ -171,8 +172,8 @@ describe('SOL HTTP transport', function() {
 
     it('keeps them out of the error when the connection fails', async function() {
       const closed = http.createServer();
-      await new Promise(resolve => closed.listen(0, '127.0.0.1', resolve));
-      const closedPort = closed.address().port;
+      await new Promise<void>(resolve => closed.listen(0, '127.0.0.1', resolve));
+      const closedPort = (closed.address() as AddressInfo).port;
       await new Promise(resolve => closed.close(resolve));
 
       const error = await sendFrom(secretsIn(`127.0.0.1:${closedPort}`));

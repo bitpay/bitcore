@@ -13,7 +13,7 @@ import { SolRpc } from '../lib/sol/SolRpc';
 import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages';
 import { parseInstructions, instructionKeys } from '../lib/sol/transaction-parser';
 import { assertAccountInfoShape, recordGetAccountInfoCalls, SYSTEM_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from './getAccountInfo.helper';
-import { recordRpcCalls } from './solRpcCalls.helper';
+import { RpcCallResponder, recordRpcCalls } from './solRpcCalls.helper';
 import privateKey1 from '../blockchain/solana/test/keypair/id.json';
 import privateKey2 from '../blockchain/solana/test/keypair/id2.json';
 import privateKey3 from '../blockchain/solana/test/keypair/id3.json';
@@ -69,14 +69,14 @@ describe('SOL Tests', () => {
       expect(retVal.meta.preTokenBalances.every(bal => {
         try {
           return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
-        } catch (err) {
+        } catch (err: any) {
           return false;
         }
       })).to.be.true;
       expect(retVal.meta.postTokenBalances.every(bal => {
         try {
           return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
-        } catch (err) {
+        } catch (err: any) {
           return false;
         }
       })).to.be.true;
@@ -412,7 +412,7 @@ describe('SOL Tests', () => {
         try {
           await solRpc.estimateFee({ rawTx });
           expect.fail('Should have thrown an error');
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal('Could not decode provided raw transaction');
         }
       });
@@ -430,7 +430,7 @@ describe('SOL Tests', () => {
         try {
           await solRpc.estimateFee({ rawTx });
           expect.fail('Should have thrown an error');
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal('Could not decode provided raw transaction');
         }
       });
@@ -551,8 +551,8 @@ describe('SOL Tests', () => {
       // encoding, so it isn't compared: getTransaction returns the base64 meta, but used to return the jsonParsed one
       // for lookup-table txs.
       const META_FIELDS = ['fee', 'err', 'preBalances', 'postBalances', 'preTokenBalances', 'postTokenBalances', 'logMessages', 'computeUnitsConsumed'];
-      const txids = {};
-      const loadedAccounts = {};
+      const txids: Record<string, any> = {};
+      const loadedAccounts: Record<string, any> = {};
       // The lookup table created by the tx with inner instructions, which the tx's inner SOL transfer funds
       let innerTransferDestination;
 
@@ -592,7 +592,7 @@ describe('SOL Tests', () => {
       };
 
       // Calls getTransaction and returns the confirmed slots seen just before and just after it
-      const getTransactionTimed = async (txid, respond) => {
+      const getTransactionTimed = async (txid: string, respond?: RpcCallResponder) => {
         const slotBefore = await solRpc.rpc.getSlot({ commitment: 'confirmed' }).send();
         const recorder = recordRpcCalls(solRpc, { respond });
         let tx;
@@ -606,7 +606,7 @@ describe('SOL Tests', () => {
       };
 
       // A finalized tx: every field getTransaction returns, checked against the validator
-      const expectMatchesValidator = async (txid, respond) => {
+      const expectMatchesValidator = async (txid: string, respond?: RpcCallResponder) => {
         const { tx, slotBefore, slotAfter, calls } = await getTransactionTimed(txid, respond);
         const { jsonParsed, status, compiled, decompiled } = await fetchFromValidator(txid);
         assertValidTransaction(tx, true);
@@ -617,8 +617,8 @@ describe('SOL Tests', () => {
         expect(tx.version).to.equal(compiled.version);
         expect(tx.feePayerAddress).to.equal(decompiled.feePayer.address);
         expect(tx.lifetimeConstraint).to.deep.equal({
-          blockhash: decompiled.lifetimeConstraint.blockhash,
-          lastValidBlockHeight: decompiled.lifetimeConstraint.lastValidBlockHeight
+          blockhash: (decompiled.lifetimeConstraint as any).blockhash,
+          lastValidBlockHeight: (decompiled.lifetimeConstraint as any).lastValidBlockHeight
         });
         expect(tx.instructions).to.deep.equal(parseInstructions(decompiled.instructions));
         expect(tx.accountKeys).to.deep.equal(jsonParsed.transaction.message.accountKeys.map(({ pubkey }) => pubkey));
@@ -701,9 +701,9 @@ describe('SOL Tests', () => {
         const { jsonParsed } = await fetchFromValidator(txids.innerInstructions);
         const innerGroups = jsonParsed.meta.innerInstructions;
         expect(innerGroups).to.not.be.empty;
-        const returned = Object.values(tx.innerInstructions).flat();
+        const returned = Object.values(tx.innerInstructions!).flat();
         expect(returned).to.have.lengthOf(innerGroups.reduce((count, group) => count + group.instructions.length, 0));
-        expect(new Set(returned.map(({ topLevelInstructionIndex }) => topLevelInstructionIndex))).to.deep.equal(new Set(innerGroups.map(({ index }) => index)));
+        expect(new Set(returned.map(({ topLevelInstructionIndex }: any) => topLevelInstructionIndex))).to.deep.equal(new Set(innerGroups.map(({ index }) => index)));
         expect(calls.filter(({ method, args }) => method === 'getTransaction' && args[1]?.encoding === 'jsonParsed')).to.have.lengthOf(1);
         const [innerTransfer] = innerGroups[0].instructions.filter(({ program, parsed }) => program === 'system' && parsed.type === 'transfer');
         expect(tx.innerInstructions[instructionKeys.TRANSFER_SOL]).to.deep.equal([
@@ -749,7 +749,7 @@ describe('SOL Tests', () => {
 
         // Answers status lookups with `status` (and `recentStatus` when the recent cache alone is searched) and
         // tip lookups with `tip`; everything else goes to the validator
-        const answer = ({ status, recentStatus = status, tip, statusError, slotError }) => ({ method, args, send }) => {
+        const answer = ({ status, recentStatus = status, tip, statusError, slotError }: any): RpcCallResponder => ({ method, args, send }) => {
           if (method === 'getSignatureStatuses') {
             expect(args[0]).to.deep.equal([txids.legacy]);
             if (statusError) throw statusError;
@@ -865,7 +865,7 @@ describe('SOL Tests', () => {
       });
 
       describe('RPC requests', () => {
-        const record = async (fn, respond) => {
+        const record = async (fn: () => Promise<any>, respond?: RpcCallResponder) => {
           const recorder = recordRpcCalls(solRpc, { respond });
           try {
             await fn();
@@ -965,7 +965,7 @@ describe('SOL Tests', () => {
           assertValidTransaction(transaction, true);
         }
       });
-    }, 5e3);
+    });
 
     describe('getTransactionCount', () => {
       const numTransactions = 2;
@@ -983,7 +983,7 @@ describe('SOL Tests', () => {
       it('returns the count of confirmed transactions for a valid account address', async () => {
         const count = await solRpc.getTransactionCount({ address: targetKeypair.address });
         expect(count).to.equal(numTransactions + 1); // 1 is the createAccount transaction
-      }, 5e3);
+      });
     });
 
     describe('getRawTransaction', () => {
@@ -1076,7 +1076,7 @@ describe('SOL Tests', () => {
           expect(latestSignature).to.have.property('blockHeight').that.is.a('number').greaterThan(0);
           expect(latestSignature).to.have.property('blockTime').that.is.a('number').greaterThan(0);
           expect(latestSignature).to.have.property('signature').that.is.a('string');
-        } catch (err) {
+        } catch (err: any) {
           // The catch block handles the expected error of all prior blocks checked not having a signature
           expect(err.message.includes('No signatures found in the last')).to.be.true;
         }
@@ -1153,7 +1153,7 @@ describe('SOL Tests', () => {
           try {
             await solRpc.deriveAta({ solAddress: 'invalid string', mintAddress: mintKeypair.address });
             assert.fail('Test failed: deriveAta did not throw as expected');
-          } catch (err) {
+          } catch (err: any) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.NON_BASE58_PARAM);
           }
         });
@@ -1161,7 +1161,7 @@ describe('SOL Tests', () => {
           try {
             await solRpc.deriveAta({ mintAddress: mintKeypair.address });
             assert.fail('Test failed: deriveAta did not throw as expected');
-          } catch (err) {
+          } catch (err: any) {
             expect(err.message).to.equal('Cannot read properties of undefined (reading \'length\')');
           }
         });
@@ -1181,14 +1181,14 @@ describe('SOL Tests', () => {
         it(`Throws "${SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED}" if ATA not found`, async () => {
           try {
             await solRpc.getConfirmedAta({ solAddress: testKeypair.address, mintAddress: mintKeypair.address });
-          } catch (err) {
+          } catch (err: any) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED);
           }
         });
         it(`Throws ${SOL_ERROR_MESSAGES.UNSPECIFIED_INVALID_PARAMETER} if passed in address not found`, async () => {
           try {
             await solRpc.getConfirmedAta({ solAddress: 'invalid sol address', mintAddress: mintKeypair.address });
-          } catch (err) {
+          } catch (err: any) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.UNSPECIFIED_INVALID_PARAMETER);
           }
         });
@@ -1196,7 +1196,7 @@ describe('SOL Tests', () => {
           const validBase58String = (await SolKit.generateKeyPairSigner()).address;
           try {
             await solRpc.getConfirmedAta({ solAddress: testKeypair.address, mintAddress: validBase58String });
-          } catch (err) {
+          } catch (err: any) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER);
           }
         });
@@ -1239,7 +1239,7 @@ describe('SOL Tests', () => {
           try {
             await solRpc.createAta({ ownerAddress: testKeypair.address, mintAddress: invalidMintAddress });
             throw new Error('should have thrown');
-          } catch (err) {
+          } catch (err: any) {
             expect(err.message).to.equal(expectedErrorMessage);
           } finally {
             expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
@@ -1636,7 +1636,7 @@ describe('SOL Tests', () => {
         try {
           const newKeypair = await SolKit.generateKeyPairSigner();
           await solRpc.getTokenAccountsByOwner({ address: newKeypair.address });
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal(SOL_ERROR_MESSAGES.SOL_ACCT_NOT_FOUND);
         }
       });
@@ -1644,7 +1644,7 @@ describe('SOL Tests', () => {
         try {
           const newKeypair = await SolKit.generateKeyPairSigner();
           await solRpc.getTokenAccountsByOwner({ address: newKeypair.address, skipExistenceCheck: true });
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal(SOL_ERROR_MESSAGES.SOL_ACCT_NOT_FOUND);
         }
       });
@@ -1652,8 +1652,8 @@ describe('SOL Tests', () => {
   });
   describe('Transaction Parser', () => {
     // Valid base58 mock addresses for transaction parser tests
-    const mockSenderAddress = '11111111111111111111111111111112';
-    const mockReceiverAddress = '11111111111111111111111111111113';
+    const mockSenderAddress: any = '11111111111111111111111111111112';
+    const mockReceiverAddress: any = '11111111111111111111111111111113';
     const mockNonceAccountAddress = '11111111111111111111111111111114';
 
     describe('parseInstructions', () => {
@@ -1671,7 +1671,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.TRANSFER_SOL);
         expect(result[instructionKeys.TRANSFER_SOL]).to.be.an('array').with.length(1);
 
-        const transferSol = result[instructionKeys.TRANSFER_SOL][0];
+        const transferSol = result[instructionKeys.TRANSFER_SOL]![0];
         expect(transferSol).to.have.property('amount').that.is.a('number');
         expect(transferSol).to.have.property('currency', 'SOL');
         expect(transferSol).to.have.property('source').that.is.a('string');
@@ -1693,7 +1693,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.ADVANCE_NONCE_ACCOUNT);
         expect(result[instructionKeys.ADVANCE_NONCE_ACCOUNT]).to.be.an('array').with.length(1);
 
-        const advanceNonce = result[instructionKeys.ADVANCE_NONCE_ACCOUNT][0];
+        const advanceNonce = result[instructionKeys.ADVANCE_NONCE_ACCOUNT]![0];
         expect(advanceNonce).to.have.property('nonceAccount').that.is.a('string');
         expect(advanceNonce).to.have.property('nonceAuthority').that.is.a('string');
       });
@@ -1710,7 +1710,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.MEMO);
         expect(result[instructionKeys.MEMO]).to.be.an('array').with.length(1);
 
-        const memo = result[instructionKeys.MEMO][0];
+        const memo = result[instructionKeys.MEMO]![0];
         expect(memo).to.have.property('memo', mockMemo);
       });
 
@@ -1724,7 +1724,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.SET_COMPUTE_UNIT_LIMIT);
         expect(result[instructionKeys.SET_COMPUTE_UNIT_LIMIT]).to.be.an('array').with.length(1);
 
-        const computeLimit = result[instructionKeys.SET_COMPUTE_UNIT_LIMIT][0];
+        const computeLimit = result[instructionKeys.SET_COMPUTE_UNIT_LIMIT]![0];
         expect(computeLimit).to.have.property('computeUnitLimit').that.is.a('number');
       });
 
@@ -1738,7 +1738,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.SET_COMPUTE_UNIT_PRICE);
         expect(result[instructionKeys.SET_COMPUTE_UNIT_PRICE]).to.be.an('array').with.length(1);
 
-        const computePrice = result[instructionKeys.SET_COMPUTE_UNIT_PRICE][0];
+        const computePrice = result[instructionKeys.SET_COMPUTE_UNIT_PRICE]![0];
         expect(computePrice).to.have.property('priority', true);
         expect(computePrice).to.have.property('microLamports').that.is.a('number');
       });
@@ -1761,7 +1761,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.TRANSFER_TOKEN);
         expect(result[instructionKeys.TRANSFER_TOKEN]).to.be.an('array').with.length(1);
 
-        const transferToken = result[instructionKeys.TRANSFER_TOKEN][0];
+        const transferToken = result[instructionKeys.TRANSFER_TOKEN]![0];
         expect(transferToken).to.have.property('amount').that.is.a('number');
         expect(transferToken).to.have.property('authority').that.is.a('string');
         expect(transferToken).to.have.property('source').that.is.a('string');
@@ -1788,7 +1788,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.TRANSFER_CHECKED_TOKEN);
         expect(result[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.be.an('array').with.length(1);
 
-        const transferChecked = result[instructionKeys.TRANSFER_CHECKED_TOKEN][0];
+        const transferChecked = result[instructionKeys.TRANSFER_CHECKED_TOKEN]![0];
         expect(transferChecked).to.have.property('amount').that.is.a('number');
         expect(transferChecked).to.have.property('authority').that.is.a('string');
         expect(transferChecked).to.have.property('source').that.is.a('string');
@@ -1818,7 +1818,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.CREATE_ASSOCIATED_TOKEN);
         expect(result[instructionKeys.CREATE_ASSOCIATED_TOKEN]).to.be.an('array').with.length(1);
 
-        const createAta = result[instructionKeys.CREATE_ASSOCIATED_TOKEN][0];
+        const createAta = result[instructionKeys.CREATE_ASSOCIATED_TOKEN]![0];
         expect(createAta).to.have.property('payer').that.is.a('string');
         expect(createAta).to.have.property('associatedTokenAccount').that.is.a('string');
         expect(createAta).to.have.property('owner').that.is.a('string');
@@ -1849,7 +1849,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.CREATE_ASSOCIATED_TOKEN_IDEMPOTENT);
         expect(result[instructionKeys.CREATE_ASSOCIATED_TOKEN_IDEMPOTENT]).to.be.an('array').with.length(1);
 
-        const createAtaIdempotent = result[instructionKeys.CREATE_ASSOCIATED_TOKEN_IDEMPOTENT][0];
+        const createAtaIdempotent = result[instructionKeys.CREATE_ASSOCIATED_TOKEN_IDEMPOTENT]![0];
         expect(createAtaIdempotent).to.have.property('payer').that.is.a('string');
         expect(createAtaIdempotent).to.have.property('associatedTokenAccount').that.is.a('string');
         expect(createAtaIdempotent).to.have.property('owner').that.is.a('string');
@@ -1868,7 +1868,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.UNKNOWN);
         expect(result[instructionKeys.UNKNOWN]).to.be.an('array').with.length(1);
 
-        const unknownInstruction = result[instructionKeys.UNKNOWN][0];
+        const unknownInstruction = result[instructionKeys.UNKNOWN]![0];
         expect(unknownInstruction).to.have.property('programAddress', 'UnknownProgram11111111111111111111111111111');
       });
 
@@ -1883,7 +1883,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.UNKNOWN);
         expect(result[instructionKeys.UNKNOWN]).to.be.an('array').with.length(1);
 
-        const errorInstruction = result[instructionKeys.UNKNOWN][0];
+        const errorInstruction = result[instructionKeys.UNKNOWN]![0];
         expect(errorInstruction).to.have.property('error').that.is.a('string');
         expect(errorInstruction).to.have.property('programAddress', SolSystem.SYSTEM_PROGRAM_ADDRESS);
       });
@@ -1912,7 +1912,7 @@ describe('SOL Tests', () => {
         expect(result).to.have.property(instructionKeys.TRANSFER_SOL);
         expect(result[instructionKeys.TRANSFER_SOL]).to.be.an('array').with.length(2);
 
-        for (const transfer of result[instructionKeys.TRANSFER_SOL]) {
+        for (const transfer of result[instructionKeys.TRANSFER_SOL]!) {
           expect(transfer).to.have.property('amount').that.is.a('number');
           expect(transfer).to.have.property('currency', 'SOL');
         }
@@ -2028,9 +2028,9 @@ describe('SOL Tests', () => {
  * @returns 
  */
 async function createNonceAccount(
-  solRpc,
-  feePayerAndAuthorityKeypair,
-  nonceKeypair
+  solRpc: any,
+  feePayerAndAuthorityKeypair: any,
+  nonceKeypair: any
 ) {
   try {
     // Get the min balance for rent exception
@@ -2070,7 +2070,7 @@ async function createNonceAccount(
     const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
     await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
     return SolKit.getSignatureFromTransaction(signedTransactionMessage);
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error creating nonce account:', err);
     throw err;
   }
@@ -2084,7 +2084,7 @@ async function createNonceAccount(
  * @param {number} amountInLamports
  * @param {0|'legacy'} [version=0]
  */
-async function sendTransaction(solRpc, fromKeypair, toKeypair, amountInLamports, version = 0) {
+async function sendTransaction(solRpc: any, fromKeypair: any, toKeypair: any, amountInLamports: any, version: any = 0) {
   const transaction = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, amountInLamports, version);
   const signedTransaction = await SolKit.signTransactionMessageWithSigners(transaction);
 
@@ -2101,10 +2101,10 @@ async function sendTransaction(solRpc, fromKeypair, toKeypair, amountInLamports,
  * @param {number} amountInLamports 
  */
 async function createRawTransaction(
-  rpc,
-  fromKeypair,
-  toKeypair,
-  amountInLamports
+  rpc: any,
+  fromKeypair: any,
+  toKeypair: any,
+  amountInLamports: any
 ) {
   const transaction = await createUnsignedTransaction(rpc, fromKeypair, toKeypair, amountInLamports);
   const signedTransaction = await SolKit.signTransactionMessageWithSigners(transaction);
@@ -2121,11 +2121,11 @@ async function createRawTransaction(
  * @param {0 | 'legacy'} [version=0]
  */
 async function createUnsignedTransaction(
-  rpc,
-  fromKeypair,
-  toKeypair,
-  amountInLamports,
-  version = 0
+  rpc: any,
+  fromKeypair: any,
+  toKeypair: any,
+  amountInLamports: any,
+  version: any = 0
 ) {
   const { value: recentBlockhash } = await rpc.getLatestBlockhash().send();
 
@@ -2158,7 +2158,7 @@ async function createAccount({
   feePayerKeypair,
   version = 0,
   commitment = 'confirmed'
-}
+}: any
 ) {
   const keypair = await SolKit.generateKeyPairSigner();
   const space = 0;
@@ -2196,7 +2196,7 @@ async function createAccount({
  * @param {SolKit.KeyPairSigner<string>} params.mintAuthority
  * @param {number} params.decimals
  */
-async function createMint({ solRpc, payer, mint, mintAuthority, decimals }) {
+async function createMint({ solRpc, payer, mint, mintAuthority, decimals }: any) {
   const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
   const mintSpace = SolToken.getMintSize();
   const rentLamports = await solRpc.rpc.getMinimumBalanceForRentExemption(mintSpace).send();
@@ -2241,7 +2241,7 @@ async function createMint({ solRpc, payer, mint, mintAuthority, decimals }) {
  * @param {SolKit.Address<string>} params.mint
  * @param {SolKit.KeyPairSigner<string>} params.payer
  */
-async function createAta({ solRpc, owner, mint, payer }) {
+async function createAta({ solRpc, owner, mint, payer }: any) {
   const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
 
   const [ata] = await SolToken.findAssociatedTokenPda({
@@ -2280,9 +2280,9 @@ async function createAta({ solRpc, owner, mint, payer }) {
  * @param {number} amountInLamports 
  * @param {0 | 'legacy'} [version=0]
  */
-async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair, version, lookupTableAddress, amountInLamports }) {
+async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair, version, lookupTableAddress, amountInLamports }: any) {
   try {
-    const unsignedTransactionMessage = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, amountInLamports, version);
+    const unsignedTransactionMessage: any = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, amountInLamports, version);
 
     // Fetch JSON parsed representation of the lookup table from the RPC
     const lookupTableAccount = await SolKit.fetchJsonParsedAccount(solRpc.rpc, lookupTableAddress);
@@ -2291,15 +2291,15 @@ async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair
 
     // Compress transaction message using lookup table
     const transactionMessageWithLookupTables = SolKit.compressTransactionMessageUsingAddressLookupTables(unsignedTransactionMessage, {
-      [lookupTableAddress]: lookupTableAccount.data.addresses
+      [lookupTableAddress]: (lookupTableAccount.data as any).addresses
     });
 
-    const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
+    const signedTransactionMessage: any = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
     const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
     await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
     const signature = SolKit.getSignatureFromTransaction(signedTransactionMessage);
     return signature;
-  } catch (err) {
+  } catch (err: any) {
     console.error('err', err);
     throw err;
   }
@@ -2316,7 +2316,7 @@ async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair
  * @param {string} params.lut1Address;
  * @param {string} params.lut2Address}
  */
-async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypair, targetKeypair, keypair3, amountInLamports, otherAmountInLamports, lut1Address, lut2Address }) {
+async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypair, targetKeypair, keypair3, amountInLamports, otherAmountInLamports, lut1Address, lut2Address }: any) {
   const { rpc, rpcSubscriptions } = solRpc;
   // This should set up a transaction in which targetKeypair's balance difference is 1000, and there are other transfers to create noise
 
@@ -2351,8 +2351,8 @@ async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypa
 
   // Compress unsigned transaction mesage with LUTs
   const transactionMessageWithLookupTables = SolKit.compressTransactionMessageUsingAddressLookupTables(unsignedTransactionMessage, {
-    [lut1Address]: lutAcct1.data.addresses,
-    [lut2Address]: lutAcct2.data.addresses,
+    [lut1Address]: (lutAcct1 as any).data.addresses,
+    [lut2Address]: (lutAcct2 as any).data.addresses,
   });
 
   const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
@@ -2370,7 +2370,7 @@ async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypa
  * @param {SolKit.KeyPairSigner<string>} [params.toKeypair] - its address is the table's only entry, unless `addresses` is given
  * @param {string[]} [params.addresses] - the table's entries
  */
-async function createLookupTable({ solRpc, fromKeypair, toKeypair, addresses = [toKeypair.address] }) {
+async function createLookupTable({ solRpc, fromKeypair, toKeypair, addresses = [toKeypair.address] }: any) {
   try {
     const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
     const { value: recentBlockhash } = await solRpc.rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
@@ -2419,7 +2419,7 @@ async function createLookupTable({ solRpc, fromKeypair, toKeypair, addresses = [
     await sendAndConfirmTransaction(signedExtendLookupTableTransaction, { commitment: 'finalized' });
 
     return lookupTableAddress;
-  } catch (err) {
+  } catch (err: any) {
     console.error('err', err);
     throw err;
   }
@@ -2434,7 +2434,7 @@ async function createLookupTable({ solRpc, fromKeypair, toKeypair, addresses = [
  * @param {Array<{ lookupTableAddress: string, writable: string, readonly: string }>} params.tables
  * @param {number} params.amountInLamports - enough to fund a new account
  */
-async function sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair, tables, amountInLamports }) {
+async function sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair, tables, amountInLamports }: any) {
   const lookupTableAccounts = await SolKit.fetchJsonParsedAccounts(solRpc.rpc, tables.map(({ lookupTableAddress }) => lookupTableAddress));
   for (const lookupTableAccount of lookupTableAccounts) {
     SolKit.assertAccountDecoded(lookupTableAccount);
@@ -2454,7 +2454,7 @@ async function sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair, tab
   );
   const transactionMessageWithLookupTables = SolKit.compressTransactionMessageUsingAddressLookupTables(
     transactionMessage,
-    Object.fromEntries(lookupTableAccounts.map(({ address, data }) => [address, data.addresses]))
+    Object.fromEntries(lookupTableAccounts.map(({ address, data }: any) => [address, data.addresses]))
   );
 
   const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
@@ -2470,10 +2470,10 @@ async function sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair, tab
  * @param {SolKit.KeyPairSigner<string>} params.authority - also the fee payer
  * @returns {Promise<{ txid: string, lookupTableAddress: string }>}
  */
-async function sendCreateLookupTable({ solRpc, authority }) {
+async function sendCreateLookupTable({ solRpc, authority }: any) {
   const recentSlot = await solRpc.rpc.getSlot({ commitment: 'finalized' }).send();
   const createLookupTableInstruction = await SolLookUpTable.getCreateLookupTableInstructionAsync({ authority, recentSlot });
-  const lookupTableAddress = createLookupTableInstruction.accounts.find(account => account.role === SolKit.AccountRole.WRITABLE).address;
+  const lookupTableAddress = createLookupTableInstruction.accounts.find(account => account.role === SolKit.AccountRole.WRITABLE)!.address;
   const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
   const transactionMessage = pipe(
     SolKit.createTransactionMessage({ version: 0 }),
@@ -2490,7 +2490,7 @@ async function sendCreateLookupTable({ solRpc, authority }) {
  * @param {SolRpc} solRpc
  * @param {string} txid
  */
-async function waitForFinalized(solRpc, txid) {
+async function waitForFinalized(solRpc: any, txid: string) {
   for (let i = 0; i < 240; i++) {
     const { value: [status] } = await solRpc.rpc.getSignatureStatuses([txid]).send();
     if (status?.confirmationStatus === 'finalized') {

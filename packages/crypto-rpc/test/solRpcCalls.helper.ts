@@ -5,9 +5,18 @@
 //
 // `respond({ method, args, send })` is called for each request; return `send()` to pass it to the validator,
 // or anything else to answer it. Without `respond`, every request goes to the validator.
-export function recordRpcCalls(rpcClient, { respond } = {}) {
+export interface RecordedRpcCall {
+  method: string;
+  args: any[];
+}
+
+export interface RpcCallResponder {
+  (call: { method: string; args: any[]; send: () => Promise<any> }): any;
+}
+
+export function recordRpcCalls(rpcClient: { rpc: any }, { respond }: { respond?: RpcCallResponder } = {}) {
   const realRpc = rpcClient.rpc;
-  const calls = [];
+  const calls: RecordedRpcCall[] = [];
   rpcClient.rpc = new Proxy(realRpc, {
     get(target, method) {
       if (typeof method !== 'string' || method === 'then') {

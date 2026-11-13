@@ -14,7 +14,7 @@ import privateKey2 from '../blockchain/solana/test/keypair/id2.json';
 // const SolKit = require('@solana/kit'); // Using require to avoid issues with sinon stubbing/spying ES module imports
 
 const bs58Encoder = SolKit.getBase58Encoder();
-const tokenProgramAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const tokenProgramAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as SolKit.Address;
 
 describe('SPL Tests', () => {
   const topLevelConfig = {
@@ -89,18 +89,18 @@ describe('SPL Tests', () => {
       sinon.stub(SolRpc.prototype, 'estimateTransactionFee').resolves(100);
       sinon.stub(SolRpc.prototype, 'addPriorityFee').resolves({});
       sinon.stub(SolRpc.prototype, 'getBestBlockHash');
-      sinon.stub(SolRpc.prototype, 'getTransaction').resolves({});
+      sinon.stub(SolRpc.prototype, 'getTransaction').resolves({} as any);
       sinon.stub(SolRpc.prototype, 'getTransactions').resolves([]);
       sinon.stub(SolRpc.prototype, 'getTransactionCount').resolves(10);
       sinon.stub(SolRpc.prototype, 'getRawTransaction').resolves('mockRawTx');
-      sinon.stub(SolRpc.prototype, 'decodeRawTransaction').resolves({});
+      sinon.stub(SolRpc.prototype, 'decodeRawTransaction').resolves({} as any);
       sinon.stub(SolRpc.prototype, 'sendRawTransaction').resolves('mockSignature');
       sinon.stub(SolRpc.prototype, 'getBlock').resolves({});
       sinon.stub(SolRpc.prototype, 'getLatestFinalizedBlock').resolves({});
-      sinon.stub(SolRpc.prototype, 'getLatestSignature').resolves({});
-      sinon.stub(SolRpc.prototype, 'getConfirmations').resolves({});
-      sinon.stub(SolRpc.prototype, 'getTip').resolves({});
-      sinon.stub(SolRpc.prototype, 'getServerInfo').resolves({});
+      sinon.stub(SolRpc.prototype, 'getLatestSignature').resolves({} as any);
+      sinon.stub(SolRpc.prototype, 'getConfirmations').resolves({} as any);
+      sinon.stub(SolRpc.prototype, 'getTip').resolves({} as any);
+      sinon.stub(SolRpc.prototype, 'getServerInfo').resolves({} as any);
     
       // Create test instance after stubbing parent methods
       splRpc = new SplRpc({
@@ -118,68 +118,68 @@ describe('SPL Tests', () => {
 
     it('inherits createNonceAccount method from SolRpc', async () => {
       await splRpc.createNonceAccount(senderKeypair, nonceKeypair);
-      expect(SolRpc.prototype.createNonceAccount.callCount).to.equal(1);
+      expect((SolRpc.prototype.createNonceAccount as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits estimateFee method from SolRpc', async () => {
       await splRpc.estimateFee({ rawTx: 'mockRawTx' });
-      expect(SolRpc.prototype.estimateFee.callCount).to.equal(1);
+      expect((SolRpc.prototype.estimateFee as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits estimateTransactionFee method from SolRpc', async () => {
       await splRpc.estimateTransactionFee({ rawTx: 'mockRawTx' });
-      expect(SolRpc.prototype.estimateTransactionFee.callCount).to.equal(1);
+      expect((SolRpc.prototype.estimateTransactionFee as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits addPriorityFee method from SolRpc', async () => {
       const transactionMessage = await createUnsignedTransaction(splRpc.rpc, senderKeypair, receiverKeypair, 10);
       await splRpc.addPriorityFee({ transactionMessage });
-      expect(SolRpc.prototype.addPriorityFee.callCount).to.equal(1);
+      expect((SolRpc.prototype.addPriorityFee as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getBestBlockHash method from SolRpc', async () => {
       await splRpc.getBestBlockHash();
-      expect(SolRpc.prototype.getBestBlockHash.callCount).to.equal(1);
+      expect((SolRpc.prototype.getBestBlockHash as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getTransaction method from SolRpc', async () => {
       await splRpc.getTransaction('mockSignature');
-      expect(SolRpc.prototype.getTransaction.callCount).to.equal(1);
+      expect((SolRpc.prototype.getTransaction as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getTransactions method from SolRpc', async () => {
       await splRpc.getTransactions({ address: 'mockAddress' });
-      expect(SolRpc.prototype.getTransactions.callCount).to.equal(1);
+      expect((SolRpc.prototype.getTransactions as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getTransactionCount method from SolRpc', async () => {
       await splRpc.getTransactionCount();
-      expect(SolRpc.prototype.getTransactionCount.callCount).to.equal(1);
+      expect((SolRpc.prototype.getTransactionCount as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getRawTransaction method from SolRpc', async () => {
       await splRpc.getRawTransaction({ txid: 'mockTxId' });
-      expect(SolRpc.prototype.getRawTransaction.callCount).to.equal(1);
+      expect((SolRpc.prototype.getRawTransaction as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits decodeRawTransaction method from SolRpc', async () => {
       await splRpc.decodeRawTransaction({ rawTx: 'mockRawTx' });
-      expect(SolRpc.prototype.decodeRawTransaction.callCount).to.equal(1);
+      expect((SolRpc.prototype.decodeRawTransaction as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits sendRawTransaction method from SolRpc', async () => {
       await splRpc.sendRawTransaction({ rawTx: 'mockRawTx' });
-      expect(SolRpc.prototype.sendRawTransaction.callCount).to.equal(1);
+      expect((SolRpc.prototype.sendRawTransaction as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getBlock method from SolRpc', async () => {
       await splRpc.getBlock({ height: 1 });
-      expect(SolRpc.prototype.getBlock.callCount).to.equal(1);
+      expect((SolRpc.prototype.getBlock as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getLatestSignature method from SolRpc', async () => {
       await splRpc.getLatestSignature();
-      expect(SolRpc.prototype.getLatestSignature.callCount).to.equal(1);
+      expect((SolRpc.prototype.getLatestSignature as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getConfirmations method from SolRpc', async () => {
       await splRpc.getConfirmations({ txid: 'mockTxId' });
-      expect(SolRpc.prototype.getConfirmations.callCount).to.equal(1);
+      expect((SolRpc.prototype.getConfirmations as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getTip method from SolRpc', async () => {
       await splRpc.getTip();
-      expect(SolRpc.prototype.getTip.callCount).to.equal(1);
+      expect((SolRpc.prototype.getTip as sinon.SinonStub).callCount).to.equal(1);
     });
     it('inherits getServerInfo method from SolRpc', async () => {
       await splRpc.getServerInfo();
-      expect(SolRpc.prototype.getServerInfo.callCount).to.equal(1);
+      expect((SolRpc.prototype.getServerInfo as sinon.SinonStub).callCount).to.equal(1);
     });
   });
   describe('Local tests', function () {
@@ -324,7 +324,7 @@ describe('SPL Tests', () => {
         const badKeypair = await SolKit.generateKeyPairSigner();
         try {
           await splRpc.getBalance({ address: badKeypair.address });
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal(SOL_ERROR_MESSAGES.TOKEN_ACCOUNT_NOT_FOUND);
         }
       });
@@ -335,7 +335,7 @@ describe('SPL Tests', () => {
           const solAddress = receiverKeypair.address;
           const derivedAta = await splRpc.deriveAta({ solAddress, mintAddress: mintKeypair.address });
           await splRpc.getBalance({ address: derivedAta });
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal(SOL_ERROR_MESSAGES.TOKEN_ACCOUNT_NOT_FOUND);
         }
       });
@@ -343,7 +343,7 @@ describe('SPL Tests', () => {
       it('throws error if provided address is a SOL address', async () => {
         try {
           await splRpc.getBalance({ address: senderKeypair.address });
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal(SOL_ERROR_MESSAGES.PROVIDED_TOKEN_ADDRESS_IS_SOL);
         }
       });
@@ -405,7 +405,7 @@ describe('SPL Tests', () => {
             feePayer: senderKeypair
           });
           throw new Error('Should have thrown');
-        } catch (err) {
+        } catch (err: any) {
           expect(err.message).to.equal('SolanaError: Invalid parameter (mint)');
         }
       });
@@ -652,9 +652,9 @@ describe('SPL Tests', () => {
  * @returns 
  */
 async function createNonceAccount(
-  solRpc,
-  feePayerAndAuthorityKeypair,
-  nonceKeypair
+  solRpc: any,
+  feePayerAndAuthorityKeypair: any,
+  nonceKeypair: any
 ) {
   try {
     // Get the min balance for rent exception
@@ -694,7 +694,7 @@ async function createNonceAccount(
     const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
     await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'finalized' });
     return SolKit.getSignatureFromTransaction(signedTransactionMessage);
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error creating nonce account:', err);
     throw err;
   }
@@ -709,11 +709,11 @@ async function createNonceAccount(
  * @param {0 | 'legacy'} [version=0]
  */
 async function createUnsignedTransaction(
-  rpc,
-  fromKeypair,
-  toKeypair,
-  amountInLamports,
-  version = 0
+  rpc: any,
+  fromKeypair: any,
+  toKeypair: any,
+  amountInLamports: any,
+  version: any = 0
 ) {
   const { value: recentBlockhash } = await rpc.getLatestBlockhash().send();
 
@@ -744,7 +744,7 @@ async function createAccount({
   splRpc,
   feePayerKeypair,
   version = 0
-}) {
+}: any) {
   const keypair = await SolKit.generateKeyPairSigner();
   const space = 0;
   const rentLamports = await splRpc.rpc.getMinimumBalanceForRentExemption(space).send();
@@ -780,7 +780,7 @@ async function createAccount({
  * @param {SolKit.Address<string>} params.mint
  * @param {SolKit.KeyPairSigner<string>} params.payer
  */
-async function createAta({ splRpc, owner, mint, payer }) {
+async function createAta({ splRpc, owner, mint, payer }: any) {
   const { value: latestBlockhash } = await splRpc.rpc.getLatestBlockhash().send();
   
   const [ata] = await SolToken.findAssociatedTokenPda({
@@ -821,7 +821,7 @@ async function createAta({ splRpc, owner, mint, payer }) {
  * @param {SolKit.KeyPairSigner<string>} params.mintAuthority
  * @param {number} params.decimals
  */
-async function createMint({ splRpc, payer, mint, mintAuthority, decimals }) {
+async function createMint({ splRpc, payer, mint, mintAuthority, decimals }: any) {
   const { value: latestBlockhash } = await splRpc.rpc.getLatestBlockhash().send();
   const mintSpace = SolToken.getMintSize();
   const rentLamports = await splRpc.rpc.getMinimumBalanceForRentExemption(mintSpace).send();
@@ -868,7 +868,7 @@ async function createMint({ splRpc, payer, mint, mintAuthority, decimals }) {
  * @param {SolKit.Address<string>} params.targetAta
  * @param {number} params.decimals
  */
-async function mintTokens({ splRpc, payer, mint, mintAuthority, targetAta, decimals }) {
+async function mintTokens({ splRpc, payer, mint, mintAuthority, targetAta, decimals }: any) {
   const { value: latestBlockhash } = await splRpc.rpc.getLatestBlockhash().send();
 
   const mintToCheckedInstruction = SolToken.getMintToCheckedInstruction({

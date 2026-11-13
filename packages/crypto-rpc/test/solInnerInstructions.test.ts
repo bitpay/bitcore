@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import fs from 'node:fs';
 import http from 'node:http';
+import { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages';
 import { SolRpc } from '../lib/sol/SolRpc';
@@ -85,7 +86,7 @@ const fixturePath = path.join(__dirname, '../../test/fixtures/sol/inner-instruct
 const startReplayServer = async (exchanges) => {
   const keyOf = ({ method, params }) => `${method}:${params?.[1]?.encoding ?? ''}`;
   const responses = new Map(exchanges.map(({ request, response }) => [keyOf(request), response]));
-  const requests = [];
+  const requests: string[] = [];
   const server = http.createServer(async (req, res) => {
     let body = '';
     for await (const chunk of req) body += chunk;
@@ -95,8 +96,8 @@ const startReplayServer = async (exchanges) => {
     res.writeHead(recorded ? 200 : 500, { 'content-type': 'application/json' });
     res.end(JSON.stringify(recorded ? { ...recorded, id: request.id } : { error: `no fixture for ${keyOf(request)}` }));
   });
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  return { server, requests, port: server.address().port };
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  return { server, requests, port: (server.address() as AddressInfo).port };
 };
 
 describe('SolRpc.getTransaction inner instructions (recorded mainnet tx)', function() {
