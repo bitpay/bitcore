@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
@@ -13,7 +15,10 @@
     "sourceMap": true,
     "rootDir": ".",
     "outDir": "ts_build",
-    "types": ["node", "mocha"]
+    "types": [
+      "node",
+      "mocha"
+    ]
   },
   "include": [
     "index.ts",
@@ -24,6 +29,7 @@
   "exclude": [
     "node_modules",
     "ts_build",
-    "blockchain"
+    "blockchain",
+    "test/consumers"
   ]
 }
