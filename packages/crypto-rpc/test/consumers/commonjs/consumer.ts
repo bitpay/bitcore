@@ -7,6 +7,7 @@ import { parseInstructions } from '@bitpay-labs/crypto-rpc/lib/sol/transaction-p
 import type { SolRpc } from '@bitpay-labs/crypto-rpc/lib/sol/SolRpc';
 import type { EthRpc } from '@bitpay-labs/crypto-rpc/lib/eth/EthRpc';
 import { XrpRpc } from '@bitpay-labs/crypto-rpc/lib/xrp/XrpRpc';
+import { CryptoRpc as CryptoRpcViaIndex } from '@bitpay-labs/crypto-rpc/index.js';
 
 const config: CryptoRpcConfig = { chain: 'BTC', host: '127.0.0.1', protocol: 'http', port: 8332 };
 const rpc = new CryptoRpc(config);
@@ -19,4 +20,6 @@ const xrp: XrpRpc = new XrpRpc({ chain: 'XRP', host: '127.0.0.1', protocol: 'ws'
 let sol: SolRpc | undefined;
 let eth: EthRpc | undefined;
 
-void [chain, notANumber, message, grouped, xrp, sol, eth, utils.toBI];
+const viaIndex: typeof CryptoRpc = CryptoRpcViaIndex;
+
+void [chain, notANumber, message, grouped, xrp, sol, eth, utils.toBI, viaIndex];

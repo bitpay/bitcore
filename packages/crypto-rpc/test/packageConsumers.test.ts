@@ -191,8 +191,11 @@ describe('package consumers', function() {
       expect(await rejectionCode(`${PKG}/lib/xrp/XrpRpc.ts`)).to.equal('ERR_MODULE_NOT_FOUND');
     });
 
-    it('does not expose the old ESM entry point', async function() {
-      expect(await rejectionCode(`${PKG}/index.js`)).to.equal('ERR_PACKAGE_PATH_NOT_EXPORTED');
+    it('keeps the old index.js entry point, pointing at the root export', async function() {
+      // The ESM package had no exports map, so consumers could reach the root as index.js
+      const root = requireCjs(PKG);
+      expect(requireCjs(`${PKG}/index.js`)).to.equal(root);
+      expect((await importEsm(`${PKG}/index.js`)).CryptoRpc).to.equal(root.CryptoRpc);
     });
 
     it('exposes package.json', async function() {

@@ -10,6 +10,10 @@
       "types": "./ts_build/index.d.ts",
       "default": "./ts_build/index.js"
     },
+    "./index.js": {
+      "types": "./ts_build/index.d.ts",
+      "default": "./ts_build/index.js"
+    },
     "./lib/*.js": {
       "types": "./ts_build/lib/*.d.ts",
       "default": "./ts_build/lib/*.js"
@@ -22,6 +26,7 @@
   },
   "typesVersions": {
     "*": {
+      "index.js": ["ts_build/index.d.ts"],
       "lib/*": ["ts_build/lib/*"]
     }
   },
