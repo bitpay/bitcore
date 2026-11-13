@@ -23,12 +23,19 @@ export interface EthRpcConfig {
   isEVM?: boolean;
 }
 
-/** Amounts and fee values the node accepts as decimal numbers or strings */
+/** Gas, nonce and fee values, passed to web3 as they are */
 export type EthNumberLike = number | bigint | string;
+
+/**
+ * Amount in wei. sendToAddress runs it through Number(), so values above
+ * 2^53 lose precision.
+ * TODO(bitcore-dln): convert without Number() so large amounts stay exact.
+ */
+export type EthAmount = number | string;
 
 export interface EthSendToAddressParams {
   address: string;
-  amount: EthNumberLike;
+  amount: EthAmount;
   /** Address of an added account, or (for the unlockAndSend* methods) a hex private key */
   fromAccount?: string;
   gasPrice?: EthNumberLike;
@@ -38,7 +45,7 @@ export interface EthSendToAddressParams {
 
 export interface EthPayment {
   address: string;
-  amount: EthNumberLike;
+  amount: EthAmount;
   id?: string;
 }
 
