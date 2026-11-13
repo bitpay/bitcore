@@ -6,8 +6,9 @@ export const toBI = function(val) {
   return (typeof val === 'bigint' || isNaN(val)) ? val : BigInt(val);
 };
 
-// The JavaScript called this.toNum, which in a CommonJS module resolves to
-// exports.toNum, the same function
+// The ESM JavaScript called this.toNum, and `this` is undefined at ESM module
+// scope, so it always threw. Calling toNum directly makes it work; nothing in
+// crypto-rpc or bitcore-node calls it.
 export const objBItoNums = (obj) => {
   if (typeof obj === 'object') {
     return JSON.parse(JSON.stringify(obj, (key, value) => toNum(value)));

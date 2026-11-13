@@ -27,6 +27,8 @@
   },
   "files": [
     "ts_build",
+    "!ts_build/test",
+    "!ts_build/blockchain",
     "README.md"
   ],
   "engines": {
