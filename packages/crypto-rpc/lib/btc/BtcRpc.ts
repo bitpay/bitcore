@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import util from 'util';
 import promptly from 'promptly';
 import { BitcoinRPC } from './bitcoin';
-import type BitcoindRpcClient from 'bitcoind-rpc';
+import type { BitcoindRpcClient } from './rpc-client';
 
 const passwordPromptAsync = util.promisify(promptly.password);
 

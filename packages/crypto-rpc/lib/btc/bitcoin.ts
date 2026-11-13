@@ -1,5 +1,8 @@
 import bitcoinDRPC from 'bitcoind-rpc';
 import promptly from 'promptly';
+import type { BitcoindRpcClientConstructor } from './rpc-client';
+
+const BitcoindRpcBase: BitcoindRpcClientConstructor = bitcoinDRPC;
 
 export interface BitcoinRPCOptions {
   protocol?: string;
@@ -9,7 +12,7 @@ export interface BitcoinRPCOptions {
   pass?: string;
 }
 
-export class BitcoinRPC extends bitcoinDRPC {
+export class BitcoinRPC extends BitcoindRpcBase {
   httpOptions: { rejectUnauthorized: boolean };
 
   constructor (opts?: BitcoinRPCOptions) {
