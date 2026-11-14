@@ -39,16 +39,13 @@ async function withSession(storage: Storage, opts): Promise<Copayer> {
         return reject(Errors.NOT_AUTHORIZED.withMessage('Session expired'));
       }
 
-      storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-        if (err) {
-          return reject(err);
-        }
+      storage.fetchCopayerLookup(opts.copayerId).then(copayer => {
         if (!copayer) {
           return reject(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
         }
 
         return resolve(copayer);
-      });
+      }).catch(err => reject(err));
     });
   });
 
@@ -60,17 +57,10 @@ async function withSignature(storage: Storage, opts): Promise<Copayer> {
     return;
   }
 
-  const copayer = await new Promise<Copayer>((resolve, reject) => {
-    storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-      if (err) {
-        return reject(err);
-      }
-      if (!copayer) {
-        return reject(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
-      }
-      return resolve(copayer);
-    });
-  });
+  const copayer = await storage.fetchCopayerLookup(opts.copayerId);
+  if (!copayer) {
+    throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found');
+  }
 
   const isValid = !!copayer.requestPubKeys.find(pubKey => Utils.verifyMessage(opts.message, opts.signature, pubKey.key));
   if (!isValid) {

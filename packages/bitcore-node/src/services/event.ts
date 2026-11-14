@@ -16,6 +16,8 @@ export class EventService {
   configService: ConfigService;
   eventModel: EventModel;
   stopped = false;
+  // when this process last saw a block, by chain and network
+  lastBlockTimes = new Map<string, number>();
 
   constructor({ storageService = Storage, eventModel = EventStorage, configService = Config } = {}) {
     this.storageService = storageService;
@@ -86,6 +88,7 @@ export class EventService {
           const blockEvent = await blockCursor.next();
           if (blockEvent) {
             const block = blockEvent.payload as BlockEvent;
+            this.lastBlockTimes.set(`${block.chain}:${block.network}`, Date.now());
             this.blockEvent.emit('block', block);
             lastBlockUpdate = new Date();
           }
@@ -120,6 +123,10 @@ export class EventService {
       }
     };
     retryAddressTxCursor();
+  }
+
+  lastBlockTime(chain: string, network: string): number | undefined {
+    return this.lastBlockTimes.get(`${chain}:${network}`);
   }
 
   async signalBlock(block: BlockEvent) {

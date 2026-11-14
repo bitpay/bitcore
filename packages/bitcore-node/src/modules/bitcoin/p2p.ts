@@ -362,7 +362,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     const state = await StateStorage.collection.findOne({});
-    this.initialSyncComplete = state?.initialSyncComplete?.includes(`${chain}:${network}`);
+    this.initialSyncComplete = !!state?.initialSyncComplete?.includes(`${chain}:${network}`);
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     if (parentChain && (!tip || tip.height < forkHeight!)) {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
@@ -455,9 +455,6 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     this.stopping = true;
     this.multiThreadSync.stop();
     logger.debug(`Stopping worker for chain ${this.chain}`);
-    for (const queuedRegistration of this.queuedRegistrations) {
-      clearTimeout(queuedRegistration);
-    }
     await this.unregisterSyncingNode();
     await this.disconnect();
   }

@@ -69,7 +69,7 @@ export class XrpChain implements IChain {
             return sum + BigInt(txp.amount || 0) + BigInt(txp.fee || 0);
           }, 0n) || 0n;
           const convertedBalance = this.convertBitcoreBalance(balance, Number(lockedSum), reserve);
-          server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+          server.storage.fetchAddressesPage(server.walletId, { limit: 1 }, (err, addresses: IAddress[]) => {
             if (err) return cb(err);
             if (addresses.length > 0) {
               const byAddress = [

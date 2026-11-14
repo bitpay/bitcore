@@ -1,17 +1,18 @@
-FROM node:22-bookworm
+FROM node:24-trixie
 
 # Install Chrome
 
-RUN echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/chrome.list
-
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN set -x \
+    && install -d -m 0755 /etc/apt/keyrings \
+    && wget -q -O /etc/apt/keyrings/google-chrome.asc https://dl-ssl.google.com/linux/linux_signing_key.pub \
+    && echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.asc] https://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/chrome.list
 
 RUN set -x \
     && apt-get update \
     && apt-get install -y \
         google-chrome-stable
 
-ENV CHROME_BIN /usr/bin/google-chrome
+ENV CHROME_BIN=/usr/bin/google-chrome
 
 # Log versions
 

@@ -1,31 +1,20 @@
 import os from 'os';
 import { Deriver } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
 import type { CommonArgs } from '../../types/cli';
 
-export function command(args: CommonArgs) {
-  const { program } = args;
-  program
+export function command() {
+  return new Command('derive')
     .description('Derive a key or address from the wallet')
-    .usage('<walletName> --command derive [options]')
     .optionsGroup('Derivation Options')
-    .option('--path <path>', 'Derivation path to use (e.g. m/0/1)')
-    .parse(process.argv);
-    
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-  return opts;
+    .option('--path <path>', 'Derivation path to use (e.g. m/0/1)');
 }
 
 export async function deriveKey(args: CommonArgs<{ path?: string }>) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
 
   const promptAction = async () => {
     const a = await getAction({

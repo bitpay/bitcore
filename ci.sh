@@ -4,7 +4,7 @@ for arg in "$@"; do
   if [ "$arg" == "--help" ] || [ "$arg" == "-h" ]; then
     echo "Usage: $0 <build|run|down> [build | run: <command>|chains]"
     echo "  build: Builds the Docker images."
-    echo "  run \<command\>: Runs all blockchains OR a command in the test_runner container using the local docker-compose configuration."
+    echo "  run <command>: Runs all blockchains OR a command in the test_runner container using the local docker-compose configuration."
     echo "  down: Shuts down containers and removes volumes."
     echo ""
     echo "Examples:"

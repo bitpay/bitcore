@@ -68,18 +68,29 @@ Signature.fromCompact = function(buf) {
   return sig;
 };
 
+// TODO: Split up fromDER and fromBuffer so they aren't the same function. DER encoding is specific to ECDSA, so fromDER should only handle ECDSA signatures.
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
   const sig = new Signature();
 
   // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype
   // NOTE: this check is not very reliable. You should use .fromSchnorr directly if you know it's a schnorr sig.
-  if ((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
+  // A 64 byte buffer is treated as schnorr regardless of the first byte, since that's the first byte of r, which is
+  // 0x30 for ~1/256 schnorr sigs. A valid 64 byte DER (ecdsa) sig is possible (e.g. 29 byte r and s) but vanishingly
+  // rare in practice. Use .parseDER or .fromTxFormat if you know it's an ecdsa sig.
+  if (buf.length === 64 || (buf.length === 65 && buf[0] != 0x30)) {
     return Signature.fromSchnorr(buf);
   }
-  
-  $.checkArgument(!(buf.length === 64 && buf[0] === 0x30), new Error('64 DER (ecdsa) signatures not allowed'));
-  
-  const obj = Signature.parseDER(buf, strict);
+
+  let obj;
+  try {
+    obj = Signature.parseDER(buf, strict);
+  } catch (e) {
+    // A 65 byte schnorr sig (with nhashtype) whose r starts with 0x30
+    if (buf.length === 65) {
+      return Signature.fromSchnorr(buf);
+    }
+    throw e;
+  }
 
   sig.r = obj.r;
   sig.s = obj.s;
@@ -91,7 +102,9 @@ Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
 Signature.fromTxFormat = function(buf) {
   const nhashtype = buf.readUInt8(buf.length - 1);
   const derbuf = buf.slice(0, buf.length - 1);
-  const sig = new Signature.fromDER(derbuf, false);
+  // Tx format is always ecdsa (schnorr sigs are parsed with .fromSchnorr). Don't use .fromDER here since it
+  // would interpret a 64 byte DER sig as schnorr.
+  const sig = new Signature(Signature.parseDER(derbuf, false));
   sig.nhashtype = nhashtype;
   return sig;
 };

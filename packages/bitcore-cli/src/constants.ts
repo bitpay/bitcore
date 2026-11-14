@@ -148,6 +148,12 @@ const CHAIN_COLOR = {
   matic: COLOR.pink,
   // For XRP, use black background with light gray text to evoke the color scheme of the XRP logo
   xrp: '\x1b[48;2;0;0;0m\x1b[38;5;250m%s\x1b[39m\x1b[49m',
+  // For Arbitrum, using a light blue color that is commonly associated with the Arbitrum logo
+  arb: '\x1b[38;2;0;153;255m%s\x1b[39m',
+  // For Optimism, use a red background with bold white text that is commonly associated with the Optimism logo
+  op: '\x1b[48;2;255;0;0m\x1b[1m\x1b[38;2;255;255;255m%s\x1b[39m\x1b[22m\x1b[49m',
+  // For Base, use a blue background with white text that is commonly associated with the Base logo
+  base: '\x1b[48;2;0;0;255m\x1b[38;2;255;255;255m%s\x1b[39m\x1b[49m',
   // For Solana, using a purple color that is commonly associated with the Solana logo
   sol: COLOR.purple,
 } as const;

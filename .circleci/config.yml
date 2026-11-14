@@ -51,10 +51,10 @@ commands:
     description: Force usage of correct node version on the executor machine
     steps:
       - run:
-          name: Use Node 22
+          name: Use Node 24
           command: |
-            nvm install 22.13.1
-            nvm alias default 22.13.1
+            nvm install 24.22.1
+            nvm alias default 24.22.1
             nvm use default
   pcsc:
     description: Install PC/SC Lite for bitcore-hardware NFC library

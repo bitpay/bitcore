@@ -228,16 +228,17 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
         return res.json([]);
       }
 
+      // a copayer that isn't an object with a string id can't exist, so it isn't looked up
+      const wellFormed = copayers.filter(c => typeof c?.copayerId === 'string');
       const storage = WalletService.getStorage();
-      const existing = await Promise.all<{ copayerId: string; verified: boolean }>(copayers.map(c => new Promise((resolve) => {
-        storage.fetchCopayerLookup(c.copayerId, (err, copayer) => {
-          if (err || !copayer) {
-            return resolve({ copayerId: c.copayerId, verified: false });
-          }
-          const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
-          return resolve({ copayerId: c.copayerId, verified });
-        });
-      })));
+      const existing = await Promise.all<{ copayerId: string; verified: boolean }>(wellFormed.map(async c => {
+        const copayer = await storage.fetchCopayerLookup(c.copayerId).catch(() => null);
+        if (!copayer) {
+          return { copayerId: c.copayerId, verified: false };
+        }
+        const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
+        return { copayerId: c.copayerId, verified };
+      }));
       return res.json(existing.filter(e => e.verified).map(e => e.copayerId));
     } catch (err) {
       return returnError(err, res, req);

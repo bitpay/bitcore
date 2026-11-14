@@ -2,9 +2,9 @@
   "name": "@bitpay-labs/bitcore-logging",
   "description": "Centralized logging for Bitcore services",
   "author": "BitPay Inc",
-  "version": "11.10.9",
+  "version": "11.11.2",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.22.1"
   },
   "keywords": [
     "bitcore",

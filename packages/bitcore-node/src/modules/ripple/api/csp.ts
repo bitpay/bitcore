@@ -81,8 +81,14 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams) {
     const { chain, network, time } = params;
     const addresses = await this.getWalletAddresses(params.wallet._id!);
+    // every address is read at the same ledger, so look it up once
+    const ledgerIndex = time && addresses.length
+      ? await this.getLedgerIndexBeforeTime({ chain, network, time })
+      : undefined;
     const balances = await Promise.all(
-      addresses.map(a => this.getBalanceForAddress({ address: a.address, chain, network, args: { time } }))
+      addresses.map(a => ledgerIndex === undefined
+        ? this.getBalanceForAddress({ address: a.address, chain, network, args: { time } })
+        : this.getBalanceAtLedger({ address: a.address, network, ledgerIndex }))
     );
     return balances.reduce(
       (total, current) => {
@@ -97,40 +103,48 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
     const { chain, network, address, args } = params;
+    if (args?.time) {
+      // only the latest balance is cached
+      const ledgerIndex = await this.getLedgerIndexBeforeTime({ chain, network, time: args.time });
+      return this.getBalanceAtLedger({ address, network, ledgerIndex });
+    }
     const lowerAddress = address.toLowerCase();
     const cacheKey = `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
-      async () => {
-        const client = await this.getClient(network);
-        try {
-          let ledgerIndex: number | undefined;
-          if (args?.time) {
-            const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
-            if (!block) {
-              throw new Error(`Balance not found at ${args.time}`);
-            }
-            ledgerIndex = block.height;
-          }
-          const balance = await client.getBalance({ address, ledgerIndex });
-          const confirmed = Math.round(Number(balance) * 1e6);
-          return { confirmed, unconfirmed: 0, balance: confirmed };
-        } catch (e: any) {
-          if (e?.data?.error_code === 19) {
-            // Error code for when we have derived an address,
-            // but the account has not yet been funded
-            return {
-              confirmed: 0,
-              unconfirmed: 0,
-              balance: 0
-            };
-          }
-          logger.error(`Error getting XRP balance for ${address} on ${network}: ${JSON.stringify(e.data) || e.stack || e.message || e}`);
-          throw e;
-        }
-      },
-      args?.time ? CacheStorage.Times.None : CacheStorage.Times.Minute
+      () => this.getBalanceAtLedger({ address, network }),
+      CacheStorage.Times.Minute
     );
+  }
+
+  async getLedgerIndexBeforeTime(params: { chain: string; network: string; time: string }) {
+    const block = await this.getBlockBeforeTime(params);
+    if (!block) {
+      throw new Error(`Balance not found at ${params.time}`);
+    }
+    return block.height;
+  }
+
+  async getBalanceAtLedger(params: { address: string; network: string; ledgerIndex?: number }) {
+    const { address, network, ledgerIndex } = params;
+    const client = await this.getClient(network);
+    try {
+      const balance = await client.getBalance({ address, ledgerIndex });
+      const confirmed = Math.round(Number(balance) * 1e6);
+      return { confirmed, unconfirmed: 0, balance: confirmed };
+    } catch (e: any) {
+      if (e?.data?.error_code === 19) {
+        // Error code for when we have derived an address,
+        // but the account has not yet been funded
+        return {
+          confirmed: 0,
+          unconfirmed: 0,
+          balance: 0
+        };
+      }
+      logger.error(`Error getting XRP balance for ${address} on ${network}: ${JSON.stringify(e.data) || e.stack || e.message || e}`);
+      throw e;
+    }
   }
 
   async getBlock(params: GetBlockParams) {

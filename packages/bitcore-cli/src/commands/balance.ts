@@ -1,34 +1,23 @@
 import os from 'os';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 import type { ITokenObj } from '../../types/wallet';
 
-export function command(args: CommonArgs) {
-  const { program } = args;
-  program
+export function command() {
+  return new Command('balance')
     .description('Get the balance of the wallet')
-    .usage('<walletName> --command balance [options]')
     .optionsGroup('Balance Options')
     .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
     .option('--tokenAddress <address>', 'Token contract address to get the balance for')
-    .option('--showByAddress', 'Show balance by address', false)
-    .parse(process.argv);
-  
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-  return opts;
+    .option('--showByAddress', 'Show balance by address', false);
 }
 
 export async function getBalance(args: CommonArgs<{
   showByAddress?: boolean;
 }>) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
   if (!wallet.isComplete()) {
     prompt.log.warn('Wallet is not complete. Check the wallet status for more details.');
     return {};

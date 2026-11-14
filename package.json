@@ -1,7 +1,7 @@
 {
   "version": "8.25.8",
   "engines": {
-    "node": "^22"
+    "node": ">=24.22.1"
   },
   "scripts": {
     "build": "docker build -t bitcore-node . ",

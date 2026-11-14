@@ -41,7 +41,8 @@ export class BtcChain implements IChain {
     server.getUtxosForCurrentWallet(
       {
         coin: opts.coin,
-        addresses: opts.addresses
+        addresses: opts.addresses,
+        wallet
       },
       (err, utxos) => {
         if (err) return cb(err);
@@ -173,7 +174,7 @@ export class BtcChain implements IChain {
     return new Promise((resolve, reject) => {
       const getChangeAddress = (wallet, cb) => {
         if (wallet.singleAddress) {
-          server.storage.fetchAddresses(server.walletId, (err, addresses) => {
+          server.storage.fetchAddressesPage(server.walletId, { limit: 1 }, (err, addresses) => {
             if (err) return cb(err);
             if (!addresses?.length) return cb(new ClientError('The wallet has no addresses'));
             return cb(null, addresses[0]);

@@ -2,7 +2,7 @@ import express from 'express';
 import * as Types from '../../types/expressapp';
 import { TssKeyGen, TssSign } from '../tss';
 import { authRequest } from './middleware/authRequest';
-import { authTssRequest } from './middleware/authTssRequest';
+import { authTssKeyGenRequest, authTssSignRequest } from './middleware/authTssRequest';
 import { createWalletLimiter } from './middleware/createWalletLimiter';
 import { verifyTssMessage } from './middleware/verifyTssMessage';
 
@@ -23,7 +23,7 @@ export class TssRouter {
     
     /** Key generation methods */
 
-    router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), verifyTssMessage, async function(req, res) {
+    router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), authTssKeyGenRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
@@ -36,7 +36,20 @@ export class TssRouter {
       }
     });
 
-    router.get('/v1/tss/keygen/:id/:round', authTssRequest(), async function(req, res) {
+    router.post('/v1/tss/keygen/:id/register', authTssKeyGenRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const copayerId = req.headers['x-identity'];
+        const data = req.body;
+
+        await TssKeyGen.registerParty({ id, copayerId, data });
+        return res.send();
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.get('/v1/tss/keygen/:id/:round', authTssKeyGenRequest(), async function(req, res) {
       let interval: NodeJS.Timeout;
       try {
         const abort = new AbortController();
@@ -74,7 +87,7 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/keygen/:id/store', authTssRequest(), async function(req, res) {
+    router.post('/v1/tss/keygen/:id/store', authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
         const copayerId = req.headers['x-identity'];
@@ -87,7 +100,7 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
+    router.post('/v1/tss/keygen/:id/secret', authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
         const { secret } = req.body;
@@ -99,7 +112,7 @@ export class TssRouter {
       }
     });
 
-    router.get('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
+    router.get('/v1/tss/keygen/:id/secret', authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
         const copayerId = req.headers['x-identity'];
@@ -126,7 +139,7 @@ export class TssRouter {
       }
     });
 
-    router.get('/v1/tss/sign/:id/:round', authTssRequest(), async function(req, res) {
+    router.get('/v1/tss/sign/:id/:round', authTssSignRequest(), async function(req, res) {
       let interval: NodeJS.Timeout;
       try {
         const abort = new AbortController();
@@ -161,7 +174,7 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/sign/:id/store', authTssRequest(), async function(req, res) {
+    router.post('/v1/tss/sign/:id/store', authTssSignRequest(), async function(req, res) {
       try {
         const id = req.params.id;
         const { signature } = req.body;

@@ -1,4 +1,5 @@
 import express from 'express';
+import { ClientError } from '../errors/clienterror';
 import { WalletService } from '../server';
 import { Stats } from '../stats';
 import type * as Types from '../../types/expressapp';
@@ -27,6 +28,14 @@ export function registerMaintenanceRoutes(router: express.Router, context: Route
   });
 
   router.get('/v1/stats/', (req, res) => {
+    const { network, coin } = req.query;
+    if (network !== undefined && typeof network !== 'string') {
+      return returnError(new ClientError('Invalid network'), res, req);
+    }
+    if (coin !== undefined && typeof coin !== 'string') {
+      return returnError(new ClientError('Invalid coin'), res, req);
+    }
+
     setPublicCache(res, 1 * ONE_MINUTE);
     const opts: {
       network?: string;
@@ -35,8 +44,8 @@ export function registerMaintenanceRoutes(router: express.Router, context: Route
       to?: string;
     } = {};
 
-    if (req.query.network) opts.network = req.query.network as string;
-    if (req.query.coin) opts.coin = req.query.coin as string;
+    if (network) opts.network = network;
+    if (coin) opts.coin = coin;
     if (req.query.from) opts.from = req.query.from as string;
     if (req.query.to) opts.to = req.query.to as string;
 
