@@ -866,6 +866,15 @@ export class Wallet implements IWallet {
   async updatePassword(currentPassword: string, newPassword: string, opts?: { silent?: boolean }) {
     const { silent } = opts || {};
 
+    // Handles potential Solana (EDDSA) password drift
+    if (
+      this.isSvm() &&
+      this.#walletData.key.isPrivKeyEncrypted('EDDSA') &&
+      !this.#walletData.key.checkPassword(currentPassword, 'EDDSA')
+    ) {
+      throw new Error('Cannot change wallet password: the current password does not unlock the Solana (EDDSA) key.');
+    }
+
     // Without an algorithm, decrypt/encrypt cover every root (ECDSA and EDDSA)
     this.#walletData.key.decrypt(currentPassword);
     this.#walletData.key.encrypt(newPassword);

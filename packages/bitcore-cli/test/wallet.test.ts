@@ -729,6 +729,44 @@ describe('Wallet', function() {
         'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
     });
 
+    it('rejects a SOL password update when the EDDSA root uses an older password', async function() {
+      const solName = 'sol-password-drift';
+      const solFile = path.join(tempDir, solName + '.json');
+      const olderPassword = 'older-password';
+      const key = new Key({
+        seedType: 'mnemonic',
+        seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+        password: olderPassword,
+        encryptionOpts: { iter: 1000 }
+      });
+      const credentials = key.createCredentials(olderPassword, {
+        coin: 'sol',
+        chain: 'sol',
+        network: 'testnet',
+        account: 0,
+        n: 1
+      });
+      // Older password updates changed only the ECDSA root and mnemonic.
+      key.decrypt(olderPassword, 'ECDSA');
+      key.encrypt(PASSWORD, { iter: 1000 }, 'ECDSA');
+      fs.writeFileSync(solFile, JSON.stringify({ key: key.toObj(), credentials: credentials.toObj() }));
+      wallet = new Wallet({ name: solName, dir: tempDir });
+      sandbox.stub(wallet as any, 'lockLoadedWallet');
+      await wallet.getClient({ mustExist: true, doNotComplete: true });
+
+      assert.strictEqual(wallet.chain, 'sol');
+      stateDir = await wallet.storage.getStatePath();
+      const stateFile = path.join(stateDir, 'proposal.json');
+      fs.writeFileSync(stateFile, JSON.stringify(Encryption.encryptWithPassword('state', PASSWORD)));
+      const originalWallet = fs.readFileSync(solFile, 'utf-8');
+      const originalState = fs.readFileSync(stateFile, 'utf-8');
+
+      await assert.rejects(() => wallet.updatePassword(PASSWORD, newPassword, { silent: true }), 'Could not decrypt');
+
+      assert.strictEqual(fs.readFileSync(solFile, 'utf-8'), originalWallet);
+      assert.strictEqual(fs.readFileSync(stateFile, 'utf-8'), originalState);
+    });
+
     describe('keys encrypted before every root was covered', function() {
       let fixture;
       let eddsaXPrivKey: string;
