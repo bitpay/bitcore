@@ -611,4 +611,8 @@ export class Utils {
   static isSingleAddressChain(chain: string): boolean {
     return !Utils.isUtxoChain(chain);
   }
+
+  static zeroizeIfBuffer(data: unknown) {
+    if (Buffer.isBuffer(data)) data.fill(0);
+  }
 }

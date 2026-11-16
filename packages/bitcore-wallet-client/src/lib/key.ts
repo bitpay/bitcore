@@ -462,15 +462,20 @@ export class Key {
 
     if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
 
+    // 1) Compute every ciphertext before mutating so a failure cannot leave the key partially encrypted.
     const encryptedPrivKey = JSON.stringify(Encryption.encryptWithPassword(this.#getPrivKey({ algo }), password, opts));
+    if (!encryptedPrivKey) throw new Error('Could not encrypt');
+    const mnemonicEncrypted = this.#mnemonic
+      ? JSON.stringify(Encryption.encryptWithPassword(this.#mnemonic, password, opts))
+      : null;
+
+    // 2) Mutate instance
     this.#setPrivKeyEncrypted({ algo, value: encryptedPrivKey });
-    if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
-
-    if (this.#mnemonic)
-      this.#mnemonicEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.#mnemonic, password, opts));
-
     this.#setPrivKey({ algo, value: null });
-    this.#mnemonic = null;
+    if (mnemonicEncrypted) {
+      this.#mnemonicEncrypted = mnemonicEncrypted;
+      this.#mnemonic = null;
+    }
   };
 
   #encryptAll(password: string, opts?: { iter?: number; ks?: number }) {
@@ -519,17 +524,28 @@ export class Key {
     if (!this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key is not encrypted');
 
+    // 1) Compute all plaintext
+    let privKeyBuf: Buffer;
+    let mnemonicBuf: Buffer;
     try {
-      const decryptedPrivKey = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password).toString();
-      this.#setPrivKey({ algo, value: decryptedPrivKey });
+      privKeyBuf = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
       if (this.#mnemonicEncrypted) {
-        this.#mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
+        mnemonicBuf = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password);
       }
-      this.#setPrivKeyEncrypted({ algo, value: null });
-      this.#mnemonicEncrypted = null;
-    } catch (ex) {
-      log.error('error decrypting:', ex);
+    } catch (err) {
+      Utils.zeroizeIfBuffer(privKeyBuf); // in case privKeyBuf decrypted successfully but mnemonicBuf didn't
+      log.error('error decrypting:', err);
       throw new Error('Could not decrypt');
+    }
+
+    // 2) Then mutate instance upon full decrypt success
+    this.#setPrivKey({ algo, value: privKeyBuf.toString() });
+    this.#setPrivKeyEncrypted({ algo, value: null });
+    Utils.zeroizeIfBuffer(privKeyBuf);
+    if (mnemonicBuf != null) {
+      this.#mnemonic = mnemonicBuf.toString();
+      this.#mnemonicEncrypted = null;
+      Utils.zeroizeIfBuffer(mnemonicBuf);
     }
   };
 
@@ -538,36 +554,40 @@ export class Key {
     if (!encryptedAlgos.length)
       throw new Error('Private key is not encrypted');
 
-    // Decrypt everything before mutating so a wrong password leaves the key unchanged.
-    const decryptedPrivKeys: Array<{ algo: KeyAlgorithm; value: string }> = [];
-    let mnemonic: string = null;
+    // 1) Compute all plaintext
+    const decryptedPrivKeys: Array<{ algo: KeyAlgorithm; value: Buffer }> = [];
+    let mnemonicBuf: Buffer;
     try {
       for (const algo of encryptedAlgos) {
         try {
-          decryptedPrivKeys.push({ algo, value: Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password).toString() });
-        } catch (ex) {
+          decryptedPrivKeys.push({ algo, value: Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password) });
+        } catch (err) {
           // Older password updates re-encrypted only the default (ECDSA) root, leaving the EDDSA root
           // under a previous password. Leave such a root encrypted rather than locking the key out.
-          if (algo === Constants.ALGOS.ECDSA) throw ex;
+          if (algo === Constants.ALGOS.ECDSA) throw err;
           log.warn(`${algo} private key could not be decrypted with this password and remains encrypted`);
         }
       }
       if (!decryptedPrivKeys.length) throw new Error('No private key decrypted');
       if (this.#mnemonicEncrypted) {
-        mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
+        mnemonicBuf = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password);
       }
-    } catch (ex) {
-      log.error('error decrypting:', ex);
+    } catch (err) {
+      for (const { value } of decryptedPrivKeys) Utils.zeroizeIfBuffer(value); // in case mnemonicBuf didn't decrypt successfully, clear all privKeyBufs that did
+      log.error('error decrypting:', err);
       throw new Error('Could not decrypt');
     }
 
+    // 2) Then mutate instance upon full decrypt success
     for (const { algo, value } of decryptedPrivKeys) {
-      this.#setPrivKey({ algo, value });
+      this.#setPrivKey({ algo, value: value.toString() });
       this.#setPrivKeyEncrypted({ algo, value: null });
+      Utils.zeroizeIfBuffer(value);
     }
-    if (mnemonic != null) {
-      this.#mnemonic = mnemonic;
+    if (mnemonicBuf != null) {
+      this.#mnemonic = mnemonicBuf.toString();
       this.#mnemonicEncrypted = null;
+      Utils.zeroizeIfBuffer(mnemonicBuf);
     }
   };
 
