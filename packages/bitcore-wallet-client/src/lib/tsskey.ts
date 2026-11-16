@@ -161,23 +161,22 @@ export class TssKey extends Key implements ITssKey {
   }
 
   encrypt(password: string, opts?: { iter?: number; ks?: number }) {
-    if (this.isPrivKeyEncrypted() && !this.checkPassword(password)) {
-      throw new Error('Private key is already encrypted but with a different password');
+    const algos = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
+    for (const algo of algos) {
+      if (this.isPrivKeyEncrypted(algo) && !this.checkPassword(password, algo)) {
+        throw new Error('Private key is already encrypted but with a different password');
+      }
     }
-    const hasPlaintextPrivKey = this.hasPlaintextPrivKey();
     const keyChainEncrypted = this.isKeyChainEncrypted();
-    if (keyChainEncrypted && !hasPlaintextPrivKey) {
+    if (keyChainEncrypted && !this.hasPlaintextPrivKey()) {
       throw new Error('Keychain is already encrypted');
     }
-    if (hasPlaintextPrivKey) {
-      // Key.encrypt will encrypt every root key which does not have a corresponding encrypted key (ECDSA & EDDSA)
-      super.encrypt(password, opts);
+    for (const algo of algos) {
+      if (this.hasPlaintextPrivKey(algo)) {
+        super.encrypt(password, opts, algo);
+      }
     }
-    if (keyChainEncrypted) {
-      // Instance's privateKeyShare & reducedPrivateKeyShare are gone
-      return;
-    }
-
+    if (keyChainEncrypted) return;
     this.keychain.privateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.privateKeyShare, password, opts));
     this.keychain.reducedPrivateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.reducedPrivateKeyShare, password, opts));
     // remove the private data
@@ -188,12 +187,15 @@ export class TssKey extends Key implements ITssKey {
   }
 
   decrypt(password: string) {
-    try {
-      super.decrypt(password);
-    } catch (e) {
-      if (e.message !== 'Private key is not encrypted') {
-        throw e;
+    const encryptedAlgos = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA]
+      .filter(algo => this.isPrivKeyEncrypted(algo));
+    for (const algo of encryptedAlgos) {
+      if (!this.checkPassword(password, algo)) {
+        throw new Error('Could not decrypt');
       }
+    }
+    for (const algo of encryptedAlgos) {
+      super.decrypt(password, algo);
     }
     if (this.isKeyChainEncrypted()) {
       this.keychain.privateKeyShare = Encryption.decryptWithPassword(this.keychain.privateKeyShareEncrypted, password);

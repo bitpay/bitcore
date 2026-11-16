@@ -556,94 +556,6 @@ describe('Wallet', function() {
     });
   });
 
-  describe('loading a partially encrypted wallet', function() {
-    const { BTC, PASSWORD } = WALLETS;
-    let tempDir: string;
-    let walletFile: string;
-    let eddsaXPrivKey: string;
-
-    /**
-     * Spawn the CLI on the temp wallet and answer prompts in order: once the output since the last
-     * answer matches `waitFor` and a prompt has finished rendering, send its keystrokes.
-     */
-    function runCli(steps: Array<{ waitFor: RegExp; send: string[] }>): Promise<string> {
-      return new Promise((resolve, reject) => {
-        const child = spawn('node', [CLI_EXEC, BTC.SINGLE_SIG, ...COMMON_OPTS, '--dir', tempDir], CLI_OPTS);
-        let output = '';
-        let pending = '';
-        let step = 0;
-        child.stdout.on('data', (chunk) => {
-          const text = chunk.toString();
-          output += text;
-          pending += text;
-          if (text.includes('👋')) {
-            child.stdin.end();
-            return;
-          }
-          if (step < steps.length && pending.endsWith(OUTPUT_END_SEQ) && steps[step].waitFor.test(helpers.decolor(pending))) {
-            for (const input of steps[step].send) {
-              child.stdin.write(input);
-            }
-            step++;
-            pending = '';
-          }
-        });
-        child.stderr.on('data', (chunk) => { output += chunk.toString(); });
-        child.on('close', () => {
-          const plain = helpers.decolor(output);
-          step === steps.length ? resolve(plain) : reject(new Error(`CLI exited before step ${step}:\n${plain}`));
-        });
-      });
-    }
-
-    beforeEach(function() {
-      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-cli-partial-'));
-      walletFile = path.join(tempDir, BTC.SINGLE_SIG + '.json');
-      const fixture = JSON.parse(fs.readFileSync(path.join(DIR, BTC.SINGLE_SIG + '.json'), 'utf-8'));
-      eddsaXPrivKey = new Key({ seedType: 'object', seedData: fixture.key }).get(PASSWORD, 'EDDSA').xPrivKey;
-      // Shape left by older encryption: ECDSA root and mnemonic encrypted, EDDSA root in plaintext
-      fixture.key = { ...fixture.key, xPrivKeyEDDSA: eddsaXPrivKey, xPrivKeyEDDSAEncrypted: null };
-      fs.writeFileSync(walletFile, JSON.stringify(fixture));
-    });
-
-    afterEach(function() {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    });
-
-    it('prompts for the current password and encrypts the plaintext EDDSA root', async function() {
-      this.timeout(30000);
-
-      const output = await runCli([
-        { waitFor: /Loaded wallet has an unencrypted private key\. Do you want to encrypt it now\?/, send: [KEYSTROKES.ENTER] }, // Yes (default)
-        { waitFor: /Enter your current wallet password:/, send: [PASSWORD, KEYSTROKES.ENTER] },
-        { waitFor: /Exit/, send: [KEYSTROKES.ARROW_UP, KEYSTROKES.ENTER] }, // Main menu -> Exit
-      ]);
-
-      assert.match(output, /Wallet successfully encrypted/);
-      const saved = JSON.parse(fs.readFileSync(walletFile, 'utf-8'));
-      const savedKey = new Key({ seedType: 'object', seedData: saved.key });
-      assert.ok(saved.key.xPrivKeyEDDSA == null, 'EDDSA root must not be saved in plaintext');
-      assert.strictEqual(savedKey.checkPassword(PASSWORD, 'EDDSA'), true);
-      assert.strictEqual(savedKey.get(PASSWORD, 'EDDSA').xPrivKey, eddsaXPrivKey);
-    });
-
-    it('leaves the key unchanged when the password does not match the encrypted root', async function() {
-      this.timeout(30000);
-      // Loading may still save the file to fill in credentials from the server, so compare only the key
-      const originalKey = JSON.parse(fs.readFileSync(walletFile, 'utf-8')).key;
-
-      const output = await runCli([
-        { waitFor: /Loaded wallet has an unencrypted private key/, send: [KEYSTROKES.ENTER] },
-        { waitFor: /Enter your current wallet password:/, send: ['wrong-password', KEYSTROKES.ENTER] },
-        { waitFor: /Exit/, send: [KEYSTROKES.ARROW_UP, KEYSTROKES.ENTER] },
-      ]);
-
-      assert.match(output, /Failed to encrypt wallet: .*different password/);
-      assert.doesNotMatch(output, /Wallet successfully encrypted/);
-      assert.deepStrictEqual(JSON.parse(fs.readFileSync(walletFile, 'utf-8')).key, originalKey);
-    });
-  });
-
   describe('updatePassword', function() {
     const { BTC, DIR, PASSWORD } = WALLETS;
     const newPassword = 'replacement-password';
@@ -679,11 +591,9 @@ describe('Wallet', function() {
       const saved = JSON.parse(fs.readFileSync(walletFile, 'utf-8'));
       const savedKey = new Key({ seedType: 'object', seedData: saved.key });
       assert.strictEqual(saved.key.xPrivKey, null);
-      assert.strictEqual(saved.key.xPrivKeyEDDSA, null);
       assert.strictEqual(saved.key.mnemonic, null);
       assert.strictEqual(savedKey.checkPassword(newPassword), true);
       assert.strictEqual(savedKey.checkPassword(PASSWORD), false);
-      assert.strictEqual(savedKey.checkPassword(newPassword, 'EDDSA'), true);
       const updatedState = fs.readFileSync(stateFile, 'utf-8');
       assert.deepStrictEqual(Encryption.decryptWithPassword(updatedState, newPassword), stateData);
       assert.throws(() => Encryption.decryptWithPassword(updatedState, PASSWORD));
@@ -727,90 +637,6 @@ describe('Wallet', function() {
       assert.strictEqual(savedKey.get(newPassword, 'EDDSA').xPrivKey, originalEddsaKey);
       assert.strictEqual(savedKey.get(newPassword, 'EDDSA').mnemonic,
         'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
-    });
-
-    it('rejects a SOL password update when the EDDSA root uses an older password', async function() {
-      const solName = 'sol-password-drift';
-      const solFile = path.join(tempDir, solName + '.json');
-      const olderPassword = 'older-password';
-      const key = new Key({
-        seedType: 'mnemonic',
-        seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
-        password: olderPassword,
-        encryptionOpts: { iter: 1000 }
-      });
-      const credentials = key.createCredentials(olderPassword, {
-        coin: 'sol',
-        chain: 'sol',
-        network: 'testnet',
-        account: 0,
-        n: 1
-      });
-      // Older password updates changed only the ECDSA root and mnemonic.
-      key.decrypt(olderPassword, 'ECDSA');
-      key.encrypt(PASSWORD, { iter: 1000 }, 'ECDSA');
-      fs.writeFileSync(solFile, JSON.stringify({ key: key.toObj(), credentials: credentials.toObj() }));
-      wallet = new Wallet({ name: solName, dir: tempDir });
-      sandbox.stub(wallet as any, 'lockLoadedWallet');
-      await wallet.getClient({ mustExist: true, doNotComplete: true });
-
-      assert.strictEqual(wallet.chain, 'sol');
-      stateDir = await wallet.storage.getStatePath();
-      const stateFile = path.join(stateDir, 'proposal.json');
-      fs.writeFileSync(stateFile, JSON.stringify(Encryption.encryptWithPassword('state', PASSWORD)));
-      const originalWallet = fs.readFileSync(solFile, 'utf-8');
-      const originalState = fs.readFileSync(stateFile, 'utf-8');
-
-      await assert.rejects(() => wallet.updatePassword(PASSWORD, newPassword, { silent: true }), 'Could not decrypt');
-
-      assert.strictEqual(fs.readFileSync(solFile, 'utf-8'), originalWallet);
-      assert.strictEqual(fs.readFileSync(stateFile, 'utf-8'), originalState);
-    });
-
-    describe('keys encrypted before every root was covered', function() {
-      let fixture;
-      let eddsaXPrivKey: string;
-
-      async function loadWallet(key) {
-        fs.writeFileSync(walletFile, JSON.stringify({ ...fixture, key }));
-        wallet = new Wallet({ name: BTC.SINGLE_SIG, dir: tempDir });
-        sandbox.stub(wallet as any, 'lockLoadedWallet');
-        await wallet.getClient({ mustExist: true, doNotComplete: true });
-      }
-
-      beforeEach(function() {
-        fixture = JSON.parse(fs.readFileSync(walletFile, 'utf-8'));
-        eddsaXPrivKey = new Key({ seedType: 'object', seedData: fixture.key }).get(PASSWORD, 'EDDSA').xPrivKey;
-      });
-
-      it('encrypts a plaintext EDDSA root', async function() {
-        await loadWallet({ ...fixture.key, xPrivKeyEDDSA: eddsaXPrivKey, xPrivKeyEDDSAEncrypted: null });
-
-        await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
-
-        const saved = JSON.parse(fs.readFileSync(walletFile, 'utf-8'));
-        const savedKey = new Key({ seedType: 'object', seedData: saved.key });
-        assert.ok(saved.key.xPrivKeyEDDSA == null);
-        assert.strictEqual(savedKey.checkPassword(newPassword, 'ECDSA'), true);
-        assert.strictEqual(savedKey.checkPassword(newPassword, 'EDDSA'), true);
-        assert.strictEqual(savedKey.get(newPassword, 'EDDSA').xPrivKey, eddsaXPrivKey);
-      });
-
-      it('still updates the password when the EDDSA root is encrypted under an older password', async function() {
-        const olderPassword = 'older-password';
-        await loadWallet({
-          ...fixture.key,
-          xPrivKeyEDDSAEncrypted: JSON.stringify(Encryption.encryptWithPassword(eddsaXPrivKey, olderPassword, { iter: 1 }))
-        });
-
-        await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
-
-        const saved = JSON.parse(fs.readFileSync(walletFile, 'utf-8'));
-        const savedKey = new Key({ seedType: 'object', seedData: saved.key });
-        assert.ok(saved.key.xPrivKeyEDDSA == null);
-        assert.strictEqual(savedKey.checkPassword(newPassword, 'ECDSA'), true);
-        assert.strictEqual(savedKey.checkPassword(olderPassword, 'EDDSA'), true);
-      });
     });
 
     it('leaves the wallet and state files unchanged when the current password is wrong', async function() {

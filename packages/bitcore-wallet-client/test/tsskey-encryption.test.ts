@@ -1,7 +1,9 @@
-import { strict as assert } from 'assert';
+import * as chai from 'chai';
 import { Deriver } from '@bitpay-labs/crypto-wallet-core';
 import { Key } from '../src/lib/key';
 import { TssKey } from '../src/lib/tsskey';
+
+const should = chai.should();
 
 // Synthetic shares isolate encryption/export; no real DKG is performed.
 const fullShare = Buffer.from('test-only full share');
@@ -23,11 +25,11 @@ function newTssKey(baseKey: Key): TssKey {
 }
 
 function assertNoPlaintextSecrets(exported) {
-  assert.ok(exported.xPrivKey == null);
-  assert.ok(exported.xPrivKeyEDDSA == null);
-  assert.ok(exported.mnemonic == null);
-  assert.ok(exported.keychain.privateKeyShare == null);
-  assert.ok(exported.keychain.reducedPrivateKeyShare == null);
+  should.not.exist(exported.xPrivKey);
+  should.not.exist(exported.xPrivKeyEDDSA);
+  should.not.exist(exported.mnemonic);
+  should.not.exist(exported.keychain.privateKeyShare);
+  should.not.exist(exported.keychain.reducedPrivateKeyShare);
 }
 
 describe('TssKey encryption', function() {
@@ -39,32 +41,51 @@ describe('TssKey encryption', function() {
     // Generate a fresh base Key containing both algorithms.
     const baseKey = new Key({ seedType: 'new' });
     const original = baseKey.toObj();
-    assert.equal(typeof original.xPrivKeyEDDSA, 'string');
+    original.xPrivKeyEDDSA.should.be.a('string');
 
     const tssKey = newTssKey(baseKey);
     tssKey.encrypt(password); // Use default password-encryption parameters.
     const backup = JSON.parse(JSON.stringify(tssKey.toObj()));
 
     assertNoPlaintextSecrets(backup);
-    assert.ok(backup.xPrivKeyEncrypted);
-    assert.ok(backup.xPrivKeyEDDSAEncrypted);
-    assert.ok(backup.mnemonicEncrypted);
-    assert.ok(backup.keychain.privateKeyShareEncrypted);
-    assert.ok(backup.keychain.reducedPrivateKeyShareEncrypted);
+    should.exist(backup.xPrivKeyEncrypted);
+    should.exist(backup.xPrivKeyEDDSAEncrypted);
+    should.exist(backup.mnemonicEncrypted);
+    should.exist(backup.keychain.privateKeyShareEncrypted);
+    should.exist(backup.keychain.reducedPrivateKeyShareEncrypted);
 
     const restored = tssKey.get(password);
-    assert.ok(restored.xPrivKey === original.xPrivKey, 'ECDSA root round-trip failed');
-    assert.ok(restored.mnemonic === original.mnemonic, 'Mnemonic round-trip failed');
-    assert.deepEqual(restored.keychain.privateKeyShare, fullShare);
-    assert.deepEqual(restored.keychain.reducedPrivateKeyShare, reducedShare);
+    restored.xPrivKey.should.equal(original.xPrivKey);
+    restored.mnemonic.should.equal(original.mnemonic);
+    restored.keychain.privateKeyShare.should.deep.equal(fullShare);
+    restored.keychain.reducedPrivateKeyShare.should.deep.equal(reducedShare);
 
     // The EDDSA root decrypts with the password and still derives the original SOL child key.
     const solPath = "m/44'/501'/0'/0'";
     const expected = Deriver.derivePrivateKeyWithPath('SOL', 'livenet', original.xPrivKeyEDDSA, solPath, null);
     const restoredEddsa = new TssKey(backup).get(password, 'EDDSA').xPrivKey;
     const fromBackup = Deriver.derivePrivateKeyWithPath('SOL', 'livenet', restoredEddsa, solPath, null);
-    assert.equal(fromBackup.privKey, expected.privKey);
-    assert.equal(fromBackup.pubKey, expected.pubKey);
+    fromBackup.privKey.should.equal(expected.privKey);
+    fromBackup.pubKey.should.equal(expected.pubKey);
+  });
+
+  it('should encrypt and decrypt a key that has no EDDSA root', function() {
+    const baseKey = new Key({ seedType: 'new', algo: 'ECDSA' });
+    const original = baseKey.toObj();
+    const tssKey = newTssKey(baseKey);
+
+    tssKey.encrypt(password);
+
+    assertNoPlaintextSecrets(tssKey.toObj());
+    should.not.exist((tssKey.toObj() as any).xPrivKeyEDDSAEncrypted);
+
+    tssKey.decrypt(password);
+
+    const restored = tssKey.get(null);
+    restored.xPrivKey.should.equal(original.xPrivKey);
+    restored.mnemonic.should.equal(original.mnemonic);
+    restored.keychain.privateKeyShare.should.deep.equal(fullShare);
+    restored.keychain.reducedPrivateKeyShare.should.deep.equal(reducedShare);
   });
 
   it('should encrypt the keychain of a key whose roots were encrypted at construction', function() {
@@ -73,17 +94,17 @@ describe('TssKey encryption', function() {
     tssKey.encrypt(password);
 
     assertNoPlaintextSecrets(tssKey.toObj());
-    assert.ok(tssKey.isKeyChainEncrypted());
-    assert.throws(() => tssKey.encrypt(password), /Keychain is already encrypted/);
+    tssKey.isKeyChainEncrypted().should.be.true;
+    (() => tssKey.encrypt(password)).should.throw('Keychain is already encrypted');
   });
 
   it('should reject a different password than the one encrypting the roots', function() {
     const tssKey = newTssKey(new Key({ seedType: 'new', password }));
 
-    assert.throws(() => tssKey.encrypt('other'), /different password/);
+    (() => tssKey.encrypt('other')).should.throw('different password');
 
-    assert.ok(!tssKey.isKeyChainEncrypted());
-    assert.deepEqual(tssKey.keychain.privateKeyShare, fullShare);
+    tssKey.isKeyChainEncrypted().should.be.false;
+    tssKey.keychain.privateKeyShare.should.deep.equal(fullShare);
   });
 
   it('should encrypt a plaintext EDDSA root left beside an encrypted keychain', function() {
@@ -95,14 +116,14 @@ describe('TssKey encryption', function() {
     tssKey.keychain.reducedPrivateKeyShareEncrypted = 'x';
     tssKey.keychain.privateKeyShare = null;
     tssKey.keychain.reducedPrivateKeyShare = null;
-    assert.ok(tssKey.hasPlaintextPrivKey());
+    tssKey.hasPlaintextPrivKey().should.be.true;
 
     tssKey.encrypt(password);
 
-    assert.ok(!tssKey.hasPlaintextPrivKey());
-    assert.ok((tssKey.toObj() as any).xPrivKeyEDDSA == null);
-    assert.equal(tssKey.checkPassword(password, 'EDDSA'), true);
-    assert.equal(tssKey.keychain.privateKeyShareEncrypted, 'x', 'keychain should not be re-encrypted');
+    tssKey.hasPlaintextPrivKey().should.be.false;
+    should.not.exist((tssKey.toObj() as any).xPrivKeyEDDSA);
+    tssKey.checkPassword(password, 'EDDSA').should.be.true;
+    tssKey.keychain.privateKeyShareEncrypted.should.equal('x');
   });
 
   it('should decrypt every secret and re-encrypt with a new password', function() {
@@ -111,13 +132,13 @@ describe('TssKey encryption', function() {
 
     tssKey.decrypt(password);
     const decrypted = tssKey.toObj() as any;
-    assert.ok(decrypted.xPrivKey);
-    assert.ok(decrypted.xPrivKeyEDDSA);
-    assert.deepEqual(decrypted.keychain.privateKeyShare, fullShare);
+    should.exist(decrypted.xPrivKey);
+    should.exist(decrypted.xPrivKeyEDDSA);
+    decrypted.keychain.privateKeyShare.should.deep.equal(fullShare);
 
     tssKey.encrypt('new-password');
     assertNoPlaintextSecrets(tssKey.toObj());
-    assert.equal(tssKey.checkPassword('new-password', 'ECDSA'), true);
-    assert.equal(tssKey.checkPassword('new-password', 'EDDSA'), true);
+    tssKey.checkPassword('new-password', 'ECDSA').should.be.true;
+    tssKey.checkPassword('new-password', 'EDDSA').should.be.true;
   });
 });
