@@ -161,14 +161,23 @@ export class TssKey extends Key implements ITssKey {
   }
 
   encrypt(password: string, opts?: { iter?: number; ks?: number }) {
-    if (!this.isPrivKeyEncrypted()) {
-      super.encrypt(password, opts);
-    } else if (!this.checkPassword(password)) {
+    if (this.isPrivKeyEncrypted() && !this.checkPassword(password)) {
       throw new Error('Private key is already encrypted but with a different password');
     }
-    if (this.isKeyChainEncrypted()) {
+    const hasPlaintextPrivKey = this.hasPlaintextPrivKey();
+    const keyChainEncrypted = this.isKeyChainEncrypted();
+    if (keyChainEncrypted && !hasPlaintextPrivKey) {
       throw new Error('Keychain is already encrypted');
     }
+    if (hasPlaintextPrivKey) {
+      // Key.encrypt will encrypt every root key which does not have a corresponding encrypted key (ECDSA & EDDSA)
+      super.encrypt(password, opts);
+    }
+    if (keyChainEncrypted) {
+      // Instance's privateKeyShare & reducedPrivateKeyShare are gone
+      return;
+    }
+
     this.keychain.privateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.privateKeyShare, password, opts));
     this.keychain.reducedPrivateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.reducedPrivateKeyShare, password, opts));
     // remove the private data

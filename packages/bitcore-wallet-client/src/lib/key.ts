@@ -441,7 +441,22 @@ export class Key {
     return key;
   };
 
+  /**
+   * There exists some root private key - checked on every supported algorithm
+   */
+  hasPlaintextPrivKey(): boolean {
+    return SUPPORTED_ALGOS.some(algo => !!this.#getPrivKey({ algo }));
+  };
+
+  /**
+   * Encrypt the private key(s) and mnemonic with a password.
+   * @param {KeyAlgorithm} [algo] Encrypt only this algorithm's root. If omitted, every root held in plaintext is encrypted.
+   */
   encrypt(password: string, opts?: { iter?: number; ks?: number }, algo?: KeyAlgorithm) {
+    if (!algo) {
+      return this.#encryptAll(password, opts);
+    }
+
     if (this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key already encrypted');
 
@@ -458,7 +473,49 @@ export class Key {
     this.#mnemonic = null;
   };
 
+  #encryptAll(password: string, opts?: { iter?: number; ks?: number }) {
+    const plaintextAlgos = SUPPORTED_ALGOS.filter(algo => this.#getPrivKey({ algo }) && !this.#getPrivKeyEncrypted({ algo }));
+    if (!plaintextAlgos.length) {
+      if (SUPPORTED_ALGOS.some(algo => this.#getPrivKeyEncrypted({ algo }))) {
+        throw new Error('Private key already encrypted');
+      }
+      throw new Error('No private key to encrypt');
+    }
+    // Roots that are already encrypted are left as-is. If the default root is one of them,
+    // the newly encrypted roots must share its password so the key stays unlockable with one password.
+    if (this.isPrivKeyEncrypted() && !this.checkPassword(password))
+      throw new Error('Private key is already encrypted but with a different password');
+
+    // 1) Compute every ciphertext
+    const encryptedPrivKeys = plaintextAlgos.map(algo => {
+      const value = JSON.stringify(Encryption.encryptWithPassword(this.#getPrivKey({ algo }), password, opts));
+      if (!value) throw new Error('Could not encrypt');
+      return { algo, value };
+    });
+    const mnemonicEncrypted = this.#mnemonic
+      ? JSON.stringify(Encryption.encryptWithPassword(this.#mnemonic, password, opts))
+      : null;
+
+    // 2) Then mutate so a failure can't leave the key partially encrypted
+    for (const { algo, value } of encryptedPrivKeys) {
+      this.#setPrivKeyEncrypted({ algo, value });
+      this.#setPrivKey({ algo, value: null });
+    }
+    if (mnemonicEncrypted) {
+      this.#mnemonicEncrypted = mnemonicEncrypted;
+      this.#mnemonic = null;
+    }
+  };
+
+  /**
+   * Decrypt the private key(s) and mnemonic.
+   * @param {KeyAlgorithm} [algo] Decrypt only this algorithm's root. If omitted, every encrypted root is decrypted.
+   */
   decrypt(password: string, algo?: KeyAlgorithm) {
+    if (!algo) {
+      return this.#decryptAll(password);
+    }
+
     if (!this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key is not encrypted');
 
@@ -473,6 +530,44 @@ export class Key {
     } catch (ex) {
       log.error('error decrypting:', ex);
       throw new Error('Could not decrypt');
+    }
+  };
+
+  #decryptAll(password: string) {
+    const encryptedAlgos = SUPPORTED_ALGOS.filter(algo => this.#getPrivKeyEncrypted({ algo }));
+    if (!encryptedAlgos.length)
+      throw new Error('Private key is not encrypted');
+
+    // Decrypt everything before mutating so a wrong password leaves the key unchanged.
+    const decryptedPrivKeys: Array<{ algo: KeyAlgorithm; value: string }> = [];
+    let mnemonic: string = null;
+    try {
+      for (const algo of encryptedAlgos) {
+        try {
+          decryptedPrivKeys.push({ algo, value: Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password).toString() });
+        } catch (ex) {
+          // Older password updates re-encrypted only the default (ECDSA) root, leaving the EDDSA root
+          // under a previous password. Leave such a root encrypted rather than locking the key out.
+          if (algo === Constants.ALGOS.ECDSA) throw ex;
+          log.warn(`${algo} private key could not be decrypted with this password and remains encrypted`);
+        }
+      }
+      if (!decryptedPrivKeys.length) throw new Error('No private key decrypted');
+      if (this.#mnemonicEncrypted) {
+        mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
+      }
+    } catch (ex) {
+      log.error('error decrypting:', ex);
+      throw new Error('Could not decrypt');
+    }
+
+    for (const { algo, value } of decryptedPrivKeys) {
+      this.#setPrivKey({ algo, value });
+      this.#setPrivKeyEncrypted({ algo, value: null });
+    }
+    if (mnemonic != null) {
+      this.#mnemonic = mnemonic;
+      this.#mnemonicEncrypted = null;
     }
   };
 
