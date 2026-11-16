@@ -24,6 +24,7 @@ export class SolRpc {
    * @param {string} config.host - The host URL or IP address.
    * @param {number} [config.port] - The port number
    * @param {number} [config.wsPort] - The WS port number
+   * @param {boolean} [config.includeInnerInstructions] - Default for getTransaction's includeInnerInstructions (false if unset)
    */
   constructor(config) {
     this.config = config;
