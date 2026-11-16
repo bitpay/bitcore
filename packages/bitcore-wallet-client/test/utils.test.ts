@@ -389,4 +389,21 @@ describe('Utils', () => {
       valid.should.be.equal(false);
     });
   });
+
+  describe('#zeroizeIfBuffer', () => {
+    it('should zero-fill a Buffer in place', () => {
+      const buf = Buffer.from('secret material');
+      Utils.zeroizeIfBuffer(buf);
+      buf.every(b => b === 0).should.equal(true);
+      buf.length.should.equal('secret material'.length);
+    });
+
+    it('should handle non-buffers gracefully', () => {
+      (() => Utils.zeroizeIfBuffer('secret string')).should.not.throw();
+      (() => Utils.zeroizeIfBuffer(null)).should.not.throw();
+      (() => Utils.zeroizeIfBuffer(undefined)).should.not.throw();
+      (() => Utils.zeroizeIfBuffer({})).should.not.throw();
+      (() => Utils.zeroizeIfBuffer(42)).should.not.throw();
+    });
+  });
 });
