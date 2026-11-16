@@ -7,6 +7,8 @@ import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { BlockchainMonitor } from '../../src/lib/blockchainmonitor';
 import { ChainService } from '../../src/lib/chain';
 import { Constants } from '../../src/lib/common/constants';
+import { Utils } from '../../src/lib/common/utils';
+import { TxConfirmationSub } from '../../src/lib/model';
 import helpers from './helpers';
 import type { Storage } from '../../src/lib/storage';
 import type { V8 } from '../../src/lib/blockchainexplorers/v8';
@@ -237,6 +239,80 @@ describe('Blockchain monitor', function() {
       const notifications = await incomingNotifications(s);
       notifications.length.should.equal(1);
       notifications[0].data.should.include({ txid: '0x02', address, amount: '1000000', tokenAddress: token });
+    });
+  });
+
+  describe('EVM incoming tx confirmations', function() {
+    const token = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+    const sender = '0xC877cBCF020A8AA259A1Efab1559B2A3A7259086';
+    const erc20Transfer = contractAddress => ({ type: 'ERC20:transfer', from: sender, amount: '1000000', contractAddress, callStack: '' });
+    const receive = async (effects?) => {
+      const { server: s, wallet: w } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' });
+      const { address } = await util.promisify(s.createAddress).call(s, {});
+      const tx = effects
+        ? { to: effects.contractAddress, value: 0, effects: [{ ...effects, to: address }] }
+        : { to: address, value: 5000, effects: [] };
+      bcmonitor._handleIncomingPayments('eth', 'livenet', ChainService.onTx('eth', { chain: 'ETH', network: 'mainnet', txid: '0x01', from: sender, ...tx }));
+      await Utils.sleep(100);
+      return { s, walletId: w.id };
+    };
+    const mine = blockHeight => {
+      const getTransaction = sinon.stub().callsArgWith(1, null, { txid: '0x01', blockHeight });
+      blockchainExplorerEVM.getTransaction = getTransaction;
+      return getTransaction;
+    };
+    const confirmations = async s => {
+      const notifications = await util.promisify(s.getNotifications).call(s, {});
+      return notifications.filter(n => n.type === 'IncomingTxConfirmed');
+    };
+
+    afterEach(function() {
+      delete blockchainExplorerEVM.getTransaction;
+    });
+
+    it('does not notify the recipient while the incoming tx is pending', async function() {
+      const { s } = await receive();
+      mine(-1);
+      bcmonitor._handleTxConfirmations('eth', 'livenet', 'block1');
+      await Utils.sleep(100);
+      (await confirmations(s)).length.should.equal(0);
+    });
+
+    it('notifies the recipient once when the incoming tx is mined, with the token', async function() {
+      const { s } = await receive(erc20Transfer(token));
+      mine(100);
+      bcmonitor._handleTxConfirmations('eth', 'livenet', 'block1');
+      await Utils.sleep(100);
+      bcmonitor._handleTxConfirmations('eth', 'livenet', 'block2');
+      await Utils.sleep(100);
+      const notifications = await confirmations(s);
+      notifications.length.should.equal(1);
+      notifications[0].data.should.include({ txid: '0x01', chain: 'eth', network: 'livenet', tokenAddress: token });
+    });
+
+    it('notifies the wallet once when several of its copayers are subscribed', async function() {
+      const { s, walletId } = await receive();
+      const sub = TxConfirmationSub.create({ copayerId: 'copayer-2', walletId, txid: '0x01', amount: 5000, isCreator: false, chain: 'eth', network: 'livenet' });
+      await util.promisify(storage.storeTxConfirmationSub).call(storage, sub);
+      mine(100);
+      bcmonitor._handleTxConfirmations('eth', 'livenet', 'block1');
+      await Utils.sleep(100);
+      (await confirmations(s)).length.should.equal(1);
+    });
+
+    it('runs one check per chain at a time', async function() {
+      await receive();
+      const getTransaction = mine(-1);
+      bcmonitor._handleTxConfirmations('eth', 'livenet', 'block1');
+      bcmonitor._handleTxConfirmations('eth', 'livenet', 'block2');
+      await Utils.sleep(100);
+      getTransaction.callCount.should.equal(1);
+    });
+
+    it('does not subscribe the recipient to unsupported tokens', async function() {
+      await receive(erc20Transfer('0x1111111111111111111111111111111111111111'));
+      const subs = await util.promisify(storage.fetchActiveTxConfirmationSubsByChain).call(storage, 'eth', 'livenet', 0);
+      subs.length.should.equal(0);
     });
   });
 

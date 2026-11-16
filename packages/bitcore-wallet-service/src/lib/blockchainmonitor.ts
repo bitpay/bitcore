@@ -16,6 +16,8 @@ import { Storage } from './storage';
 const $ = preconditions.singleton();
 
 const Constants = Common.Constants;
+const EVM_TX_CONFIRMATION_SUB_MAX_AGE_SECONDS = 60 * 60;
+const EVM_TX_CONFIRMATION_CHECK_CONCURRENCY = 5;
 
 const throttle = (fn: (bcmContext: any, chain: string, network: string, hash: string) => void) => {
   let lastCalled = 0;
@@ -69,6 +71,7 @@ export class BlockchainMonitor {
   Ni: number;
   Nix: number;
   lastTx: Array<string>;
+  evmTxConfirmationChecks = new Set<string>();
 
   start(opts: Options, cb: (err?: Error) => void) {
     opts = opts || {};
@@ -261,7 +264,11 @@ export class BlockchainMonitor {
           },
           walletId
         });
-        if (Utils.getNetworkType(network) !== 'testnet') {
+        const tokenOpts = Constants[`${chain.toUpperCase()}_TOKEN_OPTS`] || {};
+        const isUnsupportedToken =
+          out.tokenAddress &&
+          !Object.keys(tokenOpts).some(address => address.toLowerCase() === out.tokenAddress.toLowerCase());
+        if (Utils.getNetworkType(network) !== 'testnet' && !isUnsupportedToken) {
           this.storage.fetchWallet(walletId, (err, wallet) => {
             if (err) return;
             async.each(
@@ -272,7 +279,10 @@ export class BlockchainMonitor {
                   walletId,
                   txid: data.txid,
                   amount: out.amount,
-                  isCreator: false
+                  isCreator: false,
+                  chain,
+                  network,
+                  tokenAddress: out.tokenAddress
                 });
                 this.storage.storeTxConfirmationSub(sub, next);
               },
@@ -307,6 +317,7 @@ export class BlockchainMonitor {
 
   _handleTxConfirmations(chain, network, hash) {
     if (!ChainService.notifyConfirmations(chain, network)) return;
+    if (Constants.EVM_CHAINS[chain.toUpperCase()]) return this._handleEvmTxConfirmations(chain, network);
 
     const processTriggeredSub = (sub, cb) => {
       logger.debug('New tx confirmation ' + sub.txid);
@@ -359,6 +370,77 @@ export class BlockchainMonitor {
         txSub = await stream.next();
       }
     });
+  }
+
+  _handleEvmTxConfirmations(chain, network) {
+    const explorer = this.explorers[chain][network];
+    const chainNetwork = `${chain}:${network}`;
+    if (!explorer || this.evmTxConfirmationChecks.has(chainNetwork)) return;
+
+    this.evmTxConfirmationChecks.add(chainNetwork);
+    const done = () => this.evmTxConfirmationChecks.delete(chainNetwork);
+    const minCreatedOn = Math.floor(Date.now() / 1000) - EVM_TX_CONFIRMATION_SUB_MAX_AGE_SECONDS;
+    this.storage.fetchActiveTxConfirmationSubsByChain(chain, network, minCreatedOn, (err, subs: TxConfirmationSub[]) => {
+      if (err) {
+        logger.error('Could not fetch tx confirmation subs: %o', err.message);
+        return done();
+      }
+
+      const subsByTxid = new Map<string, TxConfirmationSub[]>();
+      for (const sub of subs) {
+        const txSubs = subsByTxid.get(sub.txid);
+        if (txSubs) txSubs.push(sub);
+        else subsByTxid.set(sub.txid, [sub]);
+      }
+
+      async.eachLimit(
+        [...subsByTxid.keys()],
+        EVM_TX_CONFIRMATION_CHECK_CONCURRENCY,
+        (txid, next) => {
+          explorer.getTransaction(txid, (err, tx) => {
+            if (err) {
+              logger.error('Could not fetch tx %o: %o', txid, err.message);
+              return next();
+            }
+            if (!(tx?.blockHeight >= 0)) return next();
+
+            this._notifyIncomingTxConfirmed(subsByTxid.get(txid), next);
+          });
+        },
+        done
+      );
+    });
+  }
+
+  _notifyIncomingTxConfirmed(subs: TxConfirmationSub[], cb: () => void) {
+    const notifiedWalletIds = new Set<string>();
+    async.each(
+      subs,
+      (sub, next) => {
+        this.storage.deactivateTxConfirmationSub(sub.copayerId, sub.txid, (err, deactivated) => {
+          if (err) {
+            logger.error('Could not deactivate tx confirmation sub: %o', err.message);
+            return next();
+          }
+          if (!deactivated || notifiedWalletIds.has(sub.walletId)) return next();
+
+          notifiedWalletIds.add(sub.walletId);
+          const notification = Notification.create({
+            type: 'IncomingTxConfirmed',
+            walletId: sub.walletId,
+            data: {
+              txid: sub.txid,
+              chain: sub.chain,
+              network: sub.network,
+              amount: sub.amount,
+              tokenAddress: sub.tokenAddress
+            }
+          });
+          this._storeAndBroadcastNotification(notification, next);
+        });
+      },
+      cb
+    );
   }
 
   _handleNewBlock(chain, network, hash) {

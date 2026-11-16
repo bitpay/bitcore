@@ -72,8 +72,8 @@ export class EthChain implements IChain {
     return 0;
   }
 
-  notifyConfirmations() {
-    return false;
+  notifyConfirmations(network: string) {
+    return network === 'livenet';
   }
 
   supportsMultisig() {
