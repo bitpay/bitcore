@@ -162,6 +162,7 @@ export class SolRpc {
    * @param {number} [config.port] - The port number
    * @param {number} [config.wsPort] - The WS port number
    * @param {Function} [config.fetch] - fetch implementation for HTTP RPC requests (defaults to node-fetch)
+   * @param {boolean} [config.includeInnerInstructions] - Default for getTransaction's includeInnerInstructions (false if unset)
    */
   constructor(config: SolRpcConfig) {
     this.config = config;
