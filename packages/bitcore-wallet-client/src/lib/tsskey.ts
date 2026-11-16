@@ -5,6 +5,7 @@ import { API as Client, CreateWalletOpts } from './api';
 import { Constants, Encryption, Utils } from './common';
 import { Credentials } from './credentials';
 import { ExportedKey, Key, type KeyAlgorithm, type PasswordMaybe } from './key';
+import log from './log';
 import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
@@ -162,10 +163,8 @@ export class TssKey extends Key implements ITssKey {
 
   encrypt(password: string, opts?: { iter?: number; ks?: number }) {
     const algos = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
-    for (const algo of algos) {
-      if (this.isPrivKeyEncrypted(algo) && !this.checkPassword(password, algo)) {
-        throw new Error('Private key is already encrypted but with a different password');
-      }
+    if (this.isPrivKeyEncrypted() && !this.checkPassword(password)) {
+      throw new Error('Private key is already encrypted but with a different password');
     }
     const keyChainEncrypted = this.isKeyChainEncrypted();
     if (keyChainEncrypted && !this.hasPlaintextPrivKey()) {
@@ -190,11 +189,11 @@ export class TssKey extends Key implements ITssKey {
     const encryptedAlgos = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA]
       .filter(algo => this.isPrivKeyEncrypted(algo));
     for (const algo of encryptedAlgos) {
-      if (!this.checkPassword(password, algo)) {
-        throw new Error('Could not decrypt');
+      // Older password updates could leave the retained EDDSA root under a previous password.
+      if (algo === Constants.ALGOS.EDDSA && !this.checkPassword(password, algo)) {
+        log.warn(`${algo} private key could not be decrypted with this password and remains encrypted`);
+        continue;
       }
-    }
-    for (const algo of encryptedAlgos) {
       super.decrypt(password, algo);
     }
     if (this.isKeyChainEncrypted()) {

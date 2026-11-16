@@ -126,6 +126,26 @@ describe('TssKey encryption', function() {
     tssKey.keychain.privateKeyShareEncrypted.should.equal('x');
   });
 
+  it('should preserve an EDDSA root encrypted under an older password', function() {
+    const baseKey = new Key({ seedType: 'new', password: 'old-password' });
+    baseKey.decrypt('old-password', 'ECDSA');
+    baseKey.encrypt(password, null, 'ECDSA');
+    const tssKey = newTssKey(baseKey);
+    tssKey.encrypt(password);
+
+    tssKey.decrypt(password);
+
+    tssKey.get(null).xPrivKey.should.equal(baseKey.get(password).xPrivKey);
+    tssKey.keychain.privateKeyShare.should.deep.equal(fullShare);
+    tssKey.checkPassword('old-password', 'EDDSA').should.be.true;
+
+    tssKey.encrypt('new-password');
+
+    assertNoPlaintextSecrets(tssKey.toObj());
+    tssKey.checkPassword('new-password', 'ECDSA').should.be.true;
+    tssKey.checkPassword('old-password', 'EDDSA').should.be.true;
+  });
+
   it('should decrypt every secret and re-encrypt with a new password', function() {
     const tssKey = newTssKey(new Key({ seedType: 'new' }));
     tssKey.encrypt(password);
