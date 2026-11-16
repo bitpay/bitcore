@@ -162,6 +162,15 @@ export class Storage {
       txid: 1,
       copayerId: 1
     });
+    db.collection(collections.TX_CONFIRMATION_SUBS).createIndex(
+      {
+        isActive: 1,
+        chain: 1,
+        network: 1,
+        createdOn: 1
+      },
+      { partialFilterExpression: { chain: { $exists: true } } }
+    );
     db.collection(collections.SESSIONS).createIndex({
       copayerId: 1
     });
@@ -1598,6 +1607,25 @@ export class Storage {
       .collection(collections.TX_CONFIRMATION_SUBS)
       .find(filter)
       .addCursorFlag('noCursorTimeout', true);
+  }
+
+  fetchActiveTxConfirmationSubsByChain(chain: string, network: string, minCreatedOn: number, cb) {
+    this.db
+      .collection(collections.TX_CONFIRMATION_SUBS)
+      .find({ isActive: true, chain, network, createdOn: { $gte: minCreatedOn } })
+      .toArray(cb);
+  }
+
+  deactivateTxConfirmationSub(copayerId: string, txid: string, cb) {
+    this.db.collection(collections.TX_CONFIRMATION_SUBS).updateOne(
+      { copayerId, txid, isActive: true },
+      { $set: { isActive: false } },
+      { w: 1 },
+      (err, result) => {
+        if (err) return cb(err);
+        return cb(null, result.modifiedCount > 0);
+      }
+    );
   }
 
   storeTxConfirmationSub(txConfirmationSub, cb) {

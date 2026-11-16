@@ -456,6 +456,9 @@ export const Defaults = {
 
   PUSH_NOTIFICATION_LIMIT: 10,
 
+  EVM_TX_CONFIRMATION_SUB_MAX_AGE_SECONDS: 60 * 60,
+  EVM_TX_CONFIRMATION_CHECK_CONCURRENCY: 5,
+
   FIAT_CURRENCIES: [
     { code: 'USD', name: 'US Dollar' },
     { code: 'INR', name: 'Indian Rupee' },
