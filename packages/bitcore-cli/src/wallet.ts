@@ -359,14 +359,20 @@ export class Wallet implements IWallet {
     const status = await this.client.openWallet({ forceOpen });
     let needsSave = status?.wallet?.status === 'complete';
 
-    if (!key.isPrivKeyEncrypted()) {
+    if (key.hasPlaintextPrivKey()) {
+      // A partially encrypted key has a plaintext root (typically EDDSA) left beside an encrypted one;
+      // it must be encrypted with the existing wallet password.
+      const partiallyEncrypted = key.isPrivKeyEncrypted();
+      const encryptionState = partiallyEncrypted ? 'has an unencrypted private key' : 'is not encrypted';
       if (loadingFromCache) {
-        _verbose && prompt.log.warn('Warning: Loaded wallet is not encrypted. This may be a mistake. Try exiting and reloading your wallet.');
+        _verbose && prompt.log.warn(`Warning: Loaded wallet ${encryptionState}. This may be a mistake. Try exiting and reloading your wallet.`);
       } else {
-        const ans = await prompt.confirm({ message: 'Loaded wallet is not encrypted. Do you want to encrypt it now?', initialValue: true });
+        const ans = await prompt.confirm({ message: `Loaded wallet ${encryptionState}. Do you want to encrypt it now?`, initialValue: true });
         if (!prompt.isCancel(ans) && ans) {
           try {
-            const password = await getPassword('Enter wallet lock password:', { hidden: false, minLength: 6, confirm: true });
+            const password = partiallyEncrypted
+              ? await getPassword('Enter your current wallet password:', { hidden: true })
+              : await getPassword('Enter wallet lock password:', { hidden: false, minLength: 6, confirm: true });
             key.encrypt(password);
             this.#walletData.key = key;
             prompt.log.success('Wallet successfully encrypted.');
@@ -860,19 +866,9 @@ export class Wallet implements IWallet {
   async updatePassword(currentPassword: string, newPassword: string, opts?: { silent?: boolean }) {
     const { silent } = opts || {};
 
-    // Decrypt
+    // Without an algorithm, decrypt/encrypt cover every root (ECDSA and EDDSA)
     this.#walletData.key.decrypt(currentPassword);
-    if (this.isSvm()) {
-      // Note: EDDSA keys are not currently supported by TssKey,
-      //  so if isSvm() then key must be of type BWC Key
-      (this.#walletData.key as Key).decrypt(currentPassword, 'EDDSA');
-    }
-
-    // Re-encrypt with new password
     this.#walletData.key.encrypt(newPassword);
-    if (this.isSvm()) {
-      this.#walletData.key.encrypt(newPassword, null, 'EDDSA');
-    }
 
     await this.save();
 
