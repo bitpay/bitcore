@@ -66,7 +66,7 @@ Follow this process:
    ```
 
 3. Set up your local environment and write code, committing your changes in
-   logical chunks. See [README.md](README.md#development) for the exact
+   logical chunks. See [SETUP.md](SETUP.md) for the exact
    Node/npm versions, the root `npm ci` install, compile/watch/test commands,
    and how to edit a workspace package's dependencies.
 

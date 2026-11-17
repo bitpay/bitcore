@@ -27,7 +27,7 @@ npm start
 BWS is developed as part of the Bitcore monorepo. Use the following steps to
 install it from github source and run it with defaults; this installs and
 links every backend package from one root install (see the root
-[README.md](../../README.md#development) for details), not just BWS on its
+[SETUP.md](../../SETUP.md) for details), not just BWS on its
 own.
 
 ```sh

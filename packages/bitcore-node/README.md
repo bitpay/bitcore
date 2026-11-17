@@ -20,7 +20,7 @@ Bitcore Node is developed as part of the Bitcore monorepo; it is not
 installed on its own from a checkout. Clone the repo and install from the
 root, which installs and links every backend package (including this one)
 and compiles this package's TypeScript output automatically. See the root
-[README.md](../../README.md#development) for the exact Node/npm versions and
+[SETUP.md](../../SETUP.md) for the exact Node/npm versions and
 other monorepo development commands.
 
 ```sh
