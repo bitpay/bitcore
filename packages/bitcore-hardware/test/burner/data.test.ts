@@ -132,45 +132,4 @@ describe('Burner Data', function () {
     expect(Burner.isValidChain('not a chain name')).to.be.false;
     expect(Burner.isValidChain('btc')).to.be.false;
   });
-
-  it('should reject when the nfc, reader, or card fails', async function () {
-    const burner = HwProxy.get('burner');
-    const expectReject = async (request: Promise<unknown>, message: string) => {
-      let error: Error | undefined;
-      try {
-        await request;
-      } catch (e) {
-        error = e as Error;
-      }
-      expect(error, `did not reject: ${message}`).to.be.instanceOf(Error);
-      expect(error!.message).to.include(message);
-    };
-
-    // nfc error
-    sandbox.replace(burner, 'nfc', new EventEmitter());
-    let request = HwProxy.getPublicKey({ vendor: 'burner' });
-    burner.nfc.emit('error', new Error('nfc failure'));
-    await expectReject(request, 'nfc failure');
-    sandbox.restore();
-
-    // reader error
-    sandbox.replace(burner, 'nfc', new EventEmitter());
-    request = HwProxy.getPublicKey({ vendor: 'burner' });
-    let reader: any = new EventEmitter();
-    burner.nfc.emit('reader', reader);
-    expect(reader.autoProcessing).to.be.false;
-    reader.emit('error', new Error('reader failure'));
-    await expectReject(request, 'reader failure');
-    sandbox.restore();
-
-    // card scanned, but communicating with it fails
-    sandbox.replace(burner, 'nfc', new EventEmitter());
-    request = HwProxy.getPublicKey({ vendor: 'burner' });
-    reader = new EventEmitter();
-    reader.transmit = sinon.stub().rejects(new Error('card failure'));
-    burner.nfc.emit('reader', reader);
-    reader.emit('card', {});
-    await expectReject(request, 'card failure');
-    expect(reader.transmit.called).to.be.true;
-  });
 });

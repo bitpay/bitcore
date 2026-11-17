@@ -6,7 +6,7 @@ import { BurnerChainType } from '../types/chains.js';
 import { Hardware } from '../types/modules.js';
 import { TransactionType } from '../types/tx.js';
 import Util from '../util.js';
-import { CommandNameType, DataType } from './types.js';
+import { CommandNameType, DataType, Reader } from './types.js';
 import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 
 const { Address, PublicKey, crypto } = BitcoreLib;
@@ -16,12 +16,19 @@ const { Address, PublicKey, crypto } = BitcoreLib;
  */
 export default class Burner implements Hardware {
   nfc: EventEmitter = new NFC();
+  reader?: Reader;
   private SLOT = 9;
 
   /**
    * Sends all commands to the device and recieves all responses
    */
-  async connect() { }
+  async connect() {
+    return new Promise((resolve) => this.nfc.on('reader', (reader: Reader) => {
+      this.reader = reader;
+      this.reader.autoProcessing = false;
+      resolve(true);
+    }));
+  }
 
   async disconnect() { };
 
@@ -195,27 +202,24 @@ export default class Burner implements Hardware {
    */
   async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
     return new Promise(async (resolve, reject) => {
-      this.nfc.on('reader', (reader) => {
-        reader.autoProcessing = false;
-        // When the user scans the card, send a bunch of commands
-        reader.on('card', async () => {
-          try {
-            const responses: Record<string, any>[] = [];
-            for (const command of commands) {
-              responses.push(await execHaloCmdPCSC(command, reader));
-            }
-            resolve(responses);
-          } catch (e) {
-            reject(e);
+      if (this.reader === undefined)
+        return reject('Reader not connected');
+
+      this.reader.once('card', async () => {
+        if (this.reader === undefined)
+          return reject();
+        try {
+          const responses: Record<string, any>[] = [];
+          for (const command of commands) {
+            responses.push(await execHaloCmdPCSC(command, this.reader));
           }
-        });
-  
-        reader.on('error', (e) => {
+          resolve(responses);
+        } catch (e) {
           reject(e);
-        });
+        }
       });
-  
-      this.nfc.on('error', (e) => {
+
+      this.reader.once('error', (e) => {
         reject(e);
       });
     });
