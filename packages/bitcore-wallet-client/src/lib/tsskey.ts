@@ -5,7 +5,6 @@ import { API as Client, CreateWalletOpts } from './api';
 import { Constants, Encryption, Utils } from './common';
 import { Credentials } from './credentials';
 import { ExportedKey, Key, type KeyAlgorithm, type PasswordMaybe } from './key';
-import log from './log';
 import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
@@ -162,7 +161,6 @@ export class TssKey extends Key implements ITssKey {
   }
 
   encrypt(password: string, opts?: { iter?: number; ks?: number }) {
-    const algos = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
     if (this.isPrivKeyEncrypted() && !this.checkPassword(password)) {
       throw new Error('Private key is already encrypted but with a different password');
     }
@@ -170,14 +168,14 @@ export class TssKey extends Key implements ITssKey {
     if (keyChainEncrypted && !this.hasPlaintextPrivKey()) {
       throw new Error('Keychain is already encrypted');
     }
-    for (const algo of algos) {
-      if (this.hasPlaintextPrivKey(algo)) {
-        super.encrypt(password, opts, algo);
-      }
-    }
+    const privateKeyShareEncrypted = keyChainEncrypted ? null
+      : JSON.stringify(Encryption.encryptWithPassword(this.keychain.privateKeyShare, password, opts));
+    const reducedPrivateKeyShareEncrypted = keyChainEncrypted ? null
+      : JSON.stringify(Encryption.encryptWithPassword(this.keychain.reducedPrivateKeyShare, password, opts));
+    this.encryptPrivateKeys(password, opts, Constants.SUPPORTED_SIG_ALGOS.filter(algo => this.hasPlaintextPrivKey(algo)));
     if (keyChainEncrypted) return;
-    this.keychain.privateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.privateKeyShare, password, opts));
-    this.keychain.reducedPrivateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.reducedPrivateKeyShare, password, opts));
+    this.keychain.privateKeyShareEncrypted = privateKeyShareEncrypted;
+    this.keychain.reducedPrivateKeyShareEncrypted = reducedPrivateKeyShareEncrypted;
     // remove the private data
     this.keychain.privateKeyShare.fill(0);
     this.keychain.privateKeyShare = null;
@@ -186,22 +184,30 @@ export class TssKey extends Key implements ITssKey {
   }
 
   decrypt(password: string) {
-    const encryptedAlgos = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA]
+    const encryptedAlgos = Constants.SUPPORTED_SIG_ALGOS
       .filter(algo => this.isPrivKeyEncrypted(algo));
-    for (const algo of encryptedAlgos) {
-      // Older password updates could leave the retained EDDSA root under a previous password.
-      if (algo === Constants.ALGOS.EDDSA && !this.checkPassword(password, algo)) {
-        log.warn(`${algo} private key could not be decrypted with this password and remains encrypted`);
-        continue;
+    const keyChainEncrypted = this.isKeyChainEncrypted();
+    let privateKeyShare: Buffer | string;
+    let reducedPrivateKeyShare: Buffer | string;
+    try {
+      // Stage shares before committing roots, so a share failure cannot partially decrypt the key.
+      if (keyChainEncrypted) {
+        privateKeyShare = Encryption.decryptWithPassword(this.keychain.privateKeyShareEncrypted, password);
+        reducedPrivateKeyShare = Encryption.decryptWithPassword(this.keychain.reducedPrivateKeyShareEncrypted, password);
       }
-      super.decrypt(password, algo);
-    }
-    if (this.isKeyChainEncrypted()) {
-      this.keychain.privateKeyShare = Encryption.decryptWithPassword(this.keychain.privateKeyShareEncrypted, password);
-      this.keychain.reducedPrivateKeyShare = Encryption.decryptWithPassword(this.keychain.reducedPrivateKeyShareEncrypted, password);
-      // remove the encrypted data
-      this.keychain.privateKeyShareEncrypted = null;
-      this.keychain.reducedPrivateKeyShareEncrypted = null;
+      this.decryptPrivateKeys(password, encryptedAlgos, { allowEddsaPasswordDrift: true });
+      if (keyChainEncrypted) {
+        // handles possible sjcl backup behavior, otherwise creates a copy & assignsis z
+        this.keychain.privateKeyShare = typeof privateKeyShare === 'string'
+          ? Buffer.from(privateKeyShare, 'utf8') : Buffer.from(privateKeyShare);
+        this.keychain.reducedPrivateKeyShare = typeof reducedPrivateKeyShare === 'string'
+          ? Buffer.from(reducedPrivateKeyShare, 'utf8') : Buffer.from(reducedPrivateKeyShare);
+        this.keychain.privateKeyShareEncrypted = null;
+        this.keychain.reducedPrivateKeyShareEncrypted = null;
+      }
+    } finally {
+      if (Buffer.isBuffer(privateKeyShare)) privateKeyShare.fill(0);
+      if (Buffer.isBuffer(reducedPrivateKeyShare)) reducedPrivateKeyShare.fill(0);
     }
   }
 };
