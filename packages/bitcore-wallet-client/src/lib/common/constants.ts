@@ -2,6 +2,11 @@
 
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 
+const ALGOS = {
+  EDDSA: 'EDDSA' as const,
+  ECDSA: 'ECDSA' as const,
+};
+
 export const Constants = {
   SCRIPT_TYPES: CWC.Constants.SCRIPT_TYPES,
   // not used, since Credentials 2.0
@@ -22,10 +27,8 @@ export const Constants = {
     ED25519: 'ed25519' as const,
     SECP256K1: 'secp256k1' as const,
   },
-  ALGOS: {
-    EDDSA: 'EDDSA' as const,
-    ECDSA: 'ECDSA' as const,
-  },
+  ALGOS,
+  SUPPORTED_SIG_ALGOS: [ALGOS.ECDSA, ALGOS.EDDSA] as const,
   CURVE_KEY: {
     ED25519: 'ed25519' as const,
     BITCOIN: 'bitcoin' as const,
