@@ -22,12 +22,22 @@ export default class Burner implements Hardware {
   /**
    * Sends all commands to the device and recieves all responses
    */
-  async connect() {
-    return new Promise((resolve) => this.nfc.on('reader', (reader: Reader) => {
-      this.reader = reader;
-      this.reader.autoProcessing = false;
-      resolve(true);
-    }));
+  async connect(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const onReader = (reader: Reader) => {
+        clearTimeout(timer);
+        this.reader = reader;
+        this.reader.autoProcessing = false;
+        resolve(true);
+      };
+  
+      const timer = setTimeout(() => {
+        this.nfc.removeListener('reader', onReader);
+        reject(new Error('No NFC reader detected within 5000ms'));
+      }, 5000);
+  
+      this.nfc.once('reader', onReader);
+    });
   }
 
   async disconnect() { };

@@ -132,7 +132,10 @@ export default class Ledger implements Hardware {
       promises.push(promise);
     }
     
-    return Promise.all(promises);
+    return Promise.race([
+      Promise.all(promises),
+      new Promise((_, reject) => setTimeout(() => reject('Could not find ledger after 5000 ms'), 5000))
+    ]);
   }
 
   async disconnect() {
