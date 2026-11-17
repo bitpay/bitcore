@@ -1,5 +1,8 @@
 import * as chai from 'chai';
+import sinon from 'sinon';
+import sjcl from 'sjcl';
 import { Deriver } from '@bitpay-labs/crypto-wallet-core';
+import { Constants, Encryption } from '../src/lib/common';
 import { Key } from '../src/lib/key';
 import { TssKey } from '../src/lib/tsskey';
 
@@ -36,6 +39,11 @@ describe('TssKey encryption', function() {
   this.timeout(20000);
 
   const password = 'test-only-password';
+  const sandbox = sinon.createSandbox();
+
+  afterEach(function() {
+    sandbox.restore();
+  });
 
   it('should not export a plaintext EDDSA root after password encryption', function() {
     // Generate a fresh base Key containing both algorithms.
@@ -149,16 +157,105 @@ describe('TssKey encryption', function() {
   it('should decrypt every secret and re-encrypt with a new password', function() {
     const tssKey = newTssKey(new Key({ seedType: 'new' }));
     tssKey.encrypt(password);
+    const decryptSpy = sandbox.spy(Encryption, 'decryptWithPassword');
 
     tssKey.decrypt(password);
     const decrypted = tssKey.toObj() as any;
     should.exist(decrypted.xPrivKey);
     should.exist(decrypted.xPrivKeyEDDSA);
     decrypted.keychain.privateKeyShare.should.deep.equal(fullShare);
+    decrypted.keychain.reducedPrivateKeyShare.should.deep.equal(reducedShare);
+    decryptSpy.returnValues.should.not.include(tssKey.keychain.privateKeyShare);
+    decryptSpy.returnValues.should.not.include(tssKey.keychain.reducedPrivateKeyShare);
+    for (const value of decryptSpy.returnValues) {
+      Buffer.isBuffer(value).should.be.true;
+      value.every(b => b === 0).should.be.true;
+    }
 
     tssKey.encrypt('new-password');
     assertNoPlaintextSecrets(tssKey.toObj());
     tssKey.checkPassword('new-password', 'ECDSA').should.be.true;
     tssKey.checkPassword('new-password', 'EDDSA').should.be.true;
+  });
+
+  it('should accept SJCL string results and retain the decrypted shares as buffers', function() {
+    const original = newTssKey(new Key({ seedType: 'new' })).toObj() as any;
+    const obj = {
+      ...original,
+      keychain: { ...original.keychain }
+    };
+    for (const field of ['xPrivKey', 'xPrivKeyEDDSA', 'mnemonic']) {
+      obj[`${field}Encrypted`] = sjcl.encrypt(password, obj[field], { iter: 1000 });
+      obj[field] = null;
+    }
+    for (const field of ['privateKeyShare', 'reducedPrivateKeyShare']) {
+      obj.keychain[`${field}Encrypted`] = sjcl.encrypt(password, obj.keychain[field].toString(), { iter: 1000 });
+      obj.keychain[field] = null;
+    }
+    const tssKey = new TssKey(obj);
+    sandbox.stub(Encryption, '_baseDecrypt').throws(new Error('force SJCL fallback'));
+
+    tssKey.checkPassword(password).should.be.true;
+    tssKey.decrypt(password);
+
+    const decrypted = tssKey.toObj() as any;
+    decrypted.xPrivKey.should.equal(original.xPrivKey);
+    decrypted.xPrivKeyEDDSA.should.equal(original.xPrivKeyEDDSA);
+    decrypted.mnemonic.should.equal(original.mnemonic);
+    Buffer.isBuffer(tssKey.keychain.privateKeyShare).should.be.true;
+    Buffer.isBuffer(tssKey.keychain.reducedPrivateKeyShare).should.be.true;
+    tssKey.keychain.privateKeyShare.should.deep.equal(fullShare);
+    tssKey.keychain.reducedPrivateKeyShare.should.deep.equal(reducedShare);
+  });
+
+  for (const secret of ['xPrivKeyEDDSA', 'mnemonic', 'reducedPrivateKeyShare']) {
+    it(`should leave every secret unchanged when encrypting ${secret} fails`, function() {
+      const tssKey = newTssKey(new Key({ seedType: 'new' }));
+      const before = tssKey.toObj() as any;
+      const plaintext = before[secret] || before.keychain[secret];
+      const encryptStub = sandbox.stub(Encryption, 'encryptWithPassword').callThrough();
+      encryptStub.withArgs(sinon.match(value => Buffer.isBuffer(plaintext)
+        ? Buffer.isBuffer(value) && value.equals(plaintext)
+        : value === plaintext)).throws(new Error('encryption failed'));
+
+      (() => tssKey.encrypt(password, { iter: 1 })).should.throw('encryption failed');
+
+      tssKey.toObj().should.deep.equal(before);
+    });
+  }
+
+  for (const secret of ['xPrivKeyEncrypted', 'mnemonicEncrypted', 'reducedPrivateKeyShareEncrypted']) {
+    it(`should leave every secret unchanged and clear buffers when decrypting ${secret} fails`, function() {
+      const tssKey = newTssKey(new Key({ seedType: 'new' }));
+      tssKey.encrypt(password, { iter: 1 });
+      const before = tssKey.toObj() as any;
+      const ciphertext = before[secret] || before.keychain[secret];
+      const decryptStub = sandbox.stub(Encryption, 'decryptWithPassword').callThrough();
+      decryptStub.withArgs(ciphertext).throws(new Error('decryption failed'));
+
+      (() => tssKey.decrypt(password)).should.throw();
+
+      tssKey.toObj().should.deep.equal(before);
+      for (const value of decryptStub.returnValues.filter(Buffer.isBuffer)) {
+        value.every(b => b === 0).should.be.true;
+      }
+    });
+  }
+
+  it('should leave both roots unchanged and clear buffers when EDDSA is tried before a failing ECDSA root', function() {
+    const baseKey = new Key({ seedType: 'new', password: 'old-password', encryptionOpts: { iter: 1 } });
+    baseKey.decrypt('old-password', 'ECDSA');
+    baseKey.encrypt(password, { iter: 1 }, 'ECDSA');
+    const tssKey = newTssKey(baseKey);
+    const before = tssKey.toObj();
+    sandbox.stub(Constants, 'SUPPORTED_SIG_ALGOS').value([...Constants.SUPPORTED_SIG_ALGOS].reverse());
+    const decryptSpy = sandbox.spy(Encryption, 'decryptWithPassword');
+
+    (() => tssKey.decrypt('old-password')).should.throw('Could not decrypt');
+
+    tssKey.toObj().should.deep.equal(before);
+    for (const value of decryptSpy.returnValues.filter(Buffer.isBuffer)) {
+      value.every(b => b === 0).should.be.true;
+    }
   });
 });
