@@ -2,7 +2,7 @@
   "name": "@bitpay-labs/bitcore-node",
   "description": "A blockchain indexing node with extended capabilities using bitcore",
   "engines": {
-    "node": ">=24.22.1"
+    "node": ">=24.22.3"
   },
   "version": "11.11.5",
   "author": "Justin Langston <nitsujlangston@gmail.com>",

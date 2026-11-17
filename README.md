@@ -58,7 +58,7 @@ each module's distributable files.
 
 ### Setup
 
-Use Node `24.22.1` and npm exactly `11.19.1`. Root `package.json` declares
+Use Node `24.22.3` and npm exactly `11.19.1`. Root `package.json` declares
 `devEngines`, which npm checks before `install`, `ci`, and `run` commands.
 Clone the repository, then install from its root:
 

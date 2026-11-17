@@ -12,7 +12,7 @@ addons:
     - g++-4.8
     - clang
 node_js:
-  - '8'
+  - '24.22.3'
 before_script:
   - sleep 30  # suggested in https://docs.travis-ci.com/user/database-setup/#mongodb
   # - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
