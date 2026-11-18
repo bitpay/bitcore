@@ -1174,6 +1174,28 @@ describe('Push notifications', function() {
         });
       });
     });
+
+    it('should notify incoming tx confirmations silently, with the token', async function() {
+      const tokenAddress = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+      await util.promisify(server._notify).call(server, 'IncomingTxConfirmed', {
+        txid: '0x01',
+        chain: 'eth',
+        network: 'livenet',
+        amount: 5000,
+        tokenAddress
+      });
+      await Utils.sleep(100);
+      const args = requestStub.getCalls().map(c => c.args[0]);
+      args.length.should.equal(1);
+      args[0].body.messages.apple_push.extra.notification_type.should.equal('IncomingTxConfirmed');
+      args[0].body.messages.apple_push.extra.tokenAddress.should.equal(tokenAddress);
+      should.not.exist(args[0].body.messages.apple_push.alert.title);
+      should.not.exist(args[0].body.messages.apple_push.alert.body);
+      should.not.exist(args[0].body.messages.android_push.alert);
+      should.not.exist(args[0].body.messages.android_push.title);
+      should.exist(args[0].body.messages.android_push.send_to_sync);
+      should.exist(args[0].body.messages.apple_push['content-available']);
+    });
   });
 
   describe('Single wallet - Should use braze subscription if both set', function() {

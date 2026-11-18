@@ -7,6 +7,9 @@ export interface ITxConfirmationSub {
   amount: number;
   isActive: boolean;
   isCreator: boolean;
+  chain?: string;
+  network?: string;
+  tokenAddress?: string;
 }
 export class TxConfirmationSub {
   version: number;
@@ -17,6 +20,9 @@ export class TxConfirmationSub {
   amount: number;
   isActive: boolean;
   isCreator: boolean;
+  chain?: string;
+  network?: string;
+  tokenAddress?: string;
 
   static create(opts) {
     opts = opts || {};
@@ -31,6 +37,9 @@ export class TxConfirmationSub {
     x.isActive = true;
     x.amount = opts.amount;
     x.isCreator = opts.isCreator;
+    x.chain = opts.chain;
+    x.network = opts.network;
+    x.tokenAddress = opts.tokenAddress;
     return x;
   }
 
@@ -45,6 +54,9 @@ export class TxConfirmationSub {
     x.amount = obj.amount;
     x.isActive = obj.isActive;
     x.isCreator = obj.isCreator;
+    x.chain = obj.chain;
+    x.network = obj.network;
+    x.tokenAddress = obj.tokenAddress;
     return x;
   }
 }

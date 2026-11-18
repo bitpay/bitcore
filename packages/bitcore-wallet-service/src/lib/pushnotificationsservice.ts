@@ -62,6 +62,9 @@ const PUSHNOTIFICATIONS_TYPES = {
   },
   TxProposalRemoved: {
     dataOnly: true
+  },
+  IncomingTxConfirmed: {
+    dataOnly: true
   }
 };
 
