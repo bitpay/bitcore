@@ -24,8 +24,8 @@ export class SolRpc {
    * @param {string} config.protocol - The network protocol (e.g., 'http', 'https', 'wss'). - remove on review agreement
    * @param {string} config.host - The host URL or IP address.
    * @param {number} [config.port] - The port number
-   * @param {number} [config.wsPort] - The WS port number
    * @param {Function} [config.fetch] - fetch implementation for HTTP RPC requests (defaults to node-fetch)
+   * @param {number} [config.wsPort] - The WS port number
    */
   constructor(config) {
     this.config = config;
