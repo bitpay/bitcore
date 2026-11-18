@@ -7,7 +7,8 @@
   "scripts": {
     "test": "gulp test",
     "build": "gulp",
-    "pub": "npm run build && npm publish"
+    "pub": "npm run build && npm publish",
+    "prepack": "gulp browser:compressed"
   },
   "contributors": [
     {
@@ -43,5 +44,11 @@
     "@bitpay-labs/bitcore-lib": "^11.11.2",
     "unorm": "^1.4.1"
   },
-  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
+  "files": [
+    "index.js",
+    "lib",
+    "bitcore-mnemonic.js",
+    "bitcore-mnemonic.min.js"
+  ]
 }

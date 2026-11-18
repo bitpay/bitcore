@@ -136,7 +136,7 @@ function createCoinGeckoRequestStub(handlers: {
 describe('CoinGecko integration', function() {
   this.timeout(5000);
   const sandbox = sinon.createSandbox();
-  let server;
+  let server: WalletService;
   let wallet;
   let fakeRequest;
   let loggerError: sinon.SinonStub;
@@ -147,8 +147,9 @@ describe('CoinGecko integration', function() {
   const getTokens = (req: any = {}) => cg().coinGeckoGetTokens(req);
 
   function forceGlobalCacheMisses() {
-    sandbox.stub(cg().storage, 'checkAndUseGlobalCache').callsFake((_key, _duration, cb) => cb(null, null, null));
+    const cacheStub = sandbox.stub(cg().storage, 'checkAndUseGlobalCache').callsFake((_key, _duration, cb) => cb(null, null, null));
     sandbox.stub(cg().storage, 'storeGlobalCache').callsFake((_key, _values, cb) => cb(null));
+    return cacheStub;
   }
 
   /** Wraps the active fakeRequest so every outgoing market_chart URL is recorded, in order. */
@@ -225,7 +226,7 @@ describe('CoinGecko integration', function() {
     });
 
     it('should use the Arc platform for token lists and contract lookups', async () => {
-      forceGlobalCacheMisses();
+      const cacheStub = forceGlobalCacheMisses();
       const tokenAddress = '0x3600000000000000000000000000000000000000';
       const otherToken = { chainId: 5042, address: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         name: 'Arc Test Token', symbol: 'TEST', decimals: 6, logoURI: '' };
@@ -249,7 +250,7 @@ describe('CoinGecko integration', function() {
 
       const tokens = await getTokens({ params: { chain: 'arc' } });
       tokens.should.deep.equal([otherToken]);
-      cg().storage.checkAndUseGlobalCache.onSecondCall().callsFake((_key, _duration, cb) => cb(null, tokenList, null));
+      cacheStub.onSecondCall().callsFake((_key, _duration, cb) => cb(null, tokenList, null));
       (await getTokens({ params: { chain: 'arc' } })).should.deep.equal([otherToken]);
       const rates = await getFiatRates({ coin: 'USDC', chain: 'arc', tokenAddress });
       rates.should.deep.equal([{ ts: 1, rate: 1 }]);
@@ -975,7 +976,11 @@ describe('CoinGecko integration', function() {
     });
 
     it('should omit a failed default coin and log a warning', async () => {
-      const warnSpy = sandbox.spy(logger, 'warn');
+      // winston's LeveledLogMethod is overloaded, and TypeScript resolves a bare
+      // reference to an overloaded method (as sandbox.spy needs here) to its last
+      // overload -- `(infoObject: object)` -- even though the real call below uses
+      // the (message, meta) overload, so narrow the view to what's really used.
+      const warnSpy = sandbox.spy(logger as unknown as { warn: (message: string, meta?: any) => any }, 'warn');
 
       // Force global-cache misses so every default coin fetches via HTTP.
       forceGlobalCacheMisses();

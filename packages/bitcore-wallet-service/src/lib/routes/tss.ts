@@ -27,7 +27,7 @@ export class TssRouter {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
         const { message, n, password, version = 1.0, timeLimit } = req.body;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         await TssKeyGen.processMessage({ id, message, n, password, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
@@ -38,7 +38,7 @@ export class TssRouter {
     router.post('/v1/tss/keygen/:id/register', authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         const data = req.body;
 
         await TssKeyGen.registerParty({ id, copayerId, data });
@@ -52,7 +52,7 @@ export class TssRouter {
     router.get('/v1/tss/keygen/:id/secret', authTssKeyGenRequest({ bypassExpired: true }), async function(req, res) {
       try {
         const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         const { chain, network } = req.query as { [key: string]: string };
         const secret = await TssKeyGen.getBwsJoinSecret({ id, chain, network, copayerId });
         return res.json({ secret });
@@ -65,7 +65,7 @@ export class TssRouter {
       try {
         const id = req.params.id;
         const { chain, network, secrets, secret } = req.body;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         if (secrets == null && secret != null) {
           // Legacy (< v1.3) clients send a single unencrypted secret
           await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
@@ -86,7 +86,7 @@ export class TssRouter {
 
         const { id, round } = req.params as { [key: string]: string };
         const { maxWaitTime } = req.query as { [key: string]: string };
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
 
         // Validate access and fetch session before committing to a streaming response, so that errors like
         //   "session not found" or "not a participant" can still be returned with a proper
@@ -115,7 +115,7 @@ export class TssRouter {
     router.post('/v1/tss/keygen/:id/store', authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         const message = req.body;
 
         await TssKeyGen.storeKey({ id, message, copayerId });
@@ -133,7 +133,7 @@ export class TssRouter {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
         const { message, m, version = 1.0, timeLimit } = req.body;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         await TssSign.processMessage({ id, message, m, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
@@ -149,13 +149,13 @@ export class TssRouter {
 
         const { id, round } = req.params as { [key: string]: string };
         const { maxWaitTime } = req.query as { [key: string]: string };
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
 
         // Validate access and fetch session before committing to a streaming response, so that errors like
         //   "session not found" or "not a participant" can still be returned with a proper
         //   HTTP status instead of silently becoming an empty 200 (see below).
         const session = await TssSign.getSessionForCopayer({ id, copayerId });
-        
+
         if (abort.signal.aborted || res.closed) {
           return; // Connection closed by client, stop processing
         }
@@ -180,7 +180,7 @@ export class TssRouter {
       try {
         const id = req.params.id;
         const { signature } = req.body;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         await TssSign.storeSignature({ id, signature, copayerId });
         return res.send();
       } catch (err) {

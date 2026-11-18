@@ -9,7 +9,7 @@ for arg in "$@"; do
     echo ""
     echo "Examples:"
     echo "  $0 build                              # Builds the Docker images for local environment"
-    echo "  $0 run 'npm run ci:bitcore-node'      # Runs 'npm run ci:bitcore-node' in the test_runner container using local configuration"
+    echo "  $0 run 'npm run test:bitcore-node'    # Runs 'npm run test:bitcore-node' in the test_runner container using local configuration"
     echo "  $0 run chains                         # Starts all blockchains needed for testing"
     echo "  $0 down                               # Shuts down containers and removes volumes"
     exit 0
@@ -23,12 +23,12 @@ elif [ "$1" = "run" ]; then
   if [ "$2" = "chains" ]; then
     docker compose -f docker-compose.test.base.yml -f docker-compose.test.ci.yml up -d
   else
-    docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml run --entrypoint "$2" test_runner
+    docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml run --rm test_runner sh -c "$2"
   fi
 elif [ "$1" = "down" ]; then
   docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml down -v
   docker container rm $(docker container ls -qa --filter name=bitcore-test_runner-run-*) &>/dev/null
   docker rmi bitcore-test_runner:latest
 else
-  echo "Missing expected parameter. The first parameter should be 'build', 'local', or 'down'."
+  echo "Missing expected parameter. The first parameter should be 'build', 'run', or 'down'."
 fi

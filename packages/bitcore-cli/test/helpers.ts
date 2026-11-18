@@ -27,7 +27,7 @@ let storage: InstanceType<typeof Storage>;
 export const CONSTANTS = {
   WALLETS: {
     PASSWORD: 'testpassword',
-    CLI_EXEC: 'build/src/cli.js',
+    CLI_EXEC: 'bin/bitcore-cli',
     CLI_OPTS: {
       env: { ...process.env }, // @clack/prompts replaced picocolors with fast-wrap-ansi which is not NO_COLOR/FORCE_COLOR compliant
       detached: true // Ensure child process is in its own process group, so it can die without killing the parent test process
@@ -80,7 +80,7 @@ export async function startBws() {
         doNotCheckV8: true
       },
       () => {
-        sinon.stub(API.prototype, 'constructor').callsFake(function(opts) {
+        sinon.stub(API.prototype as any, 'constructor').callsFake(function(opts: NonNullable<ConstructorParameters<typeof API>[0]>) {
           opts.request = supertest(expressApp.app);
           return (API.prototype.constructor as any).wrappedMethod.call(API.prototype, opts);
         });

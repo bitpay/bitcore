@@ -3,7 +3,7 @@
 import 'chai/register-should';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
-import io from 'socket.io-client';
+import io = require('socket.io-client');
 import logger from '../src/lib/logger';
 import { MessageBroker } from '../src/lib/messagebroker';
 import type { INotification } from '../src/lib/model/notification';
@@ -22,7 +22,7 @@ describe('MessageBroker', function() {
     sandbox.stub(io, 'connect').returns({
       on: sandbox.stub(),
       emit: sandbox.stub()
-    });
+    } as unknown as io.Socket);
     sandbox.stub(logger, 'info');
     sandbox.stub(logger, 'warn');
     sandbox.stub(logger, 'error');

@@ -40,6 +40,21 @@
 - [Bitcore Client](packages/bitcore-client) - A helper to create a wallet using the bitcore-node infrastructure
 - [Bitpay/Bitpay App](https://github.com/bitpay/bitpay-app) - An easy-to-use, multiplatform, multisignature, secure wallet for bitcoin, ethereum, and more
 
+## Development
+
+See [SETUP.md](SETUP.md) for Node/npm requirements, backend workspace setup,
+build and test commands, Docker workflows, and dependency maintenance.
+
+### Insight
+
+Insight (`packages/insight`) is deliberately kept out of the workspace graph
+and keeps its own independent lockfile and toolchain. Install and build it
+separately from the root:
+
+```sh
+npm run insight:install
+npm run insight:build
+```
 
 ## Versioning
 

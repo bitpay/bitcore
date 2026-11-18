@@ -70,7 +70,10 @@ export function registerWalletDataRoutes(router: express.Router, context: RouteC
     req.query.noChange = req.query.noChange ?? '1';
     req.redirectedUrl = req.url;
     req.url = '/v2/addresses?' + Object.entries(req.query).map(([key, value]) => `${key}=${value}`).join('&');
-    router.handle(req, res);
+    // `handle` re-dispatches the request through this same router without an
+    // HTTP round-trip; it exists on Express's real Router at runtime but
+    // isn't part of its public typed API.
+    (router as any).handle(req, res);
   });
 
   router.get('/v2/addresses/', (req, res) => {
@@ -80,7 +83,9 @@ export function registerWalletDataRoutes(router: express.Router, context: RouteC
       if (req.query.skip) opts.skip = +req.query.skip;
       opts.reverse = req.query.reverse == '1';
       if (req.query.addresses) {
-        opts.addresses = Array.isArray(req.query.addresses) ? req.query.addresses : req.query.addresses.split(',');
+        opts.addresses = Array.isArray(req.query.addresses)
+          ? req.query.addresses.map(String)
+          : String(req.query.addresses).split(',');
       }
       opts.noChange = Utils.castToBool(req.query.noChange);
 

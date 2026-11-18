@@ -116,7 +116,7 @@ class Helpers {
   }
 
   mockBlockchainExplorer() {
-    const blockchainExplorer = sinon.stub();
+    const blockchainExplorer: any = sinon.stub();
     blockchainExplorer.register = sinon.stub().callsArgWith(1, null, null);
     blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, null, null);
     blockchainExplorer.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
