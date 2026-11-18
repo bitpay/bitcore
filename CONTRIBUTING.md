@@ -37,6 +37,8 @@ accurate comments, etc.) and any other requirements (such as test coverage).
 
 ✍️ **All commits must be [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits)** and `Verified` in GitHub.
 
+See [SETUP.md](SETUP.md) for the instructions on how to set up your environment and edit a workspace package's dependencies.
+
 Follow this process:
 
 1. [Fork](http://help.github.com/fork-a-repo/) the project, clone your fork,
@@ -65,22 +67,17 @@ Follow this process:
    git checkout -b <feature-branch-name>
    ```
 
-3. Set up your local environment and write code, committing your changes in
-   logical chunks. See [SETUP.md](SETUP.md) for the exact
-   Node/npm versions, the root `npm ci` install, compile/watch/test commands,
-   and how to edit a workspace package's dependencies.
-
-4. Locally merge (or rebase) the upstream `master` branch into your feature branch:
+3. Locally merge (or rebase) the upstream `master` branch into your feature branch:
 
    ```bash
    git pull [--rebase] upstream master
    ```
 
-5. Push your feature branch up to your fork:
+4. Push your feature branch up to your fork:
 
    ```bash
    git push origin <feature-branch-name>
    ```
 
-6. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/)
+5. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/)
     with a clear title and description from your fork to the base repository (bitpay/bitcore - master).
