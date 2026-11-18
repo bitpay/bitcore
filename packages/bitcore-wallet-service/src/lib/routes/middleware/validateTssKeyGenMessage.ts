@@ -4,9 +4,6 @@ import { Errors } from '../../errors/errordefinitions';
 import { error } from '../helpers';
 import type express from 'express';
 
-const isObject = (value: unknown): value is Record<string, any> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 /**
  * Validate the shape of a KeyGen message request body without reading any session or storage.
  * Cryptographic fields are left opaque for `verifyTssMessage` and the DKG library.
@@ -14,7 +11,7 @@ const isObject = (value: unknown): value is Record<string, any> =>
  */
 export function checkTssKeyGenMessage(body: unknown): string | null {
   const message = (body as { message?: unknown } | undefined)?.message;
-  if (!isObject(message)) {
+  if (!Utils.isObject(message)) {
     return 'message must be an object';
   }
   const { partyId, round, broadcastMessages, p2pMessages } = message;
@@ -31,18 +28,18 @@ export function checkTssKeyGenMessage(body: unknown): string | null {
     return 'message has no broadcast or p2p messages';
   }
   for (const m of broadcastMessages) {
-    if (!isObject(m) || m.from !== partyId) {
+    if (!Utils.isObject(m) || m.from !== partyId) {
       return 'Invalid broadcast message';
     }
-    if (!isObject(m.payload) || typeof m.payload.message !== 'string' || typeof m.payload.signature !== 'string') {
+    if (!Utils.isObject(m.payload) || typeof m.payload.message !== 'string' || typeof m.payload.signature !== 'string') {
       return 'Invalid broadcast message payload';
     }
   }
   for (const m of p2pMessages) {
-    if (!isObject(m) || m.from !== partyId || !Utils.isCanonicalIndex(m.to) || m.to === m.from) {
+    if (!Utils.isObject(m) || m.from !== partyId || !Utils.isCanonicalIndex(m.to) || m.to === m.from) {
       return 'Invalid p2p message';
     }
-    if (typeof m.commitment !== 'string' || !isObject(m.payload) ||
+    if (typeof m.commitment !== 'string' || !Utils.isObject(m.payload) ||
       typeof m.payload.encryptedMessage !== 'string' || typeof m.payload.signature !== 'string') {
       return 'Invalid p2p message payload';
     }

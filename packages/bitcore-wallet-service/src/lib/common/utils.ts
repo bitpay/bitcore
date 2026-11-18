@@ -99,8 +99,11 @@ export const Utils = {
     }
   },
 
-  isObject(obj) {
-    return obj && typeof obj === 'object' && !Array.isArray(obj);
+  /**
+   * True for a non-null, non-array object. Always returns a boolean, never the falsy input itself.
+   */
+  isObject(obj: unknown): obj is Record<string, any> {
+    return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
   },
 
   /**
