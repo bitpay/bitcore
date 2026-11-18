@@ -163,9 +163,8 @@ type NewCommand = (typeof COMMANDS.NEW)[number]['value'] | 'exit';
 type Command = (typeof COMMANDS.BASIC)[number]['value'] | (typeof COMMANDS.ADVANCED)[number]['value'] | 'advanced' | 'exit';
 
 
-if (require.main === module) {
-
-  wallet.getClient({
+export function runCli() {
+  return wallet.getClient({
     mustExist: false,
     doNotComplete: opts.register
   })
@@ -225,8 +224,8 @@ if (require.main === module) {
           prompt.intro(`Status for ${Utils.colorTextByChain(wallet.chain, walletName)}`);
           const status = await commands.status.walletStatus({ wallet, opts });
           cmdParams.status = status;
-          if (wallet.isMultiSig() && !wallet.isComplete()) {
-            prompt.outro(Utils.boldText('This multisig wallet is not fully set up yet. You need to wait for all copayers to join.'));
+          if ((wallet.isMultiSig() || wallet.isTss()) && !wallet.isComplete()) {
+            prompt.outro(Utils.boldText('This multi-party wallet is not fully set up yet. You need to wait for all copayers to join.'));
             return;
           }
           prompt.outro(Utils.boldText('Welcome to the Bitcore CLI!'));
@@ -346,6 +345,9 @@ if (require.main === module) {
               case 'changepassword':
                 await commands.changepassword.changePassword(cmdParams);
                 break;
+              case 'createsiblingwallet':
+                await commands.createsiblingwallet.createSiblingWallet(cmdParams);
+                break;
               default:
               case 'exit':
                 if (opts.command) {
@@ -384,4 +386,8 @@ if (require.main === module) {
       }
     })
     .catch(Utils.die);
+}
+
+if (require.main === module) {
+  runCli();
 }

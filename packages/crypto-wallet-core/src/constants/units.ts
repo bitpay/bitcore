@@ -296,5 +296,16 @@ export const UNITS = {
       maxDecimals: 6,
       minDecimals: 2
     }
+  },
+  xaut: {
+    toSatoshis: 1e6,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
   }
 };

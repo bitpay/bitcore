@@ -130,6 +130,14 @@ const Config = (): any => {
           url: 'https://api-eth.bitcore.io'
         }
       },
+      arc: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-eth.bitcore.io'
+        }
+      },
       sol: {
         livenet: {
           url: 'https://api-sol.bitcore.io'

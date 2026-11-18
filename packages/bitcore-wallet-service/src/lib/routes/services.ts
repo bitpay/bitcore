@@ -461,7 +461,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
 
   router.post('/v1/service/transak/orderDetails', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.transak.transakGetOrderDetails(req);
+      return server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
     });
   });
 

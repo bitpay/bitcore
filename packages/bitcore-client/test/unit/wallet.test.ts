@@ -68,7 +68,7 @@ describe('Wallet', function() {
     await bcnStorage.stop();
   });
   beforeEach(function() {
-    sandbox.stub(request, 'Request').callsFake(function(args) {
+    sandbox.stub(request as any, 'Request').callsFake(function(args: { url: string; method: string; headers: Record<string, string>; body?: any }) {
       args.url = args.url.replace('https://api.bitcore.io/api', baseUrl);
       args.url = args.url.replace(baseUrl, '/api');
       const req = api[args.method.toLowerCase()](args.url);
@@ -807,7 +807,9 @@ describe('Wallet', function() {
         saveWallet: async () => undefined
       } as any;
 
-      loadWalletStub = sandbox.stub(wallet.storage, 'loadWallet').resolves(ethMigrationTestWalletFixture.rawWallet);
+      loadWalletStub = sandbox
+        .stub(wallet.storage as unknown as { loadWallet: (params: { name: string; raw: true }) => Promise<void | string> }, 'loadWallet')
+        .resolves(ethMigrationTestWalletFixture.rawWallet);
       getStoredKeysStub = sandbox.stub(wallet.storage, 'getStoredKeys').resolves(ethMigrationTestWalletFixture.storedKeys);
       addKeysSafeStub = sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
       saveWalletStub = sandbox.stub(wallet.storage, 'saveWallet').resolves();

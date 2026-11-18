@@ -14,7 +14,10 @@ export async function verifyTssMessage(req, res, next) {
       throw Errors.TSS_PUBKEY_MISSING;
     }
 
-    if (!message.broadcastMessages?.length && !message.p2pMessages?.length) {
+    // 1-of-N signing sessions won't have messages for other recipients.
+    //  req.session is unset for a new session, and keygen sessions have no `m`.
+    const isSoloSigner = req.session?.m === 1;
+    if (!isSoloSigner && !message.broadcastMessages?.length && !message.p2pMessages?.length) {
       throw Errors.TSS_INVALID_MESSAGE;
     }
 

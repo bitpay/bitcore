@@ -37,6 +37,8 @@ interface Errors<T> {
   // Solana Errors
   INSUFFICIENT_SOL_FEE: T;
   LOCKED_SOL_FEE: T;
+  INSUFFICIENT_ARC_FEE: T;
+  LOCKED_ARC_FEE: T;
   HISTORY_LIMIT_EXCEEDED: T;
   MAIN_ADDRESS_GAP_REACHED: T;
   MULTI_TX_UNSUPPORTED: T;
@@ -114,6 +116,8 @@ const errors: Errors<string> = {
   LOCKED_OP_FEE: 'Your linked OP wallet does not have enough ETH for fee',
   INSUFFICIENT_SOL_FEE: 'Your linked SOL wallet does not have enough SOL for fee',
   LOCKED_SOL_FEE: 'Your linked SOL wallet does not have enough SOL for fee',
+  INSUFFICIENT_ARC_FEE: 'Your linked ARC wallet does not have enough USDC for fee',
+  LOCKED_ARC_FEE: 'Your linked ARC wallet USDC is locked by pending spend proposals',
   INVALID_ADDRESS: 'Invalid address',
   INVALID_CHANGE_ADDRESS: 'Invalid change address',
   KEY_IN_COPAYER: 'Key already registered',

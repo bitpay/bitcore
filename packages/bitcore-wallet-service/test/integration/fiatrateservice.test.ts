@@ -507,6 +507,16 @@ describe('Fiat rate service', function() {
           rate: 156
         }
       ];
+      const xaut = [
+        {
+          code: 'USD',
+          rate: 4000
+        },
+        {
+          code: 'EUR',
+          rate: 3700
+        }
+      ];
 
       request.get
         .withArgs({
@@ -580,6 +590,12 @@ describe('Fiat rate service', function() {
           json: true
         })
         .yields(null, null, eth);
+      request.get
+        .withArgs({
+          url: 'https://bitpay.com/api/rates/XAUT?p=bws',
+          json: true
+        })
+        .yields(null, null, xaut);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -698,8 +714,19 @@ describe('Fiat rate service', function() {
                                                             should.not.exist(err);
                                                             res.fetchedOn.should.equal(100);
                                                             res.rate.should.equal(150);
-                                                            clock.restore();
-                                                            done();
+                                                            service.getRate(
+                                                              {
+                                                                code: 'USD',
+                                                                coin: 'xaut'
+                                                              },
+                                                              function(err, res) {
+                                                                should.not.exist(err);
+                                                                res.fetchedOn.should.equal(100);
+                                                                res.rate.should.equal(4000);
+                                                                clock.restore();
+                                                                done();
+                                                              }
+                                                            );
                                                           }
                                                         );
                                                       }
@@ -930,6 +957,19 @@ describe('Fiat rate service', function() {
           done();
         });
       });
+    });
+    it('should fetch and store USD-pegged rates for native USDC on Arc', async function() {
+      await util.promisify(service.storage.storeFiatRate).call(service.storage, 'btc', btcRates);
+      request.get.yields(null, null, btcRates.map(({ code, value }) => ({ code, rate: value })));
+
+      await util.promisify(service._fetch).call(service);
+
+      const storedRate = await util.promisify(service.getRate).call(service, { coin: 'arc', code: 'USD' });
+      storedRate.rate.should.equal(1);
+      const rates = await util.promisify(service.getRatesByCoin).call(service, { coin: 'arc' });
+      rates.find(rate => rate.code === 'USD').rate.should.equal(1);
+      rates.find(rate => rate.code === 'EUR').rate.should.equal(0.87);
+      request.get.calledWith(sinon.match({ url: sinon.match(/\/rates\/ARC\?/) })).should.equal(false);
     });
     it('should get rate for specific ts', function(done) {
       const clock = sinon.useFakeTimers({ toFake: ['Date'] });

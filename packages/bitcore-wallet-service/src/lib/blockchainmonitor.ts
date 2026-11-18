@@ -75,6 +75,7 @@ export class BlockchainMonitor {
             doge: {},
             ltc: {},
             arb: {},
+            arc: {},
             base: {},
             op: {},
             sol: {},

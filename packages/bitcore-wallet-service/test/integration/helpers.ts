@@ -116,7 +116,7 @@ class Helpers {
   }
 
   mockBlockchainExplorer() {
-    const blockchainExplorer = sinon.stub();
+    const blockchainExplorer: any = sinon.stub();
     blockchainExplorer.register = sinon.stub().callsArgWith(1, null, null);
     blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, null, null);
     blockchainExplorer.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
@@ -555,6 +555,7 @@ class Helpers {
 
     switch (txp.coin) {
       case 'eth':
+      case 'arc':
       case 'xrp':
         // For eth => account, 0, change = 0
         const priv = xpriv.derive('m/0/0').privateKey;

@@ -85,6 +85,12 @@ const COIN = {
     minDecimals: 2,
     maxDecimals: 2,
   },
+  XAUT: {
+    name: 'Tether Gold',
+    toSatoshis: 1e6,
+    minDecimals: 2,
+    maxDecimals: 6,
+  },
 } as const;
 
 const PUBLIC_API = {
@@ -107,6 +113,10 @@ const PUBLIC_API = {
   base: {
     mainnet: 'https:/base-rpc.publicnode.com',
     testnet: 'https://base-sepolia-rpc.publicnode.com',
+  },
+  arc: {
+    mainnet: 'https://arc-rpc.publicnode.com',
+    testnet: 'https://arc-testnet-rpc.publicnode.com',
   }
 } as const;
 

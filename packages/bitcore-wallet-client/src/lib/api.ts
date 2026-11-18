@@ -31,6 +31,7 @@ const Bitcore_ = {
   arb: CWC.BitcoreLib,
   base: CWC.BitcoreLib,
   op: CWC.BitcoreLib,
+  arc: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
   ltc: CWC.BitcoreLibLtc,
@@ -790,6 +791,7 @@ export class API extends EventEmitter {
       case 'arb':
       case 'base':
       case 'op':
+      case 'arc':
       case 'sol':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
@@ -843,6 +845,13 @@ export class API extends EventEmitter {
       clientDerivedPublicKey?: string;
       dryRun?: boolean;
       supportBIP44AndP2PKH?: boolean;
+      /** 
+       * Allows BWS to verify copayerId participation in the TSS keygen session.
+       * This is only needed when joining a TSS wallet for a different chain than the TSS keygen session. 
+       * E.g., the TSS key generation session has a copayerId for 'eth', but the wallet being joined is on 'arb'
+       * This is because the TSS keygen session uses copayerId for authentication which is chain-specific.
+      */
+      tssKeygenChain?: string;
     },
   ) {
     opts = opts || {};
@@ -862,7 +871,8 @@ export class API extends EventEmitter {
       requestPubKey,
       customData: encCustomData,
       hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
-      clientDerivedPublicKey: opts.clientDerivedPublicKey
+      clientDerivedPublicKey: opts.clientDerivedPublicKey,
+      tssKeygenChain: opts.tssKeygenChain
     };
     if (opts.dryRun) args.dryRun = true;
 
@@ -1041,7 +1051,6 @@ export class API extends EventEmitter {
       const c = this.credentials;
       c.addWalletPrivateKey(walletPrivKey.toString());
       const encWalletName = Utils.encryptMessage(walletName, c.sharedEncryptingKey);
-
       const args = {
         name: encWalletName,
         m,
@@ -1058,7 +1067,8 @@ export class API extends EventEmitter {
         hardwareSourcePublicKey: c.hardwareSourcePublicKey,
         clientDerivedPublicKey: c.clientDerivedPublicKey,
         tssVersion: opts.tssVersion,
-        tssKeyId: opts.tssKeyId
+        tssKeyId: opts.tssKeyId,
+        tssKeygenCopayerId: opts.tssKeygenCopayerId,
       };
       const { body: res } = await this.request.post('/v2/wallets/', args);
 
@@ -1086,7 +1096,8 @@ export class API extends EventEmitter {
           coin,
           chain,
           hardwareSourcePublicKey: c.hardwareSourcePublicKey,
-          clientDerivedPublicKey: c.clientDerivedPublicKey
+          clientDerivedPublicKey: c.clientDerivedPublicKey,
+          tssKeygenChain: opts.tssKeygenChain
         }
       );
 
@@ -1121,6 +1132,11 @@ export class API extends EventEmitter {
       chain?: string;
       /** Simulate wallet join. Default: false */
       dryRun?: boolean;
+      /**
+       * The chain for the TSS keygen session. Only needed when joining a TSS wallet for a different chain than the TSS keygen session.
+       * e.g., 'the TSS keygen session was for 'eth', but the wallet being joined is on 'arb'
+       */
+      tssKeygenChain?: string;
     },
     /**
      * @deprecated
@@ -1158,7 +1174,8 @@ export class API extends EventEmitter {
         {
           coin,
           chain,
-          dryRun: !!opts.dryRun
+          dryRun: !!opts.dryRun,
+          tssKeygenChain: opts.tssKeygenChain
         }
       );
       if (!opts.dryRun) {
@@ -3038,6 +3055,8 @@ export class API extends EventEmitter {
       feeLevel?: 'priority' | 'normal' | 'economy' | 'superEconomy';
       /** Specify the fee per KB (in satoshi) */
       feePerKb?: number;
+      /** Transaction type for Arc gas fee estimation. */
+      txType?: number;
       /** Indicates it if should use (or not) the unconfirmed utxos */
       excludeUnconfirmedUtxos?: boolean;
       /** Return the inputs used to build the tx */
@@ -3055,6 +3074,7 @@ export class API extends EventEmitter {
       const args = [];
       if (opts.feeLevel) args.push('feeLevel=' + opts.feeLevel);
       if (opts.feePerKb != null) args.push('feePerKb=' + opts.feePerKb);
+      if (opts.txType != null) args.push('txType=' + opts.txType);
       if (opts.excludeUnconfirmedUtxos) args.push('excludeUnconfirmedUtxos=1');
       if (opts.returnInputs) args.push('returnInputs=1');
 
@@ -3670,6 +3690,7 @@ export class API extends EventEmitter {
           { coin: 'eth', chain: 'arb', network: 'livenet' },
           { coin: 'eth', chain: 'base', network: 'livenet' },
           { coin: 'eth', chain: 'op', network: 'livenet' },
+          { coin: 'arc', chain: 'arc', network: 'livenet' },
           { coin: 'xrp', chain: 'xrp', network: 'livenet' },
           { coin: 'sol', chain: 'sol', network: 'livenet' },
           { coin: 'doge', chain: 'doge', network: 'livenet' },
@@ -3880,6 +3901,8 @@ export class API extends EventEmitter {
               { chain: 'arb', tokenAddresses: status.preferences.arbTokenAddresses, multisigInfo: status.preferences.multisigArbInfo, tokenOpts: Constants.ARB_TOKEN_OPTS },
               { chain: 'op', tokenAddresses: status.preferences.opTokenAddresses, multisigInfo: status.preferences.multisigOpInfo, tokenOpts: Constants.OP_TOKEN_OPTS },
               { chain: 'base', tokenAddresses: status.preferences.baseTokenAddresses, multisigInfo: status.preferences.multisigBaseInfo, tokenOpts: Constants.BASE_TOKEN_OPTS },
+              { chain: 'arc', tokenAddresses: (status.preferences.arcTokenAddresses || []).filter(address =>
+                address.toLowerCase() !== CWC.Constants.ARC.USDC_CONTRACT_ADDRESS), tokenOpts: Constants.ARC_TOKEN_OPTS },
               { chain: 'sol', tokenAddresses: status.preferences.solTokenAddresses, multisigInfo: status.preferences.multisigSolInfo, tokenOpts: Constants.SOL_TOKEN_OPTS },
             ];
 
@@ -4198,6 +4221,17 @@ export interface CreateWalletOpts {
    * Threshold signature key id
    */
   tssKeyId?: string;
+  /**
+   * The chain for the TSS keygen session. Only needed when joining a TSS wallet for a different chain than the TSS keygen session.
+   * e.g., 'the TSS keygen session was for 'eth', but the wallet being joined is on 'arb'
+   */
+  tssKeygenChain?: string;
+  /**
+   * The copayer ID of the wallet creator in the TSS keygen session.
+   * Needed when the wallet's network differs from the keygen session's, since the ID depends on the network the xPubKey is serialized for.
+   * Default: derived from the credentials' xPubKey and `tssKeygenChain`
+   */
+  tssKeygenCopayerId?: string;
 };
 
 
@@ -4234,6 +4268,7 @@ export interface Status {
     arbTokenAddresses?: string[]; // for Arbitrum
     opTokenAddresses?: string[]; // for Optimism
     baseTokenAddresses?: string[]; // for Base
+    arcTokenAddresses?: string[]; // for Arc
     solTokenAddresses?: string[]; // for Solana
     multisigEthInfo?: Array<MultisigInfo>;
     multisigMaticInfo?: Array<MultisigInfo>;

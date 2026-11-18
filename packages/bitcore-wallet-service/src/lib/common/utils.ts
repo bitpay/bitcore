@@ -571,5 +571,22 @@ export const Utils = {
     return retval;
   },
 
-  sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  },
+
+  convertXPubKeyForNetwork(xPubKey: string, chain: string, network: string) {
+    // Convert named network for non-UTXO chains to generic name (e.g. sepolia -> testnet)
+    network = !Bitcore_[chain] ? Utils.getGenericName(network) : network;
+    const lib = Bitcore_[chain] || BitcoreLib;
+    $.checkArgument(xPubKey, 'xPubKey is required at <convertXPubKeyForNetwork()>');
+    $.checkArgument(chain, 'chain is required at <convertXPubKeyForNetwork()>');
+    $.checkArgument(lib.Networks.get(network), 'invalid network at <convertXPubKeyForNetwork()>: ' + network);
+    const hdPubKeyObj = new lib.HDPublicKey(xPubKey).toObject();
+    hdPubKeyObj.network = network;
+    delete hdPubKeyObj.checksum;
+    delete hdPubKeyObj.xpubkey;
+    const newHdPubKey = lib.HDPublicKey.fromObject(hdPubKeyObj);
+    return newHdPubKey.toString();
+  }
 };

@@ -257,6 +257,8 @@ export class Credentials {
         chainPath = '60';
       } else if (chain == 'op') {
         chainPath = '60';
+      } else if (chain == 'arc') {
+        chainPath = '60';
       } else if (chain == 'xrp') {
         chainPath = '144';
       } else if (chain == 'doge') {

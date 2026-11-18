@@ -500,6 +500,9 @@ export class Wallet implements IWallet {
     if (!this.client.credentials) {
       Utils.die('Wallet credentials not initialized. Call load() first.');
     }
+    if (this.isTss() && this.client.credentials.publicKeyRing.length !== (this.#walletData.key as TssKey.TssKey).metadata.n) {
+      return false;
+    }
     return this.client.credentials.isComplete();
   }
 
@@ -789,6 +792,19 @@ export class Wallet implements IWallet {
     return this.client.credentials.clientDerivedPublicKey || this.client.credentials.xPubKey;
   }
 
+  getScheme() {
+    if (this.isTss()) {
+      return {
+        m: (this.#walletData.key as TssKey.TssKey).metadata?.m,
+        n: (this.#walletData.key as TssKey.TssKey).metadata?.n
+      };
+    }
+    return {
+      m: this.client.credentials.m || 1,
+      n: this.client.credentials.n || 1
+    };
+  }
+
   isMultiSig() {
     return this.client.credentials.n > 1;
   }
@@ -894,5 +910,51 @@ export class Wallet implements IWallet {
 
       if (!silent) prompt.log.success('Done');
     }
+  }
+
+  /**
+   * Create a wallet on another chain and/or network with this wallet's TSS key (e.g. an ARB wallet for an ETH TSS wallet)
+   * and save it as `walletName` in this wallet's directory.
+   * The TSS session leader must create the sibling wallet before the other parties can join it.
+   */
+  async createSiblingWallet(params: {
+    walletName: string;
+    chain: string;
+    network: Network;
+  }): Promise<Wallet> {
+    const { walletName, chain, network } = params;
+    const key = this.#walletData.key;
+    if (!(key instanceof TssKey.TssKey)) {
+      throw new Error('Sibling wallets are only supported for TSS wallets');
+    }
+    const sibling = new Wallet({ name: walletName, dir: this.dir, host: this.host });
+    if (sibling.storage.exists()) {
+      throw new Error(`Wallet file ${walletName}.json already exists in ${this.dir}`);
+    }
+
+    const tssWalletParams = {
+      baseKey: key,
+      baseCredentials: this.client.credentials,
+      baseUrl: this.client.request.baseUrl,
+      copayerName: this.client.credentials.copayerName,
+      opts: { chain, network }
+    };
+    let credentials: Credentials;
+    if (key.metadata.partyId === 0) {
+      ({ credentials } = await TssKey.createWallet({ ...tssWalletParams, walletName }));
+    } else {
+      try {
+        ({ credentials } = await TssKey.joinWallet(tssWalletParams));
+      } catch (err) {
+        if (err.message?.includes('TSS_BWS_JOIN_SECRET_NOT_FOUND')) {
+          throw new Error('The TSS session leader needs to create the wallet first before other copayers can join.');
+        }
+        throw err;
+      }
+    }
+
+    sibling.#walletData = { key, credentials };
+    await sibling.save({ encryptAll: this.isFullyEncrypted });
+    return sibling;
   }
 };

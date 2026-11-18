@@ -28,6 +28,7 @@ import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
 import { AaveAccountData, AaveReserveData, AaveReserveTokensAddresses, AaveV2AccountData, AaveV3AccountData, AaveVersion, getAavePoolAddress } from './aave';
+import { getArcUsdcEffects } from './arc';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsForAddressTransform } from './populateEffectsTransform';
@@ -70,6 +71,8 @@ export interface BuildWalletTxsStreamResult {
   dispose?: () => void | Promise<unknown>;
 }
 
+// Balance (2^128 - 1 wei) given to the sender via state override so blind gas estimates never fail on insufficient funds
+const BLIND_ESTIMATE_BALANCE = '0xffffffffffffffffffffffffffffffff';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -478,13 +481,23 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async populateReceipt(tx: MongoBound<IEVMTransaction>) {
-    if (!tx.receipt) {
+    const isArc = this.chain === 'ARC';
+    if (!tx.receipt || (isArc && !Array.isArray(tx.receipt.logs))) {
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
-        const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
+        const fee = Number(BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice ?? tx.gasPrice));
         await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt: receipt as any, fee } });
         tx.receipt = receipt as any;
         tx.fee = fee;
+      }
+    }
+    // Normalize Arc's native USDC events before discarding the large receipt logs.
+    if (isArc) {
+      const logs = tx.receipt?.logs;
+      if (Array.isArray(logs)) {
+        tx.effects = getArcUsdcEffects(logs, tx.effects, tx.network);
+      } else if ((tx.blockHeight ?? -1) >= 0) {
+        throw new Error(`Missing Arc receipt logs for ${tx.txid}`);
       }
     }
     // logs can be very large and are not currently needed for any use case in this codebase.
@@ -729,7 +742,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const { stream: builtStream, dispose } = await this._buildWalletTransactionsStream(params, streamParams);
     transactionStream = builtStream;
 
-    if (!args.tokenAddress && wallet._id) {
+    // Arc's receipt events are aggregated below instead of expanding native traces.
+    if (!args.tokenAddress && wallet._id && this.chain !== 'ARC') {
       const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
       transactionStream = transactionStream.eventPipe(internalTxTransform);
     }
@@ -920,13 +934,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       return Number(gasLimit);
     }
 
-    let _value;
-    if (data) {
-      // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
-      // We want this method to give a blind fee estimation, though, so we should not include the value
-      // unless it's needed for estimating smart contract execution.
-      _value = Utils.toHex(value);
-    }
+    // Passing `value` makes eth_estimateGas fail with an insufficient funds error if `from` can't cover it.
+    // We want a blind estimate, so override the sender's balance for this call only (state override, 3rd param).
+    // Also, don't pass `gasPrice` or `gasFeeCap`; those are checked against the balance as well.
+    const fromAddr = from && from.toLowerCase();
+    const stateOverride = fromAddr ? { [fromAddr]: { balance: BLIND_ESTIMATE_BALANCE } } : undefined;
 
     const opts = {
       method: 'eth_estimateGas',
@@ -934,10 +946,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         {
           data,
           to: to && to.toLowerCase(),
-          from: from && from.toLowerCase(),
-          // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
-          value: _value
-        }
+          from: fromAddr,
+          value: Utils.toHex(value ?? 0)
+        },
+        'latest',
+        ...(stateOverride ? [stateOverride] : [])
       ],
       jsonrpc: '2.0',
       id: 'bitcore-' + Date.now()
