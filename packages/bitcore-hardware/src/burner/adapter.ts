@@ -1,4 +1,3 @@
-import EventEmitter from 'events';
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
@@ -15,7 +14,7 @@ const { Address, PublicKey, crypto } = BitcoreLib;
  * Fetch address, public key and sign transactions using the burner card.
  */
 export default class Burner implements Hardware {
-  nfc: EventEmitter = new NFC();
+  nfc = new NFC();
   reader?: Reader;
   private SLOT = 9;
 
