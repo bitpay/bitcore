@@ -67,17 +67,19 @@ Follow this process:
    git checkout -b <feature-branch-name>
    ```
 
-3. Locally merge (or rebase) the upstream `master` branch into your feature branch:
+3. Write code and commit your changes in logical chunks.
+
+4. Locally merge (or rebase) the upstream `master` branch into your feature branch:
 
    ```bash
    git pull [--rebase] upstream master
    ```
 
-4. Push your feature branch up to your fork:
+5. Push your feature branch up to your fork:
 
    ```bash
    git push origin <feature-branch-name>
    ```
 
-5. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/)
+6. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/)
     with a clear title and description from your fork to the base repository (bitpay/bitcore - master).

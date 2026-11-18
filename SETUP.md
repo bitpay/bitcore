@@ -1,6 +1,6 @@
 # Development setup
 
-The 18 backend packages directly under `packages/` (everything except
+The packages directly under `packages/` (everything except
 `insight`) are npm workspaces of this root, installed and linked from one root
 install and one root lockfile. The three nested `benchmark/` fixtures and
 `packages/crypto-rpc/blockchain/EVM/package.json` are also outside the workspace
