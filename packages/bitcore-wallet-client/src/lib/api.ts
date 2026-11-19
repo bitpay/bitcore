@@ -4129,6 +4129,18 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/transak/headless/kycRequirement', data);
   }
 
+  async transakHeadlessGetUserLimits(data) {
+    return this.request.post('/v1/service/transak/headless/userLimits', data);
+  }
+
+  async transakHeadlessGetActiveOrders(data) {
+    return this.request.post('/v1/service/transak/headless/activeOrders', data);
+  }
+
+  async transakHeadlessCancelOrder(data) {
+    return this.request.post('/v1/service/transak/headless/cancelOrder', data);
+  }
+
   async transakHeadlessGetSavedCards(data) {
     return this.request.post('/v1/service/transak/headless/savedCards', data);
   }
