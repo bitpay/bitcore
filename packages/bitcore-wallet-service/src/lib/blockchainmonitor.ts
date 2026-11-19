@@ -82,9 +82,9 @@ export class BlockchainMonitor {
       [
         done => {
           this.explorers = {};
-          for (const chain in Constants.NETWORKS) {
+          for (const [chain, networks] of Object.entries(Constants.NETWORKS)) {
             this.explorers[chain] = {};
-            for (const network of Constants.NETWORKS[chain]) {
+            for (const network of networks) {
               let explorer;
               if (opts.blockchainExplorers?.[chain]?.[network]) {
                 explorer = opts.blockchainExplorers[chain][network];
