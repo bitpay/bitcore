@@ -196,7 +196,7 @@ export class V8 {
   _transformUtxos(utxos, bcheight: number) {
     $.checkState(bcheight > 0, 'Failed state: No BC height passed to _transformUtxos()');
     const ret = utxos
-      .filter(x => !x.spentHeight || x.spentHeight > -3) // -3 is conflicted status
+      .filter(x => !x.spentHeight || x.spentHeight > -3) // -3 => "conflicting" (per BCN/src/types/Coin.ts -> SpentHeightIndicators)
       .map(x => {
         const u = {
           address: x.address,
