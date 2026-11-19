@@ -236,6 +236,12 @@ export const Constants = {
     ltc: { testnet: 300, livenet: 0 }
   } as { [chain: string]: { [network: string]: number } },
 
+  /**
+   * Highest round a KeyGen client submits. The DKG library's final local result (round 4) is never posted: the client skips it
+   * once the keychain is ready, and the library's "ready" state (5) is not a submitted round either.
+   */
+  TSS_KEYGEN_MAX_SUBMITTED_ROUND: 3,
+
   // May be different from the defaults if we rollback
   // or want to beta test new versions.
   TSS_KEYGEN_SCHEME_VERSION_MAX: 1.3,

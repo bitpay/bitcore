@@ -531,7 +531,15 @@ describe('TSS', function() {
 
         it('should error if the party joins at a partyId other than the one it was registered at', async function() {
           await createKeyGenSession({ registered: [1] });
-          const message = { ...round0Message(1), partyId: 2 };
+          // Re-label every sender field so the message is internally consistent and passes shape validation;
+          //  only the auth middleware's slot-ownership check should reject it
+          const original = round0Message(1);
+          const message = {
+            ...original,
+            partyId: 2,
+            broadcastMessages: original.broadcastMessages.map(m => ({ ...m, from: 2 })),
+            p2pMessages: original.p2pMessages.map(m => ({ ...m, from: 2 }))
+          };
           const res = await post(path, { message, version: 1.2 }, partyAuth(1));
           expectError(res, 401, 'NOT_AUTHORIZED', 'Copayer not found in session');
         });
@@ -705,20 +713,12 @@ describe('TSS', function() {
         });
       }
 
-      it('should accept a numeric string partyId', async function() {
-        await createKeyGenSession();
-
-        const res = await register('1', authPubKey(1));
-        res.status.should.equal(200);
-
-        const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
-        session.authPublicKeys[1].should.equal(authPubKey(1));
-      });
-
       for (const [description, partyId, expected] of [
         ['partyId is missing', undefined, 'undefined'],
         ['partyId is null', null, 'null'],
         ['partyId has a numeric prefix', '1abc', '1abc'],
+        // Slots must be canonical numbers; numeric strings are not coerced
+        ['partyId is a numeric string', '1', '1'],
       ] as Array<[string, any, string]>) {
         it(`should error with an invalid partyId message if ${description}`, async function() {
           await createKeyGenSession();
