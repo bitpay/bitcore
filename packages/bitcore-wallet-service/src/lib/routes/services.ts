@@ -14,6 +14,7 @@ interface RouteContext {
   getServerWithAuth: Types.GetServerWithAuthFn;
   setPublicCache: (res: express.Response, seconds: number) => void;
   returnError: Types.ReturnErrorFn;
+  transakOtpLimiter: express.Handler;
 }
 
 type RouteHandler = (server: WalletService) => Promise<any> | any;
@@ -66,7 +67,7 @@ function respondWithAuthServer(req, res, context: RouteContext, handler: RouteHa
 }
 
 export function registerServiceRoutes(router: express.Router, context: RouteContext) {
-  const { setPublicCache } = context;
+  const { setPublicCache, transakOtpLimiter } = context;
 
   const transakCorsOptions = {
     origin: (origin, cb) => {
@@ -465,13 +466,13 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
-  router.post('/v1/service/transak/headless/sendOtp', cors(transakCorsOptions), (req, res) => {
+  router.post('/v1/service/transak/headless/sendOtp', cors(transakCorsOptions), transakOtpLimiter, (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakHeadlessSendOtp(req);
     });
   });
 
-  router.post('/v1/service/transak/headless/verifyOtp', cors(transakCorsOptions), (req, res) => {
+  router.post('/v1/service/transak/headless/verifyOtp', cors(transakCorsOptions), transakOtpLimiter, (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakHeadlessVerifyOtp(req);
     });
