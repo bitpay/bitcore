@@ -378,6 +378,8 @@ const parseJsonParsedAssociatedTokenProgramInstruction = (instruction: any): Par
   };
 };
 
+// TODO: token amounts are u64, so Number() loses precision above 2^53 base units.
+// The top-level parser does the same; fixing both changes the amount type.
 const parseJsonParsedTokenProgramInstruction = (instruction: any): ParsedInstruction => {
   const type = instruction?.parsed?.type;
   const info = instruction?.parsed?.info ?? {};
