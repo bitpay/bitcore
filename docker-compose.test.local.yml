@@ -5,8 +5,46 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Install after mounting the live checkout and container-owned dependencies.
+    entrypoint: ["sh", "-ec", 'npm ci --foreground-scripts && exec "$$@"', "--"]
+    command: ["bash"]
     volumes:
       - .:/bitcore
+      # Container-owned dependency storage, layered on top of the live
+      # source bind mount above. A bind mount at /bitcore replaces the
+      # image's own filesystem there entirely, so without these, the
+      # image's own build-time `npm ci` output would simply vanish at
+      # container start -- and a volume at root node_modules alone still
+      # wouldn't be enough: npm workspaces nests a package's own
+      # node_modules directly under that package whenever its resolved
+      # dependency version conflicts with what gets hoisted to root, and
+      # that nested copy can be a real host-compiled native addon. Confirmed
+      # for real in this checkout: bitcore-node and bitcore-wallet-service
+      # both need secp256k1@4.0.3 while root hoists 3.7.1, so each nests its
+      # own copy, complete with a macOS/arm64 addon.node -- exactly the kind
+      # of host binary that must never reach this Linux container's module
+      # resolution. One volume per workspace below mirrors root
+      # package.json's own "workspaces" list, so every current nesting site
+      # is covered, not just the one this checkout happens to have today.
+      - node_modules_root:/bitcore/node_modules
+      - node_modules_bitcore_build:/bitcore/packages/bitcore-build/node_modules
+      - node_modules_bitcore_cli:/bitcore/packages/bitcore-cli/node_modules
+      - node_modules_bitcore_client:/bitcore/packages/bitcore-client/node_modules
+      - node_modules_bitcore_lib:/bitcore/packages/bitcore-lib/node_modules
+      - node_modules_bitcore_lib_cash:/bitcore/packages/bitcore-lib-cash/node_modules
+      - node_modules_bitcore_lib_doge:/bitcore/packages/bitcore-lib-doge/node_modules
+      - node_modules_bitcore_lib_ltc:/bitcore/packages/bitcore-lib-ltc/node_modules
+      - node_modules_bitcore_logging:/bitcore/packages/bitcore-logging/node_modules
+      - node_modules_bitcore_mnemonic:/bitcore/packages/bitcore-mnemonic/node_modules
+      - node_modules_bitcore_node:/bitcore/packages/bitcore-node/node_modules
+      - node_modules_bitcore_p2p:/bitcore/packages/bitcore-p2p/node_modules
+      - node_modules_bitcore_p2p_cash:/bitcore/packages/bitcore-p2p-cash/node_modules
+      - node_modules_bitcore_p2p_doge:/bitcore/packages/bitcore-p2p-doge/node_modules
+      - node_modules_bitcore_tss:/bitcore/packages/bitcore-tss/node_modules
+      - node_modules_bitcore_wallet_client:/bitcore/packages/bitcore-wallet-client/node_modules
+      - node_modules_bitcore_wallet_service:/bitcore/packages/bitcore-wallet-service/node_modules
+      - node_modules_crypto_rpc:/bitcore/packages/crypto-rpc/node_modules
+      - node_modules_crypto_wallet_core:/bitcore/packages/crypto-wallet-core/node_modules
     ports:
       - 8100:8100
       - 3000:3000
@@ -20,3 +58,32 @@ services:
       - erigon
       - geth
       - rippled
+
+# Named (not anonymous) so `ci.sh down`'s `docker compose down -v` removes
+# them by name and so they're identifiable with `docker volume ls` in the
+# meantime -- `npm ci` deletes node_modules before reinstalling regardless
+# (confirmed empirically), so these don't save a run from reinstalling, only
+# from losing isolation. Compose scopes these to its project name (this
+# checkout's directory name by default), the same way it already scopes the
+# containers ci.sh's own `down` targets -- so they never collide with
+# another checkout's or developer's identically-named volumes.
+volumes:
+  node_modules_root:
+  node_modules_bitcore_build:
+  node_modules_bitcore_cli:
+  node_modules_bitcore_client:
+  node_modules_bitcore_lib:
+  node_modules_bitcore_lib_cash:
+  node_modules_bitcore_lib_doge:
+  node_modules_bitcore_lib_ltc:
+  node_modules_bitcore_logging:
+  node_modules_bitcore_mnemonic:
+  node_modules_bitcore_node:
+  node_modules_bitcore_p2p:
+  node_modules_bitcore_p2p_cash:
+  node_modules_bitcore_p2p_doge:
+  node_modules_bitcore_tss:
+  node_modules_bitcore_wallet_client:
+  node_modules_bitcore_wallet_service:
+  node_modules_crypto_rpc:
+  node_modules_crypto_wallet_core:

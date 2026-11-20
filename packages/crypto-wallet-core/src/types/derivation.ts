@@ -2,6 +2,9 @@ export interface Key {
   address: string;
   privKey?: string;
   pubKey?: string;
+  // BTC/XRP/ETH-family derivations include the HD path they derived from; SOL's
+  // deriver does not set it, so it stays optional rather than lying for every chain.
+  path?: string;
 }
 
 export interface IDeriver {

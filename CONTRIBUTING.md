@@ -37,6 +37,8 @@ accurate comments, etc.) and any other requirements (such as test coverage).
 
 ✍️ **All commits must be [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits)** and `Verified` in GitHub.
 
+See [SETUP.md](SETUP.md) for the instructions on how to set up your environment and edit a workspace package's dependencies.
+
 Follow this process:
 
 1. [Fork](http://help.github.com/fork-a-repo/) the project, clone your fork,

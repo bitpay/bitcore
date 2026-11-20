@@ -10,6 +10,11 @@ If the DKG ceremony is executed asynchronously (meaning all parties are not onli
 
 ### API Spec
 
+Keygen message requests require numeric, non-negative safe-integer party IDs and rounds `0..3`.
+Every nested sender must match the outer party ID, and P2P recipients must be different valid session slots.
+An enrolled caller must submit its own party ID. Registration requires a numeric slot `1..n-1`
+and a well-formed request public key. Numeric strings are rejected rather than coerced.
+
 <details>
 <summary style="font-size:17px"><span style="font-weight:bold">POST</span> /v1/tss/keygen/:id</summary>
 

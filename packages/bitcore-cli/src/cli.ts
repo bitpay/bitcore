@@ -163,9 +163,8 @@ type NewCommand = (typeof COMMANDS.NEW)[number]['value'] | 'exit';
 type Command = (typeof COMMANDS.BASIC)[number]['value'] | (typeof COMMANDS.ADVANCED)[number]['value'] | 'advanced' | 'exit';
 
 
-if (require.main === module) {
-
-  wallet.getClient({
+export function runCli() {
+  return wallet.getClient({
     mustExist: false,
     doNotComplete: opts.register
   })
@@ -387,4 +386,8 @@ if (require.main === module) {
       }
     })
     .catch(Utils.die);
+}
+
+if (require.main === module) {
+  runCli();
 }

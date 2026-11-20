@@ -293,7 +293,7 @@ describe('ExpressApp', function() {
         };
         
         sandbox.stub(WalletService, 'initialize').callsArg(1);
-        sandbox.stub(WalletService, 'getInstance').returns(server);        
+        sandbox.stub(WalletService, 'getInstance').returns(server as any);        
         start(ExpressApp, function() {
           const requestOptions = {
             url: testHost + ':' + testPort + config.basePath + '/latest-version',
@@ -495,7 +495,7 @@ describe('ExpressApp', function() {
       describe('/v1/notifications', function() {
         let server, clock;
         beforeEach(function() {
-          clock = sinon.useFakeTimers(2000000000, 'Date');
+          clock = sinon.useFakeTimers({ now: 2000000000, toFake: ['Date'] });
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
@@ -617,7 +617,7 @@ describe('ExpressApp', function() {
             getAaveUserAccountData: sinon.stub().resolves({ totalCollateralBase: '1000', healthFactor: '2.0' }),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/userAccountData',
@@ -639,7 +639,7 @@ describe('ExpressApp', function() {
             getAaveUserAccountData: sinon.stub().rejects(new ClientError('getAaveUserAccountData request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/userAccountData',
@@ -659,7 +659,7 @@ describe('ExpressApp', function() {
             getAaveReserveData: sinon.stub().resolves({ currentVariableBorrowRate: '35000000' }),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveData',
@@ -680,7 +680,7 @@ describe('ExpressApp', function() {
             getAaveReserveData: sinon.stub().rejects(new ClientError('getAaveReserveData request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveData',
@@ -700,7 +700,7 @@ describe('ExpressApp', function() {
             getAaveReserveTokensAddresses: sinon.stub().resolves({ variableDebtTokenAddress: '0xdef' }),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveTokensAddresses',
@@ -721,7 +721,7 @@ describe('ExpressApp', function() {
             getAaveReserveTokensAddresses: sinon.stub().rejects(new ClientError('getAaveReserveTokensAddresses request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveTokensAddresses',
@@ -784,7 +784,7 @@ describe('ExpressApp', function() {
             moralisGetMultipleERC20TokenPrices: sinon.stub().resolves([{ tokenAddress: '0xaaa', usdPrice: 1 }]),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/moralis/getMultipleERC20TokenPrices',
@@ -808,7 +808,7 @@ describe('ExpressApp', function() {
             moralisGetMultipleERC20TokenPrices: sinon.stub().resolves([{ tokenAddress: '0xaaa', usdPrice: 1 }]),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
           start(ExpressApp, function() {
             const requestOptions = {
@@ -857,7 +857,7 @@ describe('ExpressApp', function() {
             getTokenAllowance: sinon.stub().resolves(5000000),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/token/allowance',
@@ -878,7 +878,7 @@ describe('ExpressApp', function() {
             getTokenAllowance: sinon.stub().rejects(new ClientError('getTokenAllowance request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/token/allowance',

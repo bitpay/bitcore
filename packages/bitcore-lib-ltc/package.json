@@ -7,7 +7,8 @@
   "scripts": {
     "test": "gulp --tasks && gulp test",
     "build": "gulp",
-    "pub": "npm run build && npm publish"
+    "pub": "npm run build && npm publish",
+    "prepack": "gulp browser:compressed"
   },
   "contributors": [
     {
@@ -100,5 +101,11 @@
     "gulp": "^4.0.0",
     "sinon": "^7.1.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "lib",
+    "bitcore-lib.js",
+    "bitcore-lib.min.js"
+  ]
 }

@@ -44,8 +44,8 @@ export function registerMaintenanceRoutes(router: express.Router, context: Route
       to?: string;
     } = {};
 
-    if (network) opts.network = network;
-    if (coin) opts.coin = coin;
+    if (network) opts.network = network as string;
+    if (coin) opts.coin = coin as string;
     if (req.query.from) opts.from = req.query.from as string;
     if (req.query.to) opts.to = req.query.to as string;
 

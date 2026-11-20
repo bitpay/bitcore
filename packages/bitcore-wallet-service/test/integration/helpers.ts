@@ -25,6 +25,7 @@ import { WalletService } from '../../src/lib/server';
 import * as Model from '../../src/lib/model';
 import * as TestData from '../testdata';
 import { version } from '../../package.json';
+import { V8 } from '../../src/lib/blockchainexplorers/v8';
 
 const should = chai.should();
 const { Utils, Constants, Defaults } = Common;
@@ -35,8 +36,8 @@ const Bitcore_ = {
   ltc: BitcoreLibLtc
 };
 
-let storage;
-let blockchainExplorer;
+let storage: Storage;
+let blockchainExplorer: V8;
 let stubAddressActivityFailsOn = null;
 let stubAddressActivityFailsOnCount = 1;
 
@@ -116,7 +117,7 @@ class Helpers {
   }
 
   mockBlockchainExplorer() {
-    const blockchainExplorer = sinon.stub();
+    const blockchainExplorer: V8 = sinon.createStubInstance(V8);
     blockchainExplorer.register = sinon.stub().callsArgWith(1, null, null);
     blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, null, null);
     blockchainExplorer.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);

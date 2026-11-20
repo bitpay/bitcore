@@ -7,13 +7,16 @@ import { WalletAddressStorage } from '../../../models/walletAddress';
 import { IWebhook, WebhookStorage } from '../../../models/webhook';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
-import { BaseP2PWorker } from '../../../services/p2p';
+import { BaseP2PWorker, within } from '../../../services/p2p';
 import { IEVMNetworkConfig, IExternalSyncConfig } from '../../../types/Config';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
 import { wait } from '../../../utils';
 import { MoralisStateProvider } from '../api/csp';
 import type { EthRpc } from '@bitpay-labs/crypto-rpc/lib/eth/EthRpc';
 import type { Web3 } from '@bitpay-labs/crypto-wallet-core';
+
+// how long stop() waits for the webhook tail to close
+const CLOSE_WAIT_MS = 5000;
 
 export class MoralisP2PWorker extends BaseP2PWorker {
   private chainConfig: IExternalSyncConfig<IEVMNetworkConfig>;
@@ -46,7 +49,11 @@ export class MoralisP2PWorker extends BaseP2PWorker {
   async stop() {
     this.stopping = true;
     clearInterval(this.syncInterval);
-    await this.webhookTail?.close();
+    // a webhook tail that won't close mustn't hold up resigning, or stop it
+    const closing = (async () => this.webhookTail?.close())().catch(err =>
+      logger.warn(`Error closing the ${this.chainNetworkStr} webhook tail: %o`, err)
+    );
+    await within(closing, CLOSE_WAIT_MS, undefined);
     await this.unregisterSyncingNode();
     (this.web3?.currentProvider as any)?.disconnect?.();
   }
@@ -130,17 +137,19 @@ export class MoralisP2PWorker extends BaseP2PWorker {
           do {
             const block = await web3.eth.getBlock(currentHeight, true);
             blockExists = !!block;
-            if (block && !this.stopping) {
-              const blockEvent = EVMBlockStorage.convertRawBlock(this.chain, this.network, block);
-              await EventStorage.signalBlock(blockEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} block event: %o`, e.stack || e.message || e));
-              for (const tx of block.transactions) {
-                const txEvent = EVMTransactionStorage.convertRawTx(this.chain, this.network, tx as any, blockEvent);
-                await EventStorage.signalTx(txEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} tx event: %o`, e.stack || e.message || e));
-              }
-              await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: currentHeight });
-              currentHeight = Number(block.number) + 1;
+            if (block) {
+              await this.write(async () => {
+                const blockEvent = EVMBlockStorage.convertRawBlock(this.chain, this.network, block);
+                await EventStorage.signalBlock(blockEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} block event: %o`, e.stack || e.message || e));
+                for (const tx of block.transactions) {
+                  const txEvent = EVMTransactionStorage.convertRawTx(this.chain, this.network, tx as any, blockEvent);
+                  await EventStorage.signalTx(txEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} tx event: %o`, e.stack || e.message || e));
+                }
+                await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: currentHeight });
+                currentHeight = Number(block.number) + 1;
+              });
             }
-          } while (blockExists);
+          } while (blockExists && !this.stopping);
           clearInterval(msgInterval); // clear before log below
           logger.info(`${this.chainNetworkStr} up to date.`);
         } catch (err: any) {
@@ -258,11 +267,13 @@ export class MoralisP2PWorker extends BaseP2PWorker {
           return;
         }
         coinEvents = this.csp.webhookToCoinEvents({ chain: this.chain, network: this.network, webhook });
-        const result = await Promise.allSettled(coinEvents.map(evt => EventStorage.signalAddressCoin(evt))); 
-        const someFulfilled = result.some(r => r.status === 'fulfilled');
-        if (someFulfilled) {
-          await WebhookStorage.setProcessed({ webhook });
-        }
+        await this.write(async () => {
+          const result = await Promise.allSettled(coinEvents.map(evt => EventStorage.signalAddressCoin(evt)));
+          const someFulfilled = result.some(r => r.status === 'fulfilled');
+          if (someFulfilled) {
+            await WebhookStorage.setProcessed({ webhook });
+          }
+        });
       } catch (err: any) {
         logger.error(`Error processing ${this.chainNetworkStr} webhook ${webhook._id?.toString()}: %o`, err.stack || err.message || err);
       }
