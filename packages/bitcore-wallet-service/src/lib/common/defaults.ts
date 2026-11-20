@@ -350,6 +350,11 @@ export const Defaults = {
 
       max: 10, // start blocking after 200 request
       message: 'Too many request'
+    },
+    transakOtp: {
+      windowMs: 10 * 60 * 1000,
+      max: 10,
+      message: 'Too many Transak verification requests, please try again later'
     }
 
     // otherPosts: {

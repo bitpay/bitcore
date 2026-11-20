@@ -14,7 +14,7 @@ import { createWalletLimiter } from './routes/middleware/createWalletLimiter';
 import { registerMoralisRoutes } from './routes/moralis';
 import { registerNotificationRoutes } from './routes/notifications';
 import { registerServiceRoutes } from './routes/services';
-import { createEstimateFeeLimiter, setupAppMiddleware } from './routes/setup';
+import { createEstimateFeeLimiter, createTransakOtpLimiter, setupAppMiddleware } from './routes/setup';
 import { registerTransactionRoutes } from './routes/transactions';
 import { TssRouter } from './routes/tss';
 import { registerWalletDataRoutes } from './routes/walletdata';
@@ -121,7 +121,8 @@ export class ExpressApp {
       getServer,
       getServerWithAuth,
       setPublicCache,
-      returnError
+      returnError,
+      transakOtpLimiter: createTransakOtpLimiter(opts)
     });
 
     registerMoralisRoutes(router, {

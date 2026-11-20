@@ -14,6 +14,7 @@ interface RouteContext {
   getServerWithAuth: Types.GetServerWithAuthFn;
   setPublicCache: (res: express.Response, seconds: number) => void;
   returnError: Types.ReturnErrorFn;
+  transakOtpLimiter: express.Handler;
 }
 
 type RouteHandler = (server: WalletService) => Promise<any> | any;
@@ -66,7 +67,7 @@ function respondWithAuthServer(req, res, context: RouteContext, handler: RouteHa
 }
 
 export function registerServiceRoutes(router: express.Router, context: RouteContext) {
-  const { setPublicCache } = context;
+  const { setPublicCache, transakOtpLimiter } = context;
 
   const transakCorsOptions = {
     origin: (origin, cb) => {
@@ -462,6 +463,72 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/transak/orderDetails', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/sendOtp', cors(transakCorsOptions), transakOtpLimiter, (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessSendOtp(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/verifyOtp', cors(transakCorsOptions), transakOtpLimiter, (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessVerifyOtp(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/quote', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetQuote(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/kycRequirement', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetKycRequirement(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/userLimits', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetUserLimits(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/activeOrders', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetActiveOrders(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/cancelOrder', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessCancelOrder(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/savedCards', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetSavedCards(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/cardSession', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessCreateCardSession(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/order', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessCreateOrder(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/orderDetails', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetOrderDetails(req);
     });
   });
 

@@ -4113,6 +4113,50 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/transak/orderDetails', data);
   }
 
+  async transakHeadlessSendOtp(data) {
+    return this.request.post('/v1/service/transak/headless/sendOtp', data);
+  }
+
+  async transakHeadlessVerifyOtp(data) {
+    return this.request.post('/v1/service/transak/headless/verifyOtp', data);
+  }
+
+  async transakHeadlessGetQuote(data) {
+    return this.request.post('/v1/service/transak/headless/quote', data);
+  }
+
+  async transakHeadlessGetKycRequirement(data) {
+    return this.request.post('/v1/service/transak/headless/kycRequirement', data);
+  }
+
+  async transakHeadlessGetUserLimits(data) {
+    return this.request.post('/v1/service/transak/headless/userLimits', data);
+  }
+
+  async transakHeadlessGetActiveOrders(data) {
+    return this.request.post('/v1/service/transak/headless/activeOrders', data);
+  }
+
+  async transakHeadlessCancelOrder(data) {
+    return this.request.post('/v1/service/transak/headless/cancelOrder', data);
+  }
+
+  async transakHeadlessGetSavedCards(data) {
+    return this.request.post('/v1/service/transak/headless/savedCards', data);
+  }
+
+  async transakHeadlessCreateCardSession(data) {
+    return this.request.post('/v1/service/transak/headless/cardSession', data);
+  }
+
+  async transakHeadlessCreateOrder(data) {
+    return this.request.post('/v1/service/transak/headless/order', data);
+  }
+
+  async transakHeadlessGetOrderDetails(data) {
+    return this.request.post('/v1/service/transak/headless/orderDetails', data);
+  }
+
   async changellyGetPairsParams(data) {
     return this.request.post('/v1/service/changelly/getPairsParams', data);
   }
