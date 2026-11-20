@@ -3,9 +3,22 @@ import cluster from 'cluster';
 import * as fs from 'fs';
 import 'source-map-support/register';
 import os from 'os';
+import { inspect } from 'util';
 import config from './config';
 import { ExpressApp } from './lib/expressapp';
 import logger from './lib/logger';
+
+function exitOnFatalError(error: unknown) {
+  try {
+    // Flush the diagnostic synchronously before terminating the process.
+    fs.writeSync(process.stderr.fd, `BWS fatal error: ${inspect(error)}\n`);
+  } finally {
+    process.exit(1);
+  }
+}
+
+process.on('uncaughtException', exitOnFatalError);
+process.on('unhandledRejection', exitOnFatalError);
 
 const port = process.env.BWS_PORT || config.port || 3232;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
