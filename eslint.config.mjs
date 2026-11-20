@@ -5,6 +5,19 @@ import importPlugin from 'eslint-plugin-import';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+const es2023Message = 'ES2023+ built-in, not available in every runtime of the mobile app packages (Hermes, Node 18). Use an ES2022 equivalent, e.g. arr.slice().sort() instead of arr.toSorted().';
+const es2023Restrictions = [
+  ...['toSorted', 'toReversed', 'toSpliced', 'with']
+    .map(property => ({ property, message: es2023Message })),
+  ...['union', 'intersection', 'symmetricDifference', 'isSubsetOf', 'isSupersetOf', 'isDisjointFrom']
+    .map(property => ({ property, message: es2023Message })),
+  { property: 'difference', allowObjects: ['_', 'CWCUtils'], message: es2023Message },
+  { object: 'Object', property: 'groupBy', message: es2023Message },
+  { object: 'Map', property: 'groupBy', message: es2023Message },
+  { object: 'Promise', property: 'withResolvers', message: es2023Message },
+  { object: 'Array', property: 'fromAsync', message: es2023Message }
+];
+
 export default defineConfig([
   js.configs.recommended,
   {
@@ -124,6 +137,22 @@ export default defineConfig([
     languageOptions: { sourceType: 'commonjs' },
     rules: {
       '@typescript-eslint/no-require-imports': 'warn',
+    }
+  },
+  {
+    files: [
+      'packages/bitcore-lib*/index.js',
+      'packages/bitcore-lib*/lib/**/*.js',
+      'packages/bitcore-mnemonic/index.js',
+      'packages/bitcore-mnemonic/lib/**/*.js',
+      'packages/bitcore-tss/index.js',
+      'packages/bitcore-tss/ecdsa/**/*.js',
+      'packages/bitcore-tss/ecies/**/*.js',
+      'packages/crypto-wallet-core/src/**/*.ts',
+      'packages/bitcore-wallet-client/src/**/*.ts'
+    ],
+    rules: {
+      'no-restricted-properties': ['error', ...es2023Restrictions]
     }
   },
   // Test files -- needs to be last so it can override other settings
