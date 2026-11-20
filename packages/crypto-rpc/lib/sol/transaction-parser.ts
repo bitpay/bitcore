@@ -293,7 +293,7 @@ const parseAssociatedTokenProgramInstruction = (instruction: any): ParsedInstruc
     };
   } else if (identifiedTokenInstruction === SolToken.AssociatedTokenInstruction.RecoverNestedAssociatedToken) {
     const parsedRecoverInstruction = SolToken.parseRecoverNestedAssociatedTokenInstruction(processedInstruction);
-    // TODO(bitcore-dln): @solana-program/token names these accounts nestedAssociatedAccountAddress,
+    // TODO: @solana-program/token names these accounts nestedAssociatedAccountAddress,
     // nestedTokenMintAddress, destinationAssociatedAccountAddress, walletAddress and ownerTokenMintAddress, so
     // every read below is undefined and the instruction ends up in the unknown group with a TypeError
     const accounts: Record<string, { address: string }> = parsedRecoverInstruction.accounts;

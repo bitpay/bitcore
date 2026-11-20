@@ -199,7 +199,7 @@ export class SolRpc {
   async cleanup() {
     // Close WebSocket connections and remove subscriptions
     if (this.rpcSubscriptions) {
-      // TODO(bitcore-dln): Kit's RpcSubscriptions is a proxy that turns any property into a pending subscription
+      // TODO: Kit's RpcSubscriptions is a proxy that turns any property into a pending subscription
       // request, so eventNames(), listeners() and disconnect() below do nothing and no socket is closed
       const rpcSubscriptions: any = this.rpcSubscriptions;
       // Remove all subscription listeners first

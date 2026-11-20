@@ -84,7 +84,7 @@ export class Erc20Rpc extends EthRpc {
     }
   }
 
-  // TODO(bitcore-dln): EthRpc's decodeRawTransaction is sync and
+  // TODO: EthRpc's decodeRawTransaction is sync and
   // sendRawTransaction reads .txid off its result to handle "already known"
   // errors. This async override makes that read undefined for tokens.
   // @ts-expect-error async override of a sync base method; kept to preserve behavior

@@ -29,7 +29,7 @@ export type EthNumberLike = number | bigint | string;
 /**
  * Amount in wei. sendToAddress runs it through Number(), so values above
  * 2^53 lose precision.
- * TODO(bitcore-dln): convert without Number() so large amounts stay exact.
+ * TODO: convert without Number() so large amounts stay exact.
  */
 export type EthAmount = number | string;
 
@@ -172,7 +172,7 @@ export class EthRpc {
 
   #addWallet(privateKey: string): [string, boolean] {
     const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
-    // TODO(bitcore-dln): this passes the account object, not its address, so
+    // TODO: this passes the account object, not its address, so
     // wallet.get() looks up wallet['[object Object]'] and accountExists is
     // always false. The account is then always removed after sending.
     // @ts-expect-error wallet.get() takes an address or index; kept as-is to preserve behavior

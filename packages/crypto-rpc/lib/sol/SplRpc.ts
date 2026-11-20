@@ -114,7 +114,7 @@ export class SplRpc extends SolRpc {
       const { value } = await this.rpc.getTokenAccountBalance(address as SolKit.Address).send();
       return value;
     } catch (err: any) {
-      // TODO(bitcore-dln): isSolanaError is never called here, so this branch runs for every error
+      // TODO: isSolanaError is never called here, so this branch runs for every error
       // @ts-expect-error the uncalled guard is always truthy; calling it would change which errors get mapped
       if (SolKit.isSolanaError) {
         if (err.context?.__code === -32602) {
