@@ -13,6 +13,7 @@ interface TransakKeys {
   ENV: string;
   API: string;
   API_KEY: string;
+  API_KEY_HEADLESS: string | undefined;
   SECRET_KEY: string;
   WIDGET_API: string;
 }
@@ -120,6 +121,7 @@ export class TransakService {
       ENV: env,
       API: config.transak[env].api,
       API_KEY: config.transak[env].apiKey,
+      API_KEY_HEADLESS: config.transak[env].apiKeyHeadless,
       SECRET_KEY: config.transak[env].secretKey,
       WIDGET_API: config.transak[env].widgetApi
     };
@@ -719,7 +721,7 @@ export class TransakService {
     }
     const userIp = this.transakGetUserIp(req);
     const keys = this.transakGetKeys(req, false);
-    const API_KEY = keys.API_KEY;
+    const API_KEY = keys.API_KEY_HEADLESS;
     const WIDGET_API = keys.WIDGET_API;
 
     const requiredParams = [...(opts.userAuth ? ['userAccessToken'] : []), ...(opts.requiredParams ?? [])];

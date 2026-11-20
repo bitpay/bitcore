@@ -73,12 +73,14 @@ describe('Transak integration', () => {
       sandbox: {
         api: 'api1',
         apiKey: 'apiKey1',
+        apiKeyHeadless: 'apiKeyHeadless1',
         secretKey: 'secretKey1',
         widgetApi: 'widgetApi1',
       },
       production: {
         api: 'api2',
         apiKey: 'apiKey2',
+        apiKeyHeadless: 'apiKeyHeadless2',
         secretKey: 'secretKey2',
         widgetApi: 'widgetApi2',
       },
@@ -1027,8 +1029,8 @@ describe('Transak integration', () => {
         const data = await server.externalServices.transak.transakHeadlessSendOtp(req);
         data.should.deep.equal({ data: 'data' });
         captured.url.should.equal('widgetApi1/api/v2/auth/login');
-        captured.opts.body.should.deep.equal({ apiKey: 'apiKey1', email: 'user@example.com' });
-        captured.opts.headers['x-api-key'].should.equal('apiKey1');
+        captured.opts.body.should.deep.equal({ apiKey: 'apiKeyHeadless1', email: 'user@example.com' });
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
         should.not.exist(captured.opts.headers.authorization);
       });
 
@@ -1036,7 +1038,7 @@ describe('Transak integration', () => {
         req.body.env = 'production';
         await server.externalServices.transak.transakHeadlessSendOtp(req);
         captured.url.should.equal('widgetApi2/api/v2/auth/login');
-        captured.opts.body.apiKey.should.equal('apiKey2');
+        captured.opts.body.apiKey.should.equal('apiKeyHeadless2');
       });
 
       it('should send the request IP as x-user-ip and ignore deviceIp', async () => {
@@ -1124,7 +1126,7 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakHeadlessVerifyOtp(req);
         captured.url.should.equal('widgetApi1/api/v2/auth/verify');
         captured.opts.body.should.deep.equal({
-          apiKey: 'apiKey1',
+          apiKey: 'apiKeyHeadless1',
           email: 'user@example.com',
           otp: '123456',
           stateToken: 'stateToken1',
@@ -1163,7 +1165,7 @@ describe('Transak integration', () => {
         await server.externalServices.transak.transakHeadlessGetQuote(req);
         const url = new URL(captured.url, 'https://example.com');
         url.pathname.should.equal('/widgetApi1/api/v2/lookup/quotes');
-        url.searchParams.get('apiKey').should.equal('apiKey1');
+        url.searchParams.get('apiKey').should.equal('apiKeyHeadless1');
         url.searchParams.get('isBuyOrSell').should.equal('BUY');
         url.searchParams.get('fiatAmount').should.equal('100');
         url.searchParams.get('partnerOrderId').should.equal('partnerOrderId1');

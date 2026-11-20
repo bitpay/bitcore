@@ -344,12 +344,14 @@ module.exports = {
   //     api: 'https://api-stg.transak.com',
   //     widgetApi: 'https://api-gateway-stg.transak.com',
   //     apiKey: 'transak_sandbox_api_key_here',
+  //     apiKeyHeadless: 'transak_sandbox_headless_api_key_here',
   //     secretKey: 'transak_sandbox_secret_key_here',
   //   },
   //   production: {
   //     api: 'https://api.transak.com',
   //     widgetApi: 'https://api-gateway.transak.com',
   //     apiKey: 'transak_production_api_key_here',
+  //     apiKeyHeadless: 'transak_production_headless_api_key_here',
   //     secretKey: 'transak_production_secret_key_here',
   //   },
   //   sandboxWeb: {
