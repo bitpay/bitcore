@@ -28,3 +28,4 @@ blockchain/EVM/cache
 blockchain/EVM/ignition/deployments
 blockchain/solana/test/data
 tmp/
+ts_build

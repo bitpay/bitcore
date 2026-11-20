@@ -2,8 +2,40 @@
   "name": "@bitpay-labs/crypto-rpc",
   "version": "11.11.5",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
-  "main": "index.js",
-  "type": "module",
+  "main": "./ts_build/index.js",
+  "types": "./ts_build/index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./ts_build/index.d.ts",
+      "default": "./ts_build/index.js"
+    },
+    "./index.js": {
+      "types": "./ts_build/index.d.ts",
+      "default": "./ts_build/index.js"
+    },
+    "./lib/*.js": {
+      "types": "./ts_build/lib/*.d.ts",
+      "default": "./ts_build/lib/*.js"
+    },
+    "./lib/*": {
+      "types": "./ts_build/lib/*.d.ts",
+      "default": "./ts_build/lib/*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "index.js": ["ts_build/index.d.ts"],
+      "lib/*": ["ts_build/lib/*"]
+    }
+  },
+  "files": [
+    "ts_build",
+    "!ts_build/test",
+    "!ts_build/blockchain",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -12,7 +44,10 @@
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/crypto-rpc"
   },
   "scripts": {
-    "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && mcr mocha test",
+    "build": "tsc",
+    "clean": "rm -rf ts_build && tsc --version",
+    "compile": "npm run clean && npm run build",
+    "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && npm run compile && mcr mocha ts_build/test",
     "docker:test:build": "docker compose build",
     "docker:test:down": "docker compose down",
     "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
@@ -20,6 +55,7 @@
     "hardhat:clean": "rm -rf blockchain/EVM/artifacts blockchain/EVM/cache",
     "hardhat:test": "npm run hardhat:clean && cd blockchain/EVM/ && npx hardhat test",
     "lint": "eslint .",
+    "prepublishOnly": "npm run compile",
     "test": "docker compose down && docker compose build && docker compose run test_runner",
     "test:local": "npm run docker:test:down && npm run docker:test:build && docker compose run test_runner"
   },
@@ -28,12 +64,15 @@
   "dependencies": {
     "@bitpay-labs/crypto-wallet-core": "^11.11.5",
     "@solana-program/address-lookup-table": "0.7.0",
+    "@solana/fast-stable-stringify": "2.1.0",
     "@solana/functional": "^2.3.0",
+    "@solana/rpc-spec-types": "2.1.0",
     "bitcoind-rpc": "0.9.1",
     "bs58": "^5.0.0",
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
     "lightning": "10.0.1",
+    "node-fetch": "2.7.0",
     "promptly": "0.2.0"
   },
   "devDependencies": {
@@ -44,11 +83,16 @@
     "@solana-program/system": "0.7.0",
     "@solana-program/token": "0.5.1",
     "@solana/kit": "2.1.0",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.7.5",
+    "@types/sinon": "^22.0.2",
     "chai": "^6.2.1",
     "eight-colors": "^1.3.3",
     "hardhat": "^2.22.18",
     "mocha": "^11.7.5",
     "monocart-coverage-reports": "^2.13.0",
-    "sinon": "^21.0.0"
+    "sinon": "^21.0.0",
+    "typescript": "~6.0.3"
   }
 }
