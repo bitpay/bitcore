@@ -17,6 +17,9 @@ export default class Burner implements Hardware {
   nfc = new NFC();
   reader?: Reader;
   private SLOT = 9;
+  private lastCardActivity = 0;
+  // Time the PC/SC daemon needs to go idle after a card is used
+  private static SETTLE_MS = 1000;
 
   /**
    * Sends all commands to the device and recieves all responses
@@ -39,7 +42,31 @@ export default class Burner implements Hardware {
     });
   }
 
-  async disconnect() { };
+  async disconnect() {
+    // Let pcsclite finish its current callback so every reader it detected exists
+    await new Promise(resolve => setImmediate(resolve));
+    // Closing a reader while the pcsc daemon is busy with a card can block forever,
+    // because the cancel request for the reader's status thread gets lost
+    const settleMs = Burner.SETTLE_MS - (Date.now() - this.lastCardActivity);
+    if (settleMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, settleMs));
+    }
+    this.reader?.removeAllListeners();
+    this.reader?.on('error', () => {});
+    this.reader = undefined;
+    this.nfc.removeAllListeners();
+    // Closing cancels the pending status change, which emits an error
+    this.nfc.on('error', () => {});
+    // Every PC/SC interface needs closing, not just the one connected to
+    for (const reader of Object.values(this.nfc.readers)) {
+      try {
+        reader.close();
+      } catch { /* reader already closed */ }
+    }
+    try {
+      this.nfc.close();
+    } catch { /* context already closed */ }
+  };
 
   async sign(params: {
     chain: 'ETH';
@@ -215,6 +242,7 @@ export default class Burner implements Hardware {
         return reject('Reader not connected');
 
       this.reader.once('card', async () => {
+        this.lastCardActivity = Date.now();
         if (this.reader === undefined)
           return reject();
         try {
@@ -225,6 +253,8 @@ export default class Burner implements Hardware {
           resolve(responses);
         } catch (e) {
           reject(e);
+        } finally {
+          this.lastCardActivity = Date.now();
         }
       });
 

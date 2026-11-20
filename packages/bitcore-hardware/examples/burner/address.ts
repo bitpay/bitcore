@@ -12,4 +12,4 @@ await HwProxy.connect();
 
 console.log('Tap an NFC reader with a burner device...');
 console.log(await HwProxy.getAddress({ vendor: 'burner', chain }));
-process.exit(0);
+await HwProxy.disconnect();

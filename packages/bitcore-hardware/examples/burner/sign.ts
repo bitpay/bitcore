@@ -91,4 +91,4 @@ switch (chain) {
   }
 }
 
-process.exit(0);
+await HwProxy.disconnect();

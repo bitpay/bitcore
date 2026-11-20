@@ -5,4 +5,4 @@ await HwProxy.connect();
 
 console.log('Tap an NFC reader with a burner device...');
 console.log(await HwProxy.getPublicKey({ vendor: 'burner' }));
-process.exit(0);
+await HwProxy.disconnect();
