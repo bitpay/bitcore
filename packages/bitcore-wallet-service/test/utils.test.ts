@@ -51,6 +51,19 @@ describe('Utils', function() {
     });
   });
 
+  describe('#isObject', function() {
+    it('should return true for plain and non-plain objects', function() {
+      for (const value of [{}, { a: 1 }, Object.create(null), new Date(), new Map()]) {
+        Utils.isObject(value).should.equal(true);
+      }
+    });
+    it('should return exactly false, not the falsy input, for non-objects', function() {
+      for (const value of [null, undefined, 0, '', NaN, false, 1, 'str', true, [], [1], () => {}, Symbol('s'), 1n]) {
+        should.equal(Utils.isObject(value), false, `expected false for ${String(value)}`);
+      }
+    });
+  });
+
   describe('#hashMessage', function() {
     it('should create a hash', function() {
       const res = Utils.hashMessage('hola', false);

@@ -8,21 +8,30 @@ import { BlockchainMonitor } from '../../src/lib/blockchainmonitor';
 import { ChainService } from '../../src/lib/chain';
 import { Constants } from '../../src/lib/common/constants';
 import helpers from './helpers';
+import type { Storage } from '../../src/lib/storage';
+import type { V8 } from '../../src/lib/blockchainexplorers/v8';
+import type { WalletService } from '../../src/lib/server';
+import type { Wallet } from '../../src/lib/model';
 
 const should = chai.should();
-let storage, blockchainExplorer, blockchainExplorerEVM, bcmonitor;
 
-const socket = {
-  handlers: {},
-  on: (name, handler) => {}
-};
-socket.on = function(eventName, handler) {
-  this.handlers[eventName] = handler;
-};
 
 describe('Blockchain monitor', function() {
-  this.timeout(5000);
-  let server, wallet;
+  this.timeout(Math.max(this['_timeout'] || 0, 5000));
+  let server: WalletService;
+  let wallet: Wallet;
+  let storage: Storage;
+  let blockchainExplorer: V8;
+  let blockchainExplorerEVM: V8;
+  let bcmonitor: BlockchainMonitor;
+
+  const socket = {
+    handlers: {},
+    on: (name, handler) => {}
+  };
+  socket.on = function(eventName, handler) {
+    this.handlers[eventName] = handler;
+  };
 
   before(async function() {
     const res = await helpers.before();
@@ -70,9 +79,6 @@ describe('Blockchain monitor', function() {
     await helpers.after();
   });
   beforeEach(async function() {
-    blockchainExplorer.last = [];
-    blockchainExplorer.lastTx = [];
-    // TODO
     const collections = {
       WALLETS: 'wallets',
       TXS: 'txs',
@@ -359,7 +365,7 @@ describe('Blockchain monitor', function() {
   describe('Block Notify Throttling', function() {
     it('should throttle _notifyNewBlock if setting requires', function(done) {
       const notifyNewBlockSpy = sinon.spy(bcmonitor, '_notifyNewBlock');
-      bcmonitor.blockThrottleSettings = { btc: { livenet: 2 } };
+      bcmonitor.blockThrottleSettings = { btc: { livenet: 2 } } as any;
 
       blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
       socket.handlers['block']('block1');
@@ -382,7 +388,7 @@ describe('Blockchain monitor', function() {
 
     it('should not throttle _notifyNewBlock if setting doesn"t exist', function(done) {
       const notifyNewBlockSpy = sinon.spy(bcmonitor, '_notifyNewBlock');
-      bcmonitor.blockThrottleSettings = { btc: {} };
+      bcmonitor.blockThrottleSettings = { btc: {} } as any;
 
       blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
       socket.handlers['block']('block1');
@@ -403,7 +409,7 @@ describe('Blockchain monitor', function() {
 
     it('should not throttle _notifyNewBlock if setting is zero', function(done) {
       const notifyNewBlockSpy = sinon.spy(bcmonitor, '_notifyNewBlock');
-      bcmonitor.blockThrottleSettings = { btc: { livenet: 0 } };
+      bcmonitor.blockThrottleSettings = { btc: { livenet: 0 } } as any;
 
       blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
       socket.handlers['block']('block1');

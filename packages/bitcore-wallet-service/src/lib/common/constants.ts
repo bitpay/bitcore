@@ -119,7 +119,7 @@ export const Constants = {
     op: ['livenet', 'sepolia', 'holesky', 'regtest'],
     arc: ['livenet', 'testnet'],
     sol: ['livenet', 'testnet', 'devnet', 'regtest']
-  } as { [chain: string]: Array<string> },
+  } as const satisfies Record<string, readonly string[]>,
 
   // These aliases are here to support legacy clients so don't change them lightly
   NETWORK_ALIASES: {
@@ -234,7 +234,13 @@ export const Constants = {
     xrp: { testnet: 300, livenet: 0 },
     doge: { testnet: 300, livenet: 0 },
     ltc: { testnet: 300, livenet: 0 }
-  } as { [chain: string]: { [network: string]: number } },
+  } as const satisfies Record<string, { [network: string]: number }>,
+
+  /**
+   * Highest round a KeyGen client submits. The DKG library's final local result (round 4) is never posted: the client skips it
+   * once the keychain is ready, and the library's "ready" state (5) is not a submitted round either.
+   */
+  TSS_KEYGEN_MAX_SUBMITTED_ROUND: 3,
 
   // May be different from the defaults if we rollback
   // or want to beta test new versions.

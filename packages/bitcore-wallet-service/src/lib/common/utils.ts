@@ -99,8 +99,11 @@ export const Utils = {
     }
   },
 
-  isObject(obj) {
-    return obj && typeof obj === 'object' && !Array.isArray(obj);
+  /**
+   * True for a non-null, non-array object. Always returns a boolean, never the falsy input itself.
+   */
+  isObject(obj: unknown): obj is Record<string, any> {
+    return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
   },
 
   /**
@@ -111,6 +114,14 @@ export const Utils = {
    */
   isNumber(val) {
     return val != null && !isNaN(val);
+  },
+
+  /**
+   * True for a numeric, non-negative safe integer, excluding negative zero and numeric strings.
+   * Does not enforce JavaScript's array-index limit or an application-specific upper bound.
+   */
+  isCanonicalIndex(value: unknown): value is number {
+    return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && !Object.is(value, -0);
   },
 
   /**
@@ -150,6 +161,14 @@ export const Utils = {
       ret = new BitcoreLib.encoding.BufferReader(ret).readReverse();
     }
     return ret;
+  },
+
+  /**
+   * True for a hex-encoded compressed or uncompressed secp256k1 public key that is a point on the curve.
+   * BitcoreLib.PublicKey.isValid alone accepts strings of the wrong length, so the format is checked first.
+   */
+  isValidSecp256k1PublicKey(value: unknown): value is string {
+    return typeof value === 'string' && /^(0[23][0-9a-f]{64}|04[0-9a-f]{128})$/i.test(value) && BitcoreLib.PublicKey.isValid(value);
   },
 
   verifyMessage(message, signature, publicKey) {
