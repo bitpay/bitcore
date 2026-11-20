@@ -60,7 +60,7 @@
     "mongodb": "3.5.9",
     "moralis": "2.25.1",
     "mustache": "2.3.2",
-    "nodemailer": "5.1.1",
+    "nodemailer": "10.1.4",
     "preconditions": "2.2.3",
     "read": "1.0.7",
     "request": "2.88.2",

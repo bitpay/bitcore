@@ -96,7 +96,7 @@
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
     "@solana/spl-token-registry": "0.2.4574",
     "abi-decoder": "2.4.0",
-    "axios": "0.21.4",
+    "axios": "0.34.0",
     "bson": "^1.1.6",
     "cors": "2.8.4",
     "express": "4.22.3",
