@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "lib": ["es2023"],
+    "module": "esnext",
+    "target": "es2023",
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node", "mocha"],
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true
+  }
+}

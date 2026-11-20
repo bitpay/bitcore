@@ -1,0 +1,38 @@
+{
+  "name": "@bitpay-labs/bitcore-contracts",
+  "version": "11.11.2",
+  "description": "A repository for on-chain contracts referenced in Bitcore",
+  "license": "MIT",
+  "author": "BitPay <dev@bitpay.com>",
+  "type": "module",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-contracts"
+  },
+  "scripts": {
+    "compile": "cd src/evm && hardhat compile",
+    "compile:prod": "cd src/evm && hardhat compile --build-profile production --no-tests",
+    "clean": "cd src/evm && hardhat clean",
+    "test": "cd src/evm && hardhat test",
+    "test:evm": "cd src/evm && hardhat test",
+    "node:evm": "cd src/evm && hardhat node",
+    "deploy:multisend": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSend.ts",
+    "deploy:multisend-with-admin": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSendWithAdmin.ts",
+    "hardhat": "cd src/evm && hardhat"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.2.2",
+    "@nomicfoundation/hardhat-ignition": "^3.1.10",
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^4.0.0",
+    "@types/chai": "^5.2.3",
+    "@types/chai-as-promised": "^8.0.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.19.2",
+    "chai": "^6.3.0",
+    "ethers": "^6.17.0",
+    "hardhat": "^3.22.0",
+    "mocha": "^12.0.3",
+    "typescript": "~6.0.3"
+  }
+}
