@@ -141,6 +141,49 @@ describe('SOL HTTP transport', function() {
     expect(requests).to.have.lengthOf(0);
   });
 
+  describe('abort reasons', function() {
+    const payload = { jsonrpc: '2.0', id: 1, method: 'getSlot', params: [] };
+    const rejectionOf = async (promise) => {
+      try {
+        await promise;
+      } catch (err) {
+        return err;
+      }
+      throw new Error('expected the request to be rejected');
+    };
+
+    it('wraps a non-Error reason when the signal is already aborted', async function() {
+      const controller = new AbortController();
+      controller.abort('caller gave up');
+      const error = await rejectionOf(createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal }));
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('caller gave up');
+      expect(requests).to.have.lengthOf(0);
+    });
+
+    it('wraps a non-Error reason when the signal aborts mid-request', async function() {
+      respond = () => {};
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort('caller gave up');
+      const error = await rejectionOf(call);
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('caller gave up');
+    });
+
+    it('passes a plain abort() reason through unchanged', async function() {
+      respond = () => {};
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort();
+      const error = await rejectionOf(call);
+      expect(error).to.equal(controller.signal.reason);
+      expect(error).to.have.property('name', 'AbortError');
+    });
+  });
+
   it('rejects with a SolanaError carrying the status code on an HTTP error', async function() {
     respond = (body, res) => {
       res.writeHead(503, 'Service Unavailable');
