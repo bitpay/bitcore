@@ -18,7 +18,8 @@
     "test:evm": "cd src/evm && hardhat test",
     "node:evm": "cd src/evm && hardhat node",
     "deploy:multisend": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSend.ts",
-    "deploy:multisend-with-admin": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSendWithAdmin.ts",
+    "multisend:set-admin": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSendSetNewAdmin.ts",
+    "multisend:accept-admin": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSendAcceptAdmin.ts",
     "hardhat": "cd src/evm && hardhat"
   },
   "devDependencies": {

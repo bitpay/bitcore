@@ -21,3 +21,7 @@
 
 # Local dev-node (chainId 31337) Ignition deployments
 /ignition/deployments/chain-31337
+
+# Ignition parameter files hold real addresses; only the examples are committed
+/ignition/parameters/*
+!/ignition/parameters/*.example.json

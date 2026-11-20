@@ -36,11 +36,17 @@ export default defineConfig({
       chainType: 'l1',
       url: process.env.HARDHAT_URL || 'http://127.0.0.1:8545'
     },
-    sepolia: {
+    testnet: {
       type: 'http',
       chainType: 'l1',
-      url: configVariable('SEPOLIA_RPC_URL'),
-      accounts: [configVariable('SEPOLIA_PRIVATE_KEY')]
+      url: configVariable('TESTNET_RPC_URL'),
+      accounts: [configVariable('TESTNET_PRIVATE_KEY')]
+    },
+    mainnet: {
+      type: 'http',
+      chainType: 'l1',
+      url: configVariable('MAINNET_RPC_URL'),
+      accounts: [configVariable('MAINNET_PRIVATE_KEY')]
     }
   }
 });
