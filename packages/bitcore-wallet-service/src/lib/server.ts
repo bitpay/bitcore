@@ -1779,11 +1779,13 @@ export class WalletService implements IWalletService {
 
     if (this.blockchainExplorer) return this.blockchainExplorer;
     if (this.blockchainExplorerOpts) {
-      if (this.blockchainExplorerOpts[chain] && this.blockchainExplorerOpts[chain][network]) {
-        opts = this.blockchainExplorerOpts[chain][network];
+      // Only use own config entries and copy them before adding request-specific options.
+      const chainOpts = Object.hasOwn(this.blockchainExplorerOpts, chain) ? this.blockchainExplorerOpts[chain] : undefined;
+      if (chainOpts && Object.hasOwn(chainOpts, network) && chainOpts[network]) {
+        opts = { ...chainOpts[network] };
         provider = opts.provider;
-      } else if (this.blockchainExplorerOpts[network]) {
-        opts = this.blockchainExplorerOpts[network];
+      } else if (Object.hasOwn(this.blockchainExplorerOpts, network) && this.blockchainExplorerOpts[network]) {
+        opts = { ...this.blockchainExplorerOpts[network] };
       }
     }
     opts.provider = provider;
