@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# Delegates to the root compile script (package.json)
-# so build order lives in one place. Resolves the repo root from this
-# script's own location, not the caller's cwd, so it works from any directory.
-set -e
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-exec npm --prefix "$ROOT_DIR" run compile
