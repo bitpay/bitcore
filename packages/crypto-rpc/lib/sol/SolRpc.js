@@ -494,7 +494,7 @@ export class SolRpc {
     const hasInnerInstructions = Array.isArray(meta?.innerInstructions) && meta.innerInstructions.length > 0;
     const needsInnerInstructions = includeInnerInstructions && hasInnerInstructions;
     const needsLookupTableAccounts = lookupTablesUsed && !accountsLoaded;
-    const parsedTx = needsInnerInstructions || needsLookupTableAccounts
+    const parsedTx = (needsInnerInstructions || needsLookupTableAccounts)
       ? await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send()
       : null;
     if (needsInnerInstructions && !parsedTx?.meta) {
