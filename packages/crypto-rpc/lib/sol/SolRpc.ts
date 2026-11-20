@@ -33,8 +33,11 @@ export interface SolRpcConfig {
   wsPort?: number;
   /** fetch implementation for HTTP RPC requests (defaults to node-fetch) */
   fetch?: SolanaHttpFetch;
-  /** Default for getTransaction's includeInnerInstructions; false when unset */
-  includeInnerInstructions?: boolean;
+  /**
+   * Default for getTransaction's includeInnerInstructions.
+   * Only true or 'true' enable it; anything else (including 'false' or unset) is false.
+   */
+  includeInnerInstructions?: boolean | string;
 }
 
 export type SolRpcClient = SolKit.Rpc<SolKit.SolanaRpcApi>;
@@ -151,6 +154,7 @@ export class SolRpc {
   rpc: SolRpcClient;
   rpcSubscriptions: SolRpcSubscriptionsClient | null;
   emitter: EventEmitter;
+  includeInnerInstructions: boolean;
   _versionedConfig: { commitment: 'confirmed'; maxSupportedTransactionVersion: 0 };
 
   /**
@@ -162,10 +166,12 @@ export class SolRpc {
    * @param {number} [config.port] - The port number
    * @param {Function} [config.fetch] - fetch implementation for HTTP RPC requests (defaults to node-fetch)
    * @param {number} [config.wsPort] - The WS port number
-   * @param {boolean} [config.includeInnerInstructions] - Default for getTransaction's includeInnerInstructions (false if unset)
+   * @param {boolean|string} [config.includeInnerInstructions] - Default for getTransaction's includeInnerInstructions.
+   *   Only true or 'true' enable it; anything else (including 'false' or unset) is false.
    */
   constructor(config: SolRpcConfig) {
     this.config = config;
+    this.includeInnerInstructions = ([true, 'true'] as unknown[]).includes(config.includeInnerInstructions);
     let { rpcPort } = this.config;
     const { protocol, host, port, wsPort: rpcSubscriptionsPort } = this.config;
     rpcPort = rpcPort || port;
@@ -624,7 +630,7 @@ export class SolRpc {
    * @param {boolean} [params.includeInnerInstructions] - Also return innerInstructions, which costs a second (jsonParsed)
    *   fetch for a tx that has any. Defaults to the client's includeInnerInstructions config, which defaults to false.
    */
-  async getTransaction({ txid, includeInnerInstructions = Boolean(this.config.includeInnerInstructions) }: {
+  async getTransaction({ txid, includeInnerInstructions = this.includeInnerInstructions }: {
     txid: string;
     includeInnerInstructions?: boolean;
   }): Promise<SolTransaction | null> {
@@ -658,7 +664,7 @@ export class SolRpc {
     const hasInnerInstructions = Array.isArray(meta?.innerInstructions) && meta.innerInstructions.length > 0;
     const needsInnerInstructions = includeInnerInstructions && hasInnerInstructions;
     const needsLookupTableAccounts = lookupTablesUsed && !accountsLoaded;
-    const parsedTx = needsInnerInstructions || needsLookupTableAccounts
+    const parsedTx = (needsInnerInstructions || needsLookupTableAccounts)
       ? await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send()
       : null;
     if (needsInnerInstructions && !parsedTx?.meta) {

@@ -174,6 +174,41 @@ describe('SolRpc.getTransaction without inner instructions requested (recorded m
   });
 });
 
+describe('SolRpc includeInnerInstructions config (recorded mainnet tx)', function() {
+  let replay;
+
+  beforeEach(async function() {
+    replay = await startReplayServer(JSON.parse(fs.readFileSync(fixturePath, 'utf8')));
+  });
+
+  afterEach(function() {
+    replay.server.close();
+  });
+
+  const getTransactionWith = (includeInnerInstructions: boolean | string) => {
+    const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port: replay.port, wsPort: 1, includeInnerInstructions });
+    return solRpc.getTransaction({ txid: MAINNET_TXID });
+  };
+
+  it('treats the string \'false\' as off', async function() {
+    const tx = await getTransactionWith('false');
+    expect(tx).not.to.have.property('innerInstructions');
+    expect(replay.requests.filter(key => key.startsWith('getTransaction:'))).to.deep.equal(['getTransaction:base64']);
+  });
+
+  it('treats the string \'true\' as on', async function() {
+    const tx = await getTransactionWith('true');
+    expect(tx!.innerInstructions![instructionKeys.TRANSFER_SOL]).to.have.lengthOf(1);
+    expect(replay.requests.filter(key => key.startsWith('getTransaction:'))).to.deep.equal(['getTransaction:base64', 'getTransaction:jsonParsed']);
+  });
+
+  it('treats true as on', async function() {
+    const tx = await getTransactionWith(true);
+    expect(tx!.innerInstructions![instructionKeys.TRANSFER_SOL]).to.have.lengthOf(1);
+    expect(replay.requests.filter(key => key.startsWith('getTransaction:'))).to.deep.equal(['getTransaction:base64', 'getTransaction:jsonParsed']);
+  });
+});
+
 describe('SolRpc.getTransaction when the jsonParsed fetch comes back empty', function() {
   let replay;
 
