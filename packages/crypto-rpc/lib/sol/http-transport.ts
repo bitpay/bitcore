@@ -62,6 +62,15 @@ function redactUrls(err: Error) {
 }
 
 /**
+ * get a signal's abort reason as an Error so the rejection has a stack trace
+ * @param {AbortSignal} signal - aborted signal
+ * @returns {Error} the reason itself if it is an Error, otherwise an Error wrapping it
+ */
+function abortError(signal: AbortSignal): Error {
+  return signal.reason instanceof Error ? signal.reason : new Error(signal.reason);
+}
+
+/**
  * create a node-fetch transport with same-turn request coalescing
  * @param {string} url - Solana RPC endpoint
  * @param {Object} [options] - transport configuration
@@ -127,8 +136,8 @@ export function createSolanaHttpTransport(url: string, options: SolanaHttpTransp
    * @returns {Promise<Object>} JSON-RPC response
    */
   return function transport({ payload, signal }: { payload: unknown; signal?: AbortSignal }): Promise<any> {
-    if (signal && signal.aborted) {
-      return Promise.reject(signal.reason);
+    if (signal?.aborted) {
+      return Promise.reject(abortError(signal));
     }
     const { method, params } = payload as JsonRpcPayload;
     if (!pendingRequests) {
@@ -171,7 +180,7 @@ export function createSolanaHttpTransport(url: string, options: SolanaHttpTransp
             pendingRequest.controller.abort();
           }
         });
-        reject(signal.reason);
+        reject(abortError(signal));
       };
 
       signal.addEventListener('abort', handleAbort, { once: true });
