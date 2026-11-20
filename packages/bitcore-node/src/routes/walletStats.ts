@@ -1,0 +1,362 @@
+import { Constants } from '@bitpay-labs/crypto-wallet-core';
+import express from 'express';
+import { Request, Response } from 'express';
+import { CacheStorage } from '../models/cache';
+import { IWalletStats, WalletStatsStorage } from '../models/walletStats';
+import { WalletStatsWalletStorage } from '../models/walletStatsWallet';
+import { RateLimiter } from './middleware';
+import { walletStatsAuth } from './walletStatsAuth';
+import { cacheKeyFor, parseParams, respondCached, setPrivateCache, withErrorResponse } from './walletStatsUtils';
+
+const router = express.Router({ mergeParams: true });
+
+export interface DateRange {
+  $gte?: string;
+  $lte?: string;
+}
+
+export interface SnapshotFilter {
+  chain?: string;
+  network?: string;
+  date?: DateRange;
+}
+
+const DEFAULT_LIMIT = 1000;
+const MAX_LIMIT = 5000;
+
+export type SnapshotQuery =
+  | { error: string; filter?: undefined; limit?: undefined; cacheKey?: undefined }
+  | { error?: undefined; filter: SnapshotFilter; limit: number; cacheKey: string };
+
+/** Validates the snapshot query params and turns them into a mongo filter. */
+export function parseSnapshotQuery(query: any): SnapshotQuery {
+  const parsed = parseParams<{
+    chain?: string;
+    network?: string;
+    from?: string;
+    to?: string;
+    limit: number;
+  }>(query, {
+    chain: { type: 'chain' },
+    network: { type: 'identifier' },
+    from: { type: 'date' },
+    to: { type: 'date' },
+    limit: { type: 'int', default: DEFAULT_LIMIT, max: MAX_LIMIT }
+  });
+  if (parsed.error !== undefined) {
+    return { error: parsed.error };
+  }
+  const { chain, network, from, to, limit } = parsed.values;
+  if (from && to && from > to) {
+    return { error: 'Invalid date range, from is after to' };
+  }
+
+  const filter: SnapshotFilter = {};
+  if (chain) {
+    filter.chain = chain;
+  }
+  if (network) {
+    filter.network = network;
+  }
+  if (from || to) {
+    filter.date = {};
+    if (from) {
+      filter.date.$gte = from;
+    }
+    if (to) {
+      filter.date.$lte = to;
+    }
+  }
+  return { filter, limit, cacheKey: cacheKeyFor('snapshots', parsed.values) };
+}
+
+export function transformSnapshot(snapshot: IWalletStats) {
+  const { meta } = snapshot;
+  return {
+    chain: snapshot.chain,
+    network: snapshot.network,
+    date: snapshot.date,
+    walletCntTotal: snapshot.walletCntTotal,
+    walletCntWithBalance: snapshot.walletCntWithBalance,
+    walletCntBitcore: snapshot.walletCntBitcore,
+    walletCntImported: snapshot.walletCntImported,
+    totalBalance: snapshot.totalBalance,
+    totalBalanceImported: snapshot.totalBalanceImported,
+    active: snapshot.active,
+    dupWalletCnt: snapshot.dupWalletCnt,
+    meta: {
+      startedAt: meta.startedAt,
+      completedAt: meta.completedAt,
+      erroredWalletCnt: meta.erroredWalletCnt,
+      source: meta.source,
+      gaps: meta.gaps
+    }
+  };
+}
+
+export async function getSnapshots(req: Request, res: Response) {
+  setPrivateCache(res);
+  const query = parseSnapshotQuery(req.query);
+  if (query.error !== undefined) {
+    return res.status(400).json({ error: query.error });
+  }
+  const { filter, limit, cacheKey } = query;
+  return respondCached(res, cacheKey, CacheStorage.Times.Hour, async () => {
+    const found = await WalletStatsStorage.collection
+      .find(filter)
+      .sort({ chain: 1, network: 1, date: 1 })
+      .limit(limit)
+      .toArray();
+    return found.map(transformSnapshot);
+  });
+}
+
+export interface CohortParams {
+  chain: string;
+  network: string;
+  date?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  activeSince?: string;
+}
+
+export function parseCohortQuery(query: any) {
+  return parseParams<CohortParams>(query, {
+    chain: { type: 'chain', required: true },
+    network: { type: 'identifier', required: true },
+    date: { type: 'date' },
+    createdFrom: { type: 'date' },
+    createdTo: { type: 'date' },
+    activeSince: { type: 'date' }
+  });
+}
+
+export interface CohortMatch {
+  chain: string;
+  network: string;
+  snapshotDate: string;
+  isDup: boolean;
+  createdDate?: { $gte?: Date; $lt?: Date };
+  lastActivityDate?: { $gte: Date };
+}
+
+export function buildCohortMatch(params: Omit<CohortParams, 'date'> & { snapshotDate: string }): CohortMatch {
+  const { chain, network, snapshotDate, createdFrom, createdTo, activeSince } = params;
+  const match: CohortMatch = { chain, network, snapshotDate, isDup: false };
+
+  if (createdFrom || createdTo) {
+    match.createdDate = {};
+    if (createdFrom) {
+      match.createdDate.$gte = startOfUtcDay(createdFrom);
+    }
+    if (createdTo) {
+      // Inclusive of the whole createdTo day, so bound by the start of the next one.
+      match.createdDate.$lt = startOfUtcDay(createdTo, 1);
+    }
+  }
+  if (activeSince) {
+    match.lastActivityDate = { $gte: startOfUtcDay(activeSince) };
+  }
+  return match;
+}
+
+function startOfUtcDay(date: string, addDays = 0) {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + addDays));
+}
+
+/**
+ * Newest completed snapshot for a chain and network, or null if it has none. Facts are
+ * written before their snapshot, so a date that only exists in the facts may be partial.
+ */
+export async function latestSnapshotDate(chain: string, network: string): Promise<string | null> {
+  const [latest] = await WalletStatsStorage.collection
+    .find({ chain, network })
+    .project({ date: 1 })
+    .sort({ date: -1 })
+    .limit(1)
+    .toArray();
+  return latest?.date || null;
+}
+
+export async function getCohorts(req: Request, res: Response) {
+  setPrivateCache(res);
+  const parsed = parseCohortQuery(req.query);
+  if (parsed.error !== undefined) {
+    return res.status(400).json({ error: parsed.error });
+  }
+  const { chain, network, date, createdFrom, createdTo, activeSince } = parsed.values;
+
+  const snapshotDate = date || (await latestSnapshotDate(chain, network));
+  if (!snapshotDate) {
+    return res.status(404).json({ error: `No wallet stats for ${chain} ${network}` });
+  }
+
+  const cacheKey = cacheKeyFor('cohorts', { ...parsed.values, date: snapshotDate });
+
+  return respondCached(res, cacheKey, CacheStorage.Times.Hour, async () => {
+    const match = buildCohortMatch({ chain, network, snapshotDate, createdFrom, createdTo, activeSince });
+    // Summing in JS keeps the balances as exact integers; $sum would have to go through
+    // $toDecimal to avoid rounding them, and would hand back a type needing stringifying
+    // anyway. Iterate the cursor rather than collecting it: there is one fact per wallet
+    // per snapshot, so a mainnet snapshot is millions of documents and only the running
+    // total needs to be held.
+    const cursor = WalletStatsWalletStorage.collection.find(match).project({ balance: 1 });
+    const { walletCnt, totalBalance } = await sumBalances(cursor);
+    return {
+      chain,
+      network,
+      snapshotDate,
+      walletCnt,
+      totalBalance: totalBalance.toString(),
+      filters: pickDefined({ createdFrom, createdTo, activeSince })
+    };
+  });
+}
+
+/** One projected fact, as both the cursor and the counting helpers see it. */
+export type BalanceFact = { balance?: string };
+
+/** Counts wallets and totals their balances, holding only the running total. */
+export async function sumBalances(facts: AsyncIterable<BalanceFact> | Iterable<BalanceFact>) {
+  let walletCnt = 0;
+  let totalBalance = BigInt(0);
+  for await (const fact of facts) {
+    walletCnt++;
+    if (fact.balance) {
+      totalBalance += BigInt(fact.balance);
+    }
+  }
+  return { walletCnt, totalBalance };
+}
+
+function pickDefined(values: Record<string, string | undefined>) {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined));
+}
+
+/**
+ * Rates are USD per whole unit and thresholds are USD, both of which arrive as
+ * floats. Scale them to integers once so every balance comparison afterwards is
+ * exact BigInt arithmetic: an ETH balance in wei overruns a double long before
+ * it reaches an interesting USD value.
+ */
+const RATE_SCALE = 1e8;
+// The ceiling: rate * RATE_SCALE must stay under Number.MAX_SAFE_INTEGER, so rates and
+// thresholds above roughly 9.0e7 would start losing precision before they reach BigInt.
+
+export interface BucketBoundary {
+  threshold: number;
+  minBaseUnits: bigint;
+}
+
+export function bucketBoundaries(thresholds: number[], rate: number, unitsPerWhole: number): BucketBoundary[] {
+  const scaledRate = BigInt(Math.round(rate * RATE_SCALE));
+  return [...thresholds]
+    .sort((a, b) => b - a)
+    .map(threshold => ({
+      threshold,
+      minBaseUnits: (BigInt(Math.round(threshold * RATE_SCALE)) * BigInt(unitsPerWhole)) / scaledRate
+    }));
+}
+
+/**
+ * Counts each wallet in the highest bucket it reaches, and in no other. Takes the
+ * cursor itself so a snapshot's worth of facts never has to be held at once.
+ */
+export async function countIntoBuckets(
+  facts: AsyncIterable<BalanceFact> | Iterable<BalanceFact>,
+  boundaries: BucketBoundary[]
+) {
+  const counts: Record<string, number> = {};
+  for (const boundary of boundaries) {
+    counts[String(boundary.threshold)] = 0;
+  }
+  for await (const fact of facts) {
+    if (!fact.balance) {
+      continue;
+    }
+    const baseUnits = BigInt(fact.balance);
+    for (const boundary of boundaries) {
+      if (baseUnits >= boundary.minBaseUnits) {
+        counts[String(boundary.threshold)]++;
+        break;
+      }
+    }
+  }
+  return counts;
+}
+
+function unitsPerWholeFor(chain: string): number | null {
+  return Constants.UNITS[chain.toLowerCase()]?.toSatoshis || null;
+}
+
+export interface BucketParams {
+  chain: string;
+  network: string;
+  date?: string;
+  thresholds: number[];
+  rate: number;
+}
+
+export function parseBucketQuery(query: any) {
+  return parseParams<BucketParams>(query, {
+    chain: { type: 'chain', required: true },
+    network: { type: 'identifier', required: true },
+    date: { type: 'date' },
+    thresholds: { type: 'numberList', required: true },
+    rate: { type: 'number', required: true }
+  });
+}
+
+export async function getBuckets(req: Request, res: Response) {
+  setPrivateCache(res);
+  const parsed = parseBucketQuery(req.query);
+  if (parsed.error !== undefined) {
+    return res.status(400).json({ error: parsed.error });
+  }
+  const { chain, network, date, thresholds, rate } = parsed.values;
+
+  const unitsPerWhole = unitsPerWholeFor(chain);
+  if (!unitsPerWhole) {
+    return res.status(400).json({ error: `Unknown units for chain ${chain}` });
+  }
+
+  const snapshotDate = date || (await latestSnapshotDate(chain, network));
+  if (!snapshotDate) {
+    return res.status(404).json({ error: `No wallet stats for ${chain} ${network}` });
+  }
+
+  // Sorted, because bucketBoundaries sorts internally: two orderings of the same
+  // thresholds produce the same response and should share one cache entry.
+  const sortedThresholds = [...thresholds].sort((a, b) => a - b).join(',');
+
+  return respondCached(
+    res,
+    cacheKeyFor('buckets', { ...parsed.values, date: snapshotDate, thresholds: sortedThresholds }),
+    CacheStorage.Times.Hour,
+    async () => {
+      const cursor = WalletStatsWalletStorage.collection
+        .find({ chain, network, snapshotDate, isDup: false })
+        .project({ balance: 1 });
+      const boundaries = bucketBoundaries(thresholds, rate, unitsPerWhole);
+      return {
+        chain,
+        network,
+        snapshotDate,
+        rate,
+        buckets: await countIntoBuckets(cursor, boundaries)
+      };
+    }
+  );
+}
+
+router.use(RateLimiter('WALLETSTATS', 5, 60, 600));
+router.use(walletStatsAuth);
+router.get('/', withErrorResponse(getSnapshots));
+router.get('/cohorts', withErrorResponse(getCohorts));
+router.get('/buckets', withErrorResponse(getBuckets));
+
+export const walletStatsRoute = {
+  router,
+  path: '/wallet-stats'
+};
