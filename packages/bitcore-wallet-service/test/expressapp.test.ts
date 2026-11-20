@@ -1,5 +1,6 @@
 'use strict';
 
+import assert from 'assert';
 import * as chai from 'chai';
 import 'chai/register-should';
 import sinon from 'sinon';
@@ -10,6 +11,7 @@ import config from '../src/config';
 import { Common } from '../src/lib/common';
 import { WalletService } from '../src/lib/server';
 import { ExpressApp } from '../src/lib/expressapp';
+import logger from '../src/lib/logger';
 import { ClientError } from '../src/lib/errors/clienterror';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import * as TestData from './testdata';
@@ -182,7 +184,7 @@ describe('ExpressApp', function() {
             should.not.exist(err);
             should.exist(res.headers['x-service-version']);
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            res.headers['x-service-version'].should.equal('bws-' + require('../package').version);
+            assert.strictEqual(res.headers['x-service-version'], 'bws-' + require('../package').version);
             res.statusCode.should.equal(200);
             body.should.equal('{}');
             done();
@@ -611,6 +613,96 @@ describe('ExpressApp', function() {
         });
         
       });
+
+      describe('Public explorer configuration', function() {
+        let upstream: http.Server;
+        let upstreamRequests: string[];
+        let upstreamStatus: number;
+        let server: WalletService;
+        const responseBody = { value: '123' };
+        const targets = [
+          { path: '/v1/service/aave/userAccountData', args: { address: '0x123' }, suffix: '/aave/account/0x123?version=v3' },
+          { path: '/v1/service/aave/reserveData', args: { asset: '0x123' }, suffix: '/aave/reserve/0x123?version=v3' },
+          { path: '/v1/service/aave/reserveTokensAddresses', args: { asset: '0x123' }, suffix: '/aave/reserve-tokens/0x123?version=v3' },
+          { path: '/v1/token/allowance', args: { tokenAddress: '0x123', ownerAddress: '0x456', spenderAddress: '0x789' }, suffix: '/token/0x123/allowance/0x456/for/0x789' }
+        ];
+
+        function post(target: typeof targets[number], network: string): Promise<{ status: number; body: unknown }> {
+          return new Promise((resolve, reject) => {
+            request({
+              url: testHost + ':' + testPort + config.basePath + target.path,
+              method: 'post',
+              json: { chain: 'eth', network, ...target.args }
+            }, (err, res, body) => {
+              if (err) return reject(err);
+              resolve({ status: res.statusCode, body });
+            });
+          });
+        }
+
+        beforeEach(async function() {
+          upstreamRequests = [];
+          upstreamStatus = 200;
+          upstream = http.createServer((req, res) => {
+            assert.ok(req.url);
+            upstreamRequests.push(req.url);
+            res.writeHead(upstreamStatus, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(responseBody));
+          });
+          await new Promise<void>(resolve => upstream.listen(0, '127.0.0.1', resolve));
+          const port = (upstream.address() as import('net').AddressInfo).port;
+          // Exercise real service methods, explorer selection and V8 HTTP requests.
+          server = Object.create(WalletService.prototype);
+          server.logw = () => logger;
+          server.blockchainExplorerOpts = {
+            eth: { mainnet: Object.freeze({ url: `http://127.0.0.1:${port}` }) }
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          await new Promise<void>(resolve => start(ExpressApp, resolve));
+        });
+
+        afterEach(async function() {
+          await new Promise<void>((resolve, reject) => upstream.close(err => err ? reject(err) : resolve()));
+        });
+
+        for (const target of targets) {
+          it(`does not pollute the process through unauthenticated ${target.path}`, async function() {
+            const before = Object.getOwnPropertyDescriptors(Object.prototype);
+            let after: typeof before;
+            try {
+              const invalid = await post(target, '__proto__');
+              assert.equal(invalid.status, 500);
+              after = Object.getOwnPropertyDescriptors(Object.prototype);
+            } finally {
+              for (const key of ['provider', 'chain', 'network', 'userAgent']) {
+                if (Object.hasOwn(before, key)) Object.defineProperty(Object.prototype, key, before[key]);
+                else delete Object.prototype[key];
+              }
+            }
+            assert.deepEqual(after, before);
+            assert.deepEqual(upstreamRequests, []);
+            const valid = await post(target, 'mainnet');
+            assert.equal(valid.status, 200);
+            assert.deepEqual(valid.body, responseBody);
+            assert.deepEqual(upstreamRequests, ['/api/ETH/mainnet' + target.suffix]);
+          });
+        }
+
+        it('preserves configuration across an upstream failure and a successful retry', async function() {
+          const before = JSON.stringify(server.blockchainExplorerOpts);
+          upstreamStatus = 503;
+          assert.equal((await post(targets[0], 'mainnet')).status, 503);
+          assert.equal(JSON.stringify(server.blockchainExplorerOpts), before);
+          upstreamStatus = 200;
+          const recovered = await post(targets[0], 'mainnet');
+          assert.equal(recovered.status, 200);
+          assert.deepEqual(recovered.body, responseBody);
+          assert.equal(upstreamRequests.length, 2);
+          assert.equal(JSON.stringify(server.blockchainExplorerOpts), before);
+        });
+      });
+
       describe('Aave service routes', function() {
         it('/v1/service/aave/userAccountData', function(done) {
           const server = {
@@ -910,7 +1002,7 @@ describe('ExpressApp', function() {
           sandbox.stub(WalletService, 'initialize').callsArg(1);
           sandbox.stub(WalletService, 'getStorage').returns(storage);
           start(ExpressApp, function() {
-            const results = [];
+            const results: Array<{ status: number; body: unknown }> = [];
             (function next() {
               if (results.length === bodies.length) {
                 return cb(null, results);
