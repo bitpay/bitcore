@@ -1,7 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
+import sinon from 'sinon';
 import sjcl from 'sjcl';
+import { Encryption } from '../src/lib/common';
 import { Key } from '../src/lib/key';
 
 const should = chai.should();
@@ -117,6 +119,12 @@ describe('Key', function() {
   });
 
   describe('Encryption', function() {
+    const sandbox = sinon.createSandbox();
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
     describe('#encrypt', function() {
       it('should create encrypted private key and remove cleartext', function() {
         const k = new Key({ seedType: 'new', password: 'password' });
@@ -165,8 +173,48 @@ describe('Key', function() {
         }
         should.exist(err);
       });
+      it('should leave the key unchanged when encrypting the mnemonic fails', function() {
+        const k = new Key({ seedType: 'new' });
+        const before = k.toObj();
+        sandbox.stub(Encryption, 'encryptWithPassword').callThrough()
+          .withArgs(before.mnemonic).throws(new Error('mnemonic encryption failed'));
+
+        (() => k.encrypt('password', { iter: 1 })).should.throw('mnemonic encryption failed');
+
+        k.toObj().should.deep.equal(before);
+      });
     });
     describe('#decryptPrivateKey', function() {
+      it('should leave the key unchanged and clear the root buffer when the mnemonic cannot be decrypted', function() {
+        const original = new Key({ seedType: 'new', password: 'password', encryptionOpts: { iter: 1 } }).toObj();
+        original.mnemonicEncrypted = JSON.stringify(Encryption.encryptWithPassword('test mnemonic', 'other-password', { iter: 1 }));
+        const k = new Key({ seedType: 'object', seedData: original });
+        const decryptSpy = sandbox.spy(Encryption, 'decryptWithPassword');
+
+        (() => k.decrypt('password')).should.throw('Could not decrypt');
+
+        k.toObj().should.deep.equal(original);
+        const rootBuffer = decryptSpy.firstCall.returnValue;
+        Buffer.isBuffer(rootBuffer).should.be.true;
+        rootBuffer.every(b => b === 0).should.be.true;
+      });
+
+      it('should clear the root and mnemonic buffers after a successful decrypt', function() {
+        const k = new Key({ seedType: 'new', algo: 'ECDSA' });
+        const before = k.toObj();
+        k.encrypt('password', { iter: 1 });
+        const decryptSpy = sandbox.spy(Encryption, 'decryptWithPassword');
+
+        k.decrypt('password');
+
+        k.toObj().xPrivKey.should.equal(before.xPrivKey);
+        k.toObj().mnemonic.should.equal(before.mnemonic);
+        for (const value of decryptSpy.returnValues) {
+          Buffer.isBuffer(value).should.be.true;
+          value.every(b => b === 0).should.be.true;
+        }
+      });
+
       it('should decrypt private key', function() {
         const k = new Key({ seedType: 'new' });
         k.encrypt('password');
