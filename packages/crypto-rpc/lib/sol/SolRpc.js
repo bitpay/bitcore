@@ -24,10 +24,12 @@ export class SolRpc {
    * @param {string} config.host - The host URL or IP address.
    * @param {number} [config.port] - The port number
    * @param {number} [config.wsPort] - The WS port number
-   * @param {boolean} [config.includeInnerInstructions] - Default for getTransaction's includeInnerInstructions (false if unset)
+   * @param {boolean|string} [config.includeInnerInstructions] - Default for getTransaction's includeInnerInstructions.
+   *   Only true or 'true' enable it; anything else (including 'false' or unset) is false.
    */
   constructor(config) {
     this.config = config;
+    this.includeInnerInstructions = [true, 'true'].includes(config.includeInnerInstructions);
     let { rpcPort } = this.config;
     const { protocol, host, port, wsPort: rpcSubscriptionsPort } = this.config;
     rpcPort = rpcPort || port;
@@ -464,7 +466,7 @@ export class SolRpc {
    * @param {boolean} [params.includeInnerInstructions] - Also return innerInstructions, which costs a second (jsonParsed)
    *   fetch for a tx that has any. Defaults to the client's includeInnerInstructions config, which defaults to false.
    */
-  async getTransaction({ txid, includeInnerInstructions = Boolean(this.config.includeInnerInstructions) }) {
+  async getTransaction({ txid, includeInnerInstructions = this.includeInnerInstructions }) {
     if (!txid || !this.isBase58(txid)) {
       return null;
     }
