@@ -1,0 +1,6 @@
+{
+  "MultiSendSetNewAdminModule": {
+    "multiSendAddress": "0x0000000000000000000000000000000000000000",
+    "newAdmin": "0x0000000000000000000000000000000000000000"
+  }
+}
