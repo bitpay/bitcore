@@ -24,6 +24,7 @@ const Bitcore_ = {
   arb: BitcoreLib,
   base: BitcoreLib,
   op: BitcoreLib,
+  arc: BitcoreLib,
   xrp: BitcoreLib,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc,
@@ -119,8 +120,11 @@ export class Utils {
 
     const pub = new PublicKey(pubKey);
     const flattenedMessage = Array.isArray(message) ? message.join(',') : message;
-    const hash = this.hashMessage(flattenedMessage);
     try {
+      // hashMessage rejects an empty message, which an array argument reaches by being empty or by holding
+      // only empty strings. A message we cannot hash is a message we cannot verify, so report it as such
+      // instead of throwing at callers who are asking a yes or no question.
+      const hash = this.hashMessage(flattenedMessage);
       const sig = new crypto.Signature.fromString(signature);
       return crypto.ECDSA.verify(hash, sig, pub, { endian: 'little' });
     } catch {
@@ -404,7 +408,7 @@ export class Utils {
       if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
         t.escrow(
           txp.escrowAddress.address,
-          txp.instantAcceptanceEscrow + txp.fee
+          Number(txp.instantAcceptanceEscrow) + Number(txp.fee)
         );
       }
 
@@ -538,6 +542,9 @@ export class Utils {
   }
 
   static getCurrencyCodeFromCoinAndChain(coin: string, chain: string): string {
+    if (coin.toLowerCase() === 'arc' && chain.toLowerCase() === 'arc') {
+      return 'USDC_arc';
+    }
     if (coin.toLowerCase() === chain.toLowerCase()) {
       return coin.toUpperCase();
     }

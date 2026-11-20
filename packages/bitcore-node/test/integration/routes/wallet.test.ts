@@ -412,7 +412,7 @@ describe('Wallet Routes', function() {
   });
 
   it('should have document in wallets', done => {
-    WalletStorage.collection.findOne(wallet).then(doc => {
+    WalletStorage.collection.findOne(wallet as any).then(doc => {
       testWalletEquivalence(wallet, doc);
       done();
     }).catch(done);

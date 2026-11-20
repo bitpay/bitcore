@@ -1,10 +1,15 @@
 'use strict';
 
-const _ = require('lodash');
 const BufferUtil = require('../util/buffer');
 const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const BN = require('./bn');
+
+/** Whether the byte's high bit is set (DER integer sign bit). */
+function isDerByteMsbSet(byte) {
+  // eslint-disable-next-line no-bitwise
+  return (byte & 0x80) !== 0;
+}
 
 const Signature = function Signature(r, s, isSchnorr) {
   if (!(this instanceof Signature)) {
@@ -63,18 +68,29 @@ Signature.fromCompact = function(buf) {
   return sig;
 };
 
+// TODO: Split up fromDER and fromBuffer so they aren't the same function. DER encoding is specific to ECDSA, so fromDER should only handle ECDSA signatures.
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
   const sig = new Signature();
 
   // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype
   // NOTE: this check is not very reliable. You should use .fromSchnorr directly if you know it's a schnorr sig.
-  if ((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
+  // A 64 byte buffer is treated as schnorr regardless of the first byte, since that's the first byte of r, which is
+  // 0x30 for ~1/256 schnorr sigs. A valid 64 byte DER (ecdsa) sig is possible (e.g. 29 byte r and s) but vanishingly
+  // rare in practice. Use .parseDER or .fromTxFormat if you know it's an ecdsa sig.
+  if (buf.length === 64 || (buf.length === 65 && buf[0] != 0x30)) {
     return Signature.fromSchnorr(buf);
   }
-  
-  $.checkArgument(!(buf.length === 64 && buf[0] === 0x30), new Error('64 DER (ecdsa) signatures not allowed'));
-  
-  const obj = Signature.parseDER(buf, strict);
+
+  let obj;
+  try {
+    obj = Signature.parseDER(buf, strict);
+  } catch (e) {
+    // A 65 byte schnorr sig (with nhashtype) whose r starts with 0x30
+    if (buf.length === 65) {
+      return Signature.fromSchnorr(buf);
+    }
+    throw e;
+  }
 
   sig.r = obj.r;
   sig.s = obj.s;
@@ -86,7 +102,9 @@ Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
 Signature.fromTxFormat = function(buf) {
   const nhashtype = buf.readUInt8(buf.length - 1);
   const derbuf = buf.slice(0, buf.length - 1);
-  const sig = new Signature.fromDER(derbuf, false);
+  // Tx format is always ecdsa (schnorr sigs are parsed with .fromSchnorr). Don't use .fromDER here since it
+  // would interpret a 64 byte DER sig as schnorr.
+  const sig = new Signature(Signature.parseDER(derbuf, false));
   sig.nhashtype = nhashtype;
   return sig;
 };
@@ -102,7 +120,7 @@ Signature.fromString = function(str) {
  */
 Signature.parseDER = function(buf, strict) {
   $.checkArgument(BufferUtil.isBuffer(buf), new Error('DER formatted signature should be a buffer'));
-  if (_.isUndefined(strict)) {
+  if (strict == null) {
     strict = true;
   }
 
@@ -189,8 +207,8 @@ Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
   const rnbuf = this.r.toBuffer();
   const snbuf = this.s.toBuffer();
 
-  const rneg = rnbuf[0] & 0x80 ? true : false;
-  const sneg = snbuf[0] & 0x80 ? true : false;
+  const rneg = isDerByteMsbSet(rnbuf[0]);
+  const sneg = isDerByteMsbSet(snbuf[0]);
 
   const rbuf = rneg ? Buffer.concat([Buffer.from([0x00]), rnbuf]) : rnbuf;
   const sbuf = sneg ? Buffer.concat([Buffer.from([0x00]), snbuf]) : snbuf;
@@ -260,11 +278,11 @@ Signature.isTxDER = function(buf) {
     //  Non-canonical signature: R length is zero
     return false;
   }
-  if (R[0] & 0x80) {
+  if (isDerByteMsbSet(R[0])) {
     //  Non-canonical signature: R value negative
     return false;
   }
-  if (nLenR > 1 && (R[0] === 0x00) && !(R[1] & 0x80)) {
+  if (nLenR > 1 && (R[0] === 0x00) && !isDerByteMsbSet(R[1])) {
     //  Non-canonical signature: R value excessively padded
     return false;
   }
@@ -278,11 +296,11 @@ Signature.isTxDER = function(buf) {
     //  Non-canonical signature: S length is zero
     return false;
   }
-  if (S[0] & 0x80) {
+  if (isDerByteMsbSet(S[0])) {
     //  Non-canonical signature: S value negative
     return false;
   }
-  if (nLenS > 1 && (S[0] === 0x00) && !(S[1] & 0x80)) {
+  if (nLenS > 1 && (S[0] === 0x00) && !isDerByteMsbSet(S[1])) {
     //  Non-canonical signature: S value excessively padded
     return false;
   }
@@ -311,6 +329,7 @@ Signature.prototype.hasDefinedHashtype = function() {
     return false;
   }
   // accept with or without Signature.SIGHASH_ANYONECANPAY by ignoring the bit
+  // eslint-disable-next-line no-bitwise
   const temp = this.nhashtype & ~Signature.SIGHASH_ANYONECANPAY;
   if (temp < Signature.SIGHASH_ALL || temp > Signature.SIGHASH_SINGLE) {
     return false;

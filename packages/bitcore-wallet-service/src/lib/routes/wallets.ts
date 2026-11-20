@@ -97,7 +97,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
 
   router.get('/v3/wallets/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      checkNumberFormat(req.query.numberFormat, res);
+      if (!checkNumberFormat(req.query.numberFormat as string, res)) return;
       const opts = {
         includeExtendedInfo: false,
         twoStep: false,
@@ -124,8 +124,8 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
     const twoStep = req.query.twoStep == '1';
     const silentFailure = req.query.silentFailure == '1';
     const includeServerMessages = req.query.serverMessageArray == '1';
-    const numberFormat = req.query.numberFormat;
-    checkNumberFormat(numberFormat, res);
+    const numberFormat = req.query.numberFormat as string;
+    if (!checkNumberFormat(numberFormat, res)) return;
 
     const buildOpts = (request, copayerId) => {
       const getParam = (param, returnArray = false) => {
@@ -228,16 +228,17 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
         return res.json([]);
       }
 
+      // a copayer that isn't an object with a string id can't exist, so it isn't looked up
+      const wellFormed = copayers.filter(c => typeof c?.copayerId === 'string');
       const storage = WalletService.getStorage();
-      const existing = await Promise.all<{ copayerId: string; verified: boolean }>(copayers.map(c => new Promise((resolve) => {
-        storage.fetchCopayerLookup(c.copayerId, (err, copayer) => {
-          if (err || !copayer) {
-            return resolve({ copayerId: c.copayerId, verified: false });
-          }
-          const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
-          return resolve({ copayerId: c.copayerId, verified });
-        });
-      })));
+      const existing = await Promise.all<{ copayerId: string; verified: boolean }>(wellFormed.map(async c => {
+        const copayer = await storage.fetchCopayerLookup(c.copayerId).catch(() => null);
+        if (!copayer) {
+          return { copayerId: c.copayerId, verified: false };
+        }
+        const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
+        return { copayerId: c.copayerId, verified };
+      }));
       return res.json(existing.filter(e => e.verified).map(e => e.copayerId));
     } catch (err) {
       return returnError(err, res, req);
@@ -254,7 +255,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
       server => {
         const opts = {
           identifier: req.params['identifier'],
-          walletCheck: ['1', 'true'].includes(req.query['walletCheck'])
+          walletCheck: ['1', 'true'].includes(req.query['walletCheck'] as string)
         };
 
         server.getWalletFromIdentifier(opts, (err, wallet) => {
@@ -297,7 +298,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
       try {
         const opts = { account: 0 };
         if (req.query.account) {
-          opts.account = parseInt(req.query.account);
+          opts.account = parseInt(req.query.account as string);
         }
         const flags = await server.getFlags(opts);
         res.json(flags);

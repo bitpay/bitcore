@@ -4,17 +4,27 @@ import sinon from 'sinon';
 import * as chai from 'chai';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
 import { Defaults as BwsDefaults } from '@bitpay-labs/bitcore-wallet-service/ts_build/src/lib/common/defaults';
+import {
+  TssKeyGen as BwsTssKeyGen,
+  TssSign as BwsTssSign
+} from '@bitpay-labs/bitcore-wallet-service/ts_build/src/lib/tss';
 import request from 'supertest';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import util from 'util';
 import { ECIES } from '@bitpay-labs/bitcore-tss';
 import { Request } from '../src/lib/request';
 import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
-import { TssKeyGen, TssKey } from '../src/lib/tsskey';
+import {
+  TssKeyGen,
+  TssKey,
+  createWallet as createTssWallet,
+  joinWallet as joinTssWallet
+} from '../src/lib/tsskey';
 import { TssSign } from '../src/lib/tsssign';
 import log from '../src/lib/log';
-import Client, { type Credentials } from '../src';
+import Client, { Credentials, type Network, Utils } from '../src';
 import {
   helpers,
   blockchainExplorerMock
@@ -71,6 +81,17 @@ describe('TSS', function() {
     });
   });
 
+  beforeEach(function() {
+    sandbox.stub(BwsTssKeyGen, 'getMessagesForParty').callsFake(async function(params) {
+      params.maxWaitTimeSec = 1;
+      return (BwsTssKeyGen.getMessagesForParty as any).wrappedMethod.call(this, params);
+    });
+    sandbox.stub(BwsTssSign, 'getMessagesForParty').callsFake(async function(params) {
+      params.maxWaitTimeSec = 1;
+      return (BwsTssSign.getMessagesForParty as any).wrappedMethod.call(this, params);
+    });
+  });
+
   after(function(done) {
     dbConnection.close(done);
   });
@@ -120,8 +141,8 @@ describe('TSS', function() {
       tss0.partyId.should.equal(0);
     });
 
-    it(happyPath('should create a join code'), function() {
-      const code1 = tss0.createJoinCode({
+    it(happyPath('should create a join code'), async function() {
+      const code1 = await tss0.createJoinCode({
         partyId: 1,
         partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
@@ -130,7 +151,7 @@ describe('TSS', function() {
       BitcoreLib.util.js.isHexaString(code1).should.equal(true);
       joinCode1 = code1;
 
-      const code2 = tss0.createJoinCode({
+      const code2 = await tss0.createJoinCode({
         partyId: 2,
         partyPubKey: party2Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
@@ -140,8 +161,8 @@ describe('TSS', function() {
       joinCode2 = code2;
     });
 
-    it('should not produce a deterministic join code', function() {
-      const code = tss0.createJoinCode({
+    it('should not produce a deterministic join code', async function() {
+      const code = await tss0.createJoinCode({
         partyId: 1,
         partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
@@ -151,8 +172,8 @@ describe('TSS', function() {
       code.should.not.equal(joinCode1);
     });
 
-    it('should encode the join code per the encoding option', function() {
-      const code = tss0.createJoinCode({
+    it('should encode the join code per the encoding option', async function() {
+      const code = await tss0.createJoinCode({
         partyId: 1,
         partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey,
         opts: { encoding: 'base64' }
@@ -164,6 +185,21 @@ describe('TSS', function() {
     });
 
     it('should not allow other party to use join code', async function() {
+      try {
+        const tss = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party0Key
+        });
+        // party0 should not be able to use party1's join code
+        const result = await tss.joinKey({ code: joinCode1 });
+        throw new Error('Should not have been able to join');
+      } catch (err) {
+        err.message.should.equal('Invalid checksum');
+      }
+
       try {
         const tss = new TssKeyGen({
           chain,
@@ -477,7 +513,7 @@ describe('TSS', function() {
 
       it(happyPath('should join key with a password'), async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
         });
@@ -493,7 +529,7 @@ describe('TSS', function() {
 
       it(happyPath('should join key with a password embedded in the join code'), async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey,
           extra: password
@@ -510,7 +546,7 @@ describe('TSS', function() {
 
       it('should NOT join key with a WRONG password', async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey
         });
@@ -531,7 +567,7 @@ describe('TSS', function() {
 
       it('should NOT join key with a MISSING password', async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey
         });
@@ -549,6 +585,325 @@ describe('TSS', function() {
           null
         ]);
       });
+    });
+
+    describe('Out of partyId order', function() {
+      let tss0: TssKeyGen;
+      let tss1: TssKeyGen;
+      let tss2: TssKeyGen;
+
+      afterEach(function() {
+        tss0?.unsubscribe();
+        tss1?.unsubscribe();
+        tss2?.unsubscribe();
+      });
+
+      it(happyPath('should generate the key when parties join out of partyId order'), async function() {
+        const party0Key = new Key({ seedType: 'new' });
+        const party1Key = new Key({ seedType: 'new' });
+        const party2Key = new Key({ seedType: 'new' });
+        tss0 = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party0Key
+        });
+        tss1 = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party1Key
+        });
+        tss2 = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party2Key
+        });
+        await tss0.newKey({ m, n });
+        const code1 = await tss0.createJoinCode({
+          partyId: 1,
+          partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+        });
+        const code2 = await tss0.createJoinCode({
+          partyId: 2,
+          partyPubKey: party2Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+        });
+
+        await tss2.joinKey({ code: code2 });
+        await tss1.joinKey({ code: code1 });
+        let session = await storage.fetchTssKeyGenSession({ id: tss0.id });
+        session.rounds[0].map(message => message.fromPartyId).should.deep.equal([0, 2, 1]);
+
+        const complete0 = new Promise(r => tss0.once('complete', r));
+        const complete1 = new Promise(r => tss1.once('complete', r));
+        const complete2 = new Promise(r => tss2.once('complete', r));
+        tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        tss2.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        tss0.subscribe({ timeout: 10 });
+        tss1.subscribe({ timeout: 10 });
+        tss2.subscribe({ timeout: 10 });
+        await Promise.all([complete0, complete1, complete2]);
+
+        session = await storage.fetchTssKeyGenSession({ id: tss0.id });
+        tss0.getTssKey().keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+        tss1.getTssKey().keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+        tss2.getTssKey().keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+      });
+    });
+  });
+
+  describe('Wallets', function() {
+    const walletChain = chain.toLowerCase();
+    const walletName = 'TSS wallet';
+    const copayerNames = ['party0', 'party1', 'party2'];
+    const partyKeys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+    let keygens: TssKeyGen[];
+    let tssKeys: TssKey[];
+    let baseWallet;
+    /** Each party's credentials for the base (ETH) wallet */
+    let baseCredentials: Credentials[];
+    /** Each party's credentials for the sibling ARB wallet */
+    let arbCredentials: Credentials[];
+
+    const tssWalletParams = (partyId: number, credentials: Credentials[] = baseCredentials) => ({
+      baseKey: tssKeys[partyId],
+      baseCredentials: credentials[partyId],
+      baseUrl: '/bws/api',
+      request: request(app),
+      copayerName: copayerNames[partyId]
+    });
+    const createSibling = (opts: { chain: string; network?: Network }, credentials?: Credentials[]) =>
+      createTssWallet({ ...tssWalletParams(0, credentials), walletName: `${walletName} ${opts.chain}`, opts });
+    const joinSibling = (partyId: number, opts: { chain: string; network?: Network }, credentials?: Credentials[]) =>
+      joinTssWallet({ ...tssWalletParams(partyId, credentials), opts });
+
+    const getClient = (credentials: Credentials) => {
+      const client = new Client({ baseUrl: '/bws/api', request: request(app) });
+      client.fromObj(credentials.toObj());
+      return client;
+    };
+    const expectRejection = async (promise: Promise<unknown>, regex: RegExp) => {
+      const err = await promise.then(() => null, e => e);
+      should.exist(err, 'Expected the promise to reject');
+      err.message.should.match(regex);
+    };
+    const fetchWallet = (walletId: string) => util.promisify(storage.fetchWallet).call(storage, walletId);
+    const countWallets = () => db.collection(BWS.Storage.collections.WALLETS).countDocuments();
+
+    afterEach(function() {
+      for (const keygen of keygens || []) {
+        keygen.unsubscribe();
+      }
+    });
+
+    it(happyPath('should create and join the wallet when the key is generated'), async function() {
+      keygens = partyKeys.map(key => new TssKeyGen({
+        chain,
+        network,
+        baseUrl: '/bws/api',
+        request: request(app),
+        key
+      }));
+      await keygens[0].newKey({ m, n });
+      for (const partyId of [1, 2]) {
+        const code = await keygens[0].createJoinCode({ partyId, partyPubKey: keygens[partyId].getAuthPublicKey() });
+        await keygens[partyId].joinKey({ code });
+      }
+
+      const wallets = keygens.map(keygen => new Promise<any>((resolve, reject) => {
+        keygen.once('wallet', resolve);
+        keygen.on('error', reject);
+      }));
+      keygens[0].subscribe({ timeout: 10, walletName, copayerName: copayerNames[0] });
+      keygens[1].subscribe({ timeout: 10, copayerName: copayerNames[1] });
+      keygens[2].subscribe({ timeout: 10, copayerName: copayerNames[2] });
+      const [wallet0, wallet1, wallet2] = await Promise.all(wallets);
+
+      wallet0.id.should.equal(wallet1.id);
+      wallet0.id.should.equal(wallet2.id);
+      wallet0.chain.should.equal(walletChain);
+      wallet0.tssKeyId.should.equal(keygens[0].id);
+      baseWallet = await fetchWallet(wallet0.id);
+      baseWallet.copayers.length.should.equal(n);
+
+      tssKeys = keygens.map(keygen => keygen.getTssKey());
+      for (const key of tssKeys) {
+        key.metadata.keygenChain.should.equal(walletChain);
+      }
+
+      // Load the base wallet credentials like a wallet app would
+      baseCredentials = [];
+      for (const key of tssKeys) {
+        const client = getClient(key.createCredentials(null, { chain: walletChain, network, account: 0 }));
+        await client.openWallet();
+        client.credentials.walletId.should.equal(baseWallet.id);
+        client.credentials.publicKeyRing.length.should.equal(n);
+        baseCredentials.push(client.credentials);
+      }
+    });
+
+    it('should error if a party joins a sibling wallet before the leader creates it', async function() {
+      await expectRejection(joinSibling(1, { chain: 'arb' }), /TSS_BWS_JOIN_SECRET_NOT_FOUND/);
+    });
+
+    it('should not let a party other than the leader create a sibling wallet', async function() {
+      const walletCount = await countWallets();
+      await expectRejection(
+        createTssWallet({ ...tssWalletParams(1), walletName, opts: { chain: 'arb' } }),
+        /Only the TSS key session leader can create the wallet/
+      );
+      (await countWallets()).should.equal(walletCount);
+    });
+
+    it('should not create a sibling wallet if the leader is missing public keys of other parties', async function() {
+      const walletCount = await countWallets();
+      const credentials = Credentials.fromObj({ ...baseCredentials[0].toObj(), publicKeyRing: baseCredentials[0].publicKeyRing.slice(0, 2) });
+      await expectRejection(createSibling({ chain: 'arb' }, [credentials]), /Missing the public keys of some TSS parties/);
+      (await countWallets()).should.equal(walletCount);
+    });
+
+    it(happyPath('should create a sibling wallet on another chain'), async function() {
+      const { wallet, credentials } = await createSibling({ chain: 'arb' });
+      wallet.id.should.not.equal(baseWallet.id);
+      wallet.chain.should.equal('arb');
+      wallet.tssKeyId.should.equal(baseWallet.tssKeyId);
+      wallet.clientDerivedPublicKey.should.equal(baseWallet.clientDerivedPublicKey);
+
+      credentials.walletId.should.equal(wallet.id);
+      credentials.walletName.should.equal(`${walletName} arb`);
+      credentials.chain.should.equal('arb');
+      credentials.coin.should.equal('arb');
+      credentials.tssKeyId.should.equal(baseWallet.tssKeyId);
+      credentials.copayerId.should.equal(Utils.xPubToCopayerId('arb', baseCredentials[0].xPubKey));
+      credentials.clientDerivedPublicKey.should.equal(baseCredentials[0].clientDerivedPublicKey);
+      credentials.walletPrivKey.should.not.equal(baseCredentials[0].walletPrivKey);
+      credentials.sharedEncryptingKey.should.not.equal(baseCredentials[0].sharedEncryptingKey);
+      arbCredentials = [credentials];
+    });
+
+    it(happyPath('should join a sibling wallet on another chain'), async function() {
+      for (const partyId of [1, 2]) {
+        const { wallet, credentials } = await joinSibling(partyId, { chain: 'arb' });
+        wallet.id.should.equal(arbCredentials[0].walletId);
+        credentials.walletId.should.equal(wallet.id);
+        credentials.walletName.should.equal(`${walletName} arb`);
+        credentials.chain.should.equal('arb');
+        credentials.tssKeyId.should.equal(baseWallet.tssKeyId);
+        credentials.copayerId.should.equal(Utils.xPubToCopayerId('arb', baseCredentials[partyId].xPubKey));
+        credentials.walletPrivKey.should.equal(arbCredentials[0].walletPrivKey);
+        credentials.sharedEncryptingKey.should.equal(arbCredentials[0].sharedEncryptingKey);
+        arbCredentials.push(credentials);
+      }
+      (await fetchWallet(arbCredentials[0].walletId)).copayers.length.should.equal(n);
+    });
+
+    it('should open the sibling wallet with its credentials', async function() {
+      for (const [partyId, credentials] of arbCredentials.entries()) {
+        const client = getClient(credentials);
+        await client.openWallet();
+        const { wallet } = await client.getStatus();
+        wallet.name.should.equal(`${walletName} arb`); // decrypted with the sibling wallet's shared encrypting key
+        wallet.copayers.map(c => c.name).sort().should.deep.equal(copayerNames);
+        client.credentials.isComplete().should.equal(true);
+        client.credentials.publicKeyRing.length.should.equal(n);
+        arbCredentials[partyId] = client.credentials;
+      }
+    });
+
+    it('should derive the same address as the base wallet', async function() {
+      const baseAddress = await getClient(baseCredentials[0]).createAddress();
+      const arbAddress = await getClient(arbCredentials[0]).createAddress();
+      arbAddress.address.should.equal(baseAddress.address);
+    });
+
+    it('should return the existing sibling wallet when creating or joining it again', async function() {
+      const { wallet, credentials } = await createSibling({ chain: 'arb' });
+      wallet.id.should.equal(arbCredentials[0].walletId);
+      credentials.walletPrivKey.should.equal(arbCredentials[0].walletPrivKey);
+      credentials.walletName.should.equal(`${walletName} arb`);
+
+      for (const partyId of [1, 2]) {
+        const { wallet, credentials } = await joinSibling(partyId, { chain: 'arb' });
+        wallet.id.should.equal(arbCredentials[0].walletId);
+        credentials.walletPrivKey.should.equal(arbCredentials[0].walletPrivKey);
+      }
+      (await fetchWallet(arbCredentials[0].walletId)).copayers.length.should.equal(n);
+    });
+
+    it('should let the parties join if the leader retries after failing to store the join secrets', async function() {
+      sandbox.stub(BwsTssKeyGen, 'storeBwsJoinSecrets').rejects(new Error('db unavailable'));
+      await expectRejection(createSibling({ chain: 'op' }), /./);
+      sandbox.restore();
+      await expectRejection(joinSibling(1, { chain: 'op' }), /TSS_BWS_JOIN_SECRET_NOT_FOUND/);
+
+      const { wallet } = await createSibling({ chain: 'op' });
+      for (const partyId of [1, 2]) {
+        (await joinSibling(partyId, { chain: 'op' })).wallet.id.should.equal(wallet.id);
+      }
+      (await fetchWallet(wallet.id)).copayers.length.should.equal(n);
+    });
+
+    it('should create and join a sibling wallet from another sibling wallet', async function() {
+      const { wallet } = await createSibling({ chain: 'base' }, arbCredentials);
+      wallet.chain.should.equal('base');
+      for (const partyId of [1, 2]) {
+        (await joinSibling(partyId, { chain: 'base' }, arbCredentials)).wallet.id.should.equal(wallet.id);
+      }
+      (await fetchWallet(wallet.id)).copayers.length.should.equal(n);
+    });
+
+    it('should use the base wallet chain for keys generated before keygenChain was stored', async function() {
+      const legacyKeys = tssKeys.map(key => {
+        const obj = key.toObj();
+        delete obj.metadata.keygenChain;
+        return new TssKey(obj);
+      });
+      const params = (partyId: number, credentials?: Credentials[]) => ({ ...tssWalletParams(partyId, credentials), baseKey: legacyKeys[partyId] });
+      const { wallet, credentials } = await createTssWallet({ ...params(0), walletName, opts: { chain: 'matic' } });
+      const maticCredentials = [credentials];
+      for (const partyId of [1, 2]) {
+        const { wallet: joined, credentials } = await joinTssWallet({ ...params(partyId), opts: { chain: 'matic' } });
+        joined.id.should.equal(wallet.id);
+        maticCredentials.push(credentials);
+      }
+
+      // The keygen chain is stored on the key so that it isn't lost when the key is saved with the sibling wallet
+      for (const key of legacyKeys) {
+        key.metadata.keygenChain.should.equal(walletChain);
+        key.toObj().metadata.keygenChain.should.equal(walletChain);
+      }
+
+      // Use the sibling wallet as the base wallet
+      for (const [partyId, credentials] of maticCredentials.entries()) {
+        const client = getClient(credentials);
+        await client.openWallet();
+        maticCredentials[partyId] = client.credentials;
+      }
+      (await createTssWallet({ ...params(0, maticCredentials), walletName, opts: { chain: 'matic' } })).wallet.id.should.equal(wallet.id);
+      for (const partyId of [1, 2]) {
+        (await joinTssWallet({ ...params(partyId, maticCredentials), opts: { chain: 'matic' } })).wallet.id.should.equal(wallet.id);
+      }
+    });
+
+    it('should create a sibling wallet on another network with the copayer xPubKey of that network', async function() {
+      const { wallet, credentials } = await createSibling({ chain: 'arb', network: 'testnet' });
+      wallet.network.should.equal('sepolia'); // BWS normalizes EVM testnets
+      credentials.xPubKey.should.match(/^tpub/);
+      credentials.copayerId.should.equal(Utils.xPubToCopayerId('arb', credentials.xPubKey));
+      // Same key, only serialized for another network
+      new BitcoreLib.HDPublicKey(credentials.xPubKey).publicKey.toString()
+        .should.equal(new BitcoreLib.HDPublicKey(baseCredentials[0].xPubKey).publicKey.toString());
+
+      for (const partyId of [1, 2]) {
+        const { wallet: joined, credentials } = await joinSibling(partyId, { chain: 'arb', network: 'testnet' });
+        joined.id.should.equal(wallet.id);
+        credentials.xPubKey.should.match(/^tpub/);
+      }
     });
   });
 
@@ -597,19 +952,19 @@ describe('TSS', function() {
         }
       });
       const client = helpers.newClient(app);
-      for (const tssKey of [party0TssKey, party1TssKey, party2TssKey]) {
-        await helpers.createAndJoinWallet(
-          [client, client, client],
-          [tssKey],
-          1,
-          1,
-          {
-            key: tssKey,
-            coin: chain.toLowerCase(),
-            tssKeyId: tssKey.metadata.id
-          }
-        );
-      }
+      // for (const tssKey of [party0TssKey, party1TssKey, party2TssKey]) {
+      await helpers.createAndJoinWallet(
+        [client, client, client],
+        [party0TssKey, party1TssKey, party2TssKey],
+        m,
+        n,
+        {
+          key: party0TssKey,
+          coin: chain.toLowerCase(),
+          tssKeyId: party0TssKey.metadata.id
+        }
+      );
+      // }
     });
 
     it(happyPath('should start a new signing session'), async function() {
@@ -1061,7 +1416,7 @@ describe('TSS', function() {
         const tss0 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: party0Key });
         await tss0.newKey({ m, n }); // real version, creates session with schemeVersion 1.1
 
-        const joinCode = tss0.createJoinCode({
+        const joinCode = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
         });

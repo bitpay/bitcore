@@ -441,7 +441,7 @@ export class Key {
     return key;
   };
 
-  encrypt(password: string, opts?: { iter?: number; ks?: number }, algo?) {
+  encrypt(password: string, opts?: { iter?: number; ks?: number }, algo?: KeyAlgorithm) {
     if (this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key already encrypted');
 
@@ -458,7 +458,7 @@ export class Key {
     this.#mnemonic = null;
   };
 
-  decrypt(password, algo?) {
+  decrypt(password: string, algo?: KeyAlgorithm) {
     if (!this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key is not encrypted');
 
@@ -577,6 +577,8 @@ export class Key {
     } else if (chain == 'op') {
       coinCode = '60';
     } else if (chain == 'base') {
+      coinCode = '60';
+    } else if (chain == 'arc') {
       coinCode = '60';
     } else if (chain == 'xrp') {
       coinCode = '144';

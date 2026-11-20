@@ -337,6 +337,7 @@ export class EmailService {
       bch: 'BCH',
       eth: 'ETH',
       matic: 'MATIC',
+      arc: 'USDC',
       xrp: 'XRP',
       doge: 'DOGE',
       ltc: 'LTC',
@@ -354,6 +355,7 @@ export class EmailService {
       weth: 'WETH',
       'usdc.e': 'USDC.e',
       sol: 'SOL',
+      xaut: 'XAUT',
     };
 
     const data = JSON.parse(JSON.stringify(notification.data)) as Notification['data'];
@@ -685,6 +687,7 @@ export class EmailService {
           arb: 'arbitrum-one',
           base: 'base',
           op: 'optimistic-ethereum',
+          arc: 'arc',
           sol: 'solana',
         };
 

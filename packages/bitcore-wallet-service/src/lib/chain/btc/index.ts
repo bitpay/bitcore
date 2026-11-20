@@ -41,7 +41,8 @@ export class BtcChain implements IChain {
     server.getUtxosForCurrentWallet(
       {
         coin: opts.coin,
-        addresses: opts.addresses
+        addresses: opts.addresses,
+        wallet
       },
       (err, utxos) => {
         if (err) return cb(err);
@@ -173,7 +174,7 @@ export class BtcChain implements IChain {
     return new Promise((resolve, reject) => {
       const getChangeAddress = (wallet, cb) => {
         if (wallet.singleAddress) {
-          server.storage.fetchAddresses(server.walletId, (err, addresses) => {
+          server.storage.fetchAddressesPage(server.walletId, { limit: 1 }, (err, addresses) => {
             if (err) return cb(err);
             if (!addresses?.length) return cb(new ClientError('The wallet has no addresses'));
             return cb(null, addresses[0]);
@@ -327,8 +328,8 @@ export class BtcChain implements IChain {
 
     // if TX is ready? no estimation is needed.
     if (txp.inputs.length && !txp.changeAddress && txp.outputs.length) {
-      const totalInputs = txp.inputs.reduce((sum, x) => sum + x.satoshis, 0);
-      const totalOutputs = txp.outputs.reduce((sum, x) => sum + x.amount, 0);
+      const totalInputs = txp.inputs.reduce((sum, x) => sum + Number(x.satoshis), 0);
+      const totalOutputs = txp.outputs.reduce((sum, x) => sum + Number(x.amount), 0);
       if (totalInputs && totalOutputs) {
         fee = totalInputs - totalOutputs;
       }
@@ -347,6 +348,11 @@ export class BtcChain implements IChain {
         return resolve({ feePerKb });
       });
     });
+  }
+
+  isPrePublishRawBound(_txp: TxProposal) {
+    // UTXO chains never mutate tx data at publish, so they never legitimately carry prePublishRaw.
+    return false;
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
@@ -396,24 +402,24 @@ export class BtcChain implements IChain {
     }
 
     for (const o of txp.outputs || []) {
-      o.amount = parseInt(o.amount);
+      const amount = parseInt(o.amount);
       $.checkState(o.script || o.toAddress, 'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>');
       if (o.script) {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
             script: o.script,
-            satoshis: o.amount
+            satoshis: amount
           })
         );
       } else {
-        t.to(o.toAddress, o.amount);
+        t.to(o.toAddress, amount);
       }
     }
 
     t.fee(parseInt(txp.fee));
 
     if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
-      t.escrow(txp.escrowAddress.address, txp.instantAcceptanceEscrow + txp.fee);
+      t.escrow(txp.escrowAddress.address, Number(txp.instantAcceptanceEscrow) + Number(txp.fee));
     }
 
     if (txp.enableRBF) t.enableRBF();
@@ -563,7 +569,7 @@ export class BtcChain implements IChain {
       conservativeEstimation: opts.payProUrl ? true : false,
       instantAcceptanceEscrow: opts.instantAcceptanceEscrow
     };
-    const escrowAmount = opts.instantAcceptanceEscrow || 0;
+    const escrowAmount = Number(opts.instantAcceptanceEscrow) || 0;
     const txpAmount = txp.getTotalAmount() + escrowAmount;
     const baseTxpSize = this.getEstimatedSize(txp, feeOpts);
     const baseTxpFee = (baseTxpSize * txp.feePerKb) / 1000;

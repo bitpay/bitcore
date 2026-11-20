@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class BanxaService {
@@ -86,9 +87,17 @@ export class BanxaService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Banxa request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to fetch Banxa coins'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Banxa request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Banxa did not return coins'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -123,9 +132,17 @@ export class BanxaService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Banxa request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to fetch Banxa payment methods'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Banxa request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Banxa did not return payment methods'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -170,9 +187,17 @@ export class BanxaService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Banxa request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to fetch Banxa quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Banxa request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Banxa did not return quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -214,9 +239,17 @@ export class BanxaService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Banxa request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to create Banxa order'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Banxa request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Banxa did not return order'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -254,9 +287,17 @@ export class BanxaService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Banxa request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Banxa order'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Banxa request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Banxa did not return order'));
+            }
+            return resolve(data.body);
           }
         }
       );

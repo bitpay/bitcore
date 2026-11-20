@@ -127,6 +127,15 @@ export class ETHTxProvider {
     return ethers.Transaction.from(tx).hash;
   }
 
+  /**
+   * Reads the fields BWS may mutate between proposal creation and publish out of a raw tx, to bind
+   * txp.prePublishRaw to the proposal. For EVM that is only the account nonce (deferred-nonce proposals).
+   */
+  getMutableFields(rawTx: string): { nonce?: number } {
+    const parsed = ethers.Transaction.from(rawTx);
+    return { nonce: parsed.nonce != null ? Number(parsed.nonce) : undefined };
+  }
+
   applySignature(params: { tx: string; signature: any }) {
     const { tx, signature } = params;
     const parsedTx = ethers.Transaction.from(tx);

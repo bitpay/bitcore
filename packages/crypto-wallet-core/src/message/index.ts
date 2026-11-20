@@ -15,6 +15,7 @@ const MessageClasses: Record<string, IMessageClass> = {
   arb: new EthMessage(),
   base: new EthMessage(),
   op: new EthMessage(),
+  arc: new EthMessage(),
   sol: new SolMessage(),
   xrp: new XrpMessage()
 };

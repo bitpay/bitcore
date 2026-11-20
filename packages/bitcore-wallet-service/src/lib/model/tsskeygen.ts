@@ -44,10 +44,14 @@ export interface ITssKeyGenModel {
    */
   n: number;
   /**
-   * The list of public keys of the participants in the TSS key generation process.
-   * The pub keys are in partyId order.
+   * The list of copayer IDs of the participants in the TSS key generation process.
+   * They are in partyId order.
    */
   participants: Array<string>;
+  /**
+   * The list of authentication public keys corresponding to the participants in the TSS key generation process.
+   */
+  authPublicKeys: Array<string>;
   /**
    * An array of the rounds in round order. Each round is an array of messages
    */
@@ -76,9 +80,18 @@ export interface ITssKeyGenModel {
    */
   timeLimit?: number;
   /**
+   * @deprecated Use bwsJoinSecrets instead.
    * The BWC-generated secret for joining a BWS wallet
    */
   bwsJoinSecret?: string;
+  /**
+   * The BWC-generated secrets for joining a BWS wallet
+   */
+  bwsJoinSecrets?: {
+    [chainNetwork: string]: {
+      [partyId: number]: string;
+    };
+  };
   /**
    * The mongo doc version
    */
@@ -89,6 +102,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   id: string;
   n: number;
   participants: Array<string>;
+  authPublicKeys: Array<string>;
   rounds: Array<Array<{
     fromPartyId: number;
     messages: ITssKeyMessageObject;
@@ -100,6 +114,11 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   createdOn: number;
   timeLimit?: number;
   bwsJoinSecret?: string;
+  bwsJoinSecrets?: {
+    [chainNetwork: string]: {
+      [partyId: number]: string;
+    };
+  };
   __v: number;
 
 
@@ -135,15 +154,18 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.schemeVersion = version || Defaults.TSS_KEYGEN_SCHEME_VERSION;
     x.n = n;
     x.participants = new Array(n);
-    x.participants[partyId] = copayerId;
+    x.participants[0] = copayerId; // caller's partyId is 0 (enforced above)
+    x.authPublicKeys = new Array(n);
+    x.authPublicKeys[0] = message.publicKey; // caller's partyId is 0 (enforced above)
     x.rounds = [[{
-      fromPartyId: partyId,
+      fromPartyId: 0, // caller's partyId is 0 (enforced above)
       messages: message
     }]];
     x.joinPassword = passwordHash;
     x.keyShares = new Array(n);
     x.createdOn = Date.now();
     x.timeLimit = Math.min(timeLimit || Defaults.TSS_KEYGEN_TIME_LIMIT, 60) * ONE_MINUTE; // capped at 60 minutes
+    x.bwsJoinSecrets = {};
     x.__v = 0;
     return x;
   }
@@ -154,6 +176,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.schemeVersion = obj.schemeVersion;
     x.n = obj.n;
     x.participants = obj.participants;
+    x.authPublicKeys = obj.authPublicKeys;
     x.rounds = obj.rounds;
     x.sharedPublicKey = obj.sharedPublicKey;
     x.joinPassword = obj.joinPassword;
@@ -161,6 +184,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.createdOn = obj.createdOn;
     x.timeLimit = obj.timeLimit;
     x.bwsJoinSecret = obj.bwsJoinSecret;
+    x.bwsJoinSecrets = obj.bwsJoinSecrets;
     x.__v = obj.__v;
     return x;
   }

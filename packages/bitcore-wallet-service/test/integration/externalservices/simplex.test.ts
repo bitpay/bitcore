@@ -1,20 +1,24 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import 'chai/register-should';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 
 describe('Simplex integration', () => {
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
 
   before(async () => {
     await helpers.before();
@@ -74,6 +78,12 @@ describe('Simplex integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async () => {
@@ -112,7 +122,23 @@ describe('Simplex integration', () => {
         await server.externalServices.simplex.simplexGetCurrencies(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Simplex request failed with error (');
+        err.message.should.equal('Failed to get Simplex supported currencies');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.simplex.request = fakeRequest2;
+      try {
+        await server.externalServices.simplex.simplexGetCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex did not return supported currencies');
       }
     });
 
@@ -150,6 +176,76 @@ describe('Simplex integration', () => {
       should.exist(data);
     });
 
+    it('should forward the deviceIp as client_ip for web context', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.simplex.simplexGetQuote(req);
+      capturedBody.client_ip.should.equal('203.0.113.42');
+    });
+
+    it('should canonicalize an IPv4-mapped IPv6 deviceIp for web context', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '::ffff:203.0.113.42';
+      await server.externalServices.simplex.simplexGetQuote(req);
+      capturedBody.client_ip.should.equal('203.0.113.42');
+    });
+
+    it('should not leak deviceIp into the body sent to Simplex', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.simplex.simplexGetQuote(req);
+      should.not.exist(capturedBody.deviceIp);
+    });
+
+    it('should ignore a body deviceIp for non-web context and use the request IP', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.headers['x-forwarded-for'] = '198.51.100.7';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.simplex.simplexGetQuote(req);
+      capturedBody.client_ip.should.equal('198.51.100.7');
+    });
+
+    it('should fall back to the request IP for web context when deviceIp is not forwarded', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.headers['x-forwarded-for'] = '198.51.100.7';
+      await server.externalServices.simplex.simplexGetQuote(req);
+      capturedBody.client_ip.should.equal('198.51.100.7');
+    });
+
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
@@ -160,7 +256,23 @@ describe('Simplex integration', () => {
         await server.externalServices.simplex.simplexGetQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Simplex request failed with error (');
+        err.message.should.equal('Failed to get Simplex quote');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.simplex.request = fakeRequest2;
+      try {
+        await server.externalServices.simplex.simplexGetQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex did not return a quote');
       }
     });
 
@@ -214,7 +326,23 @@ describe('Simplex integration', () => {
         await server.externalServices.simplex.simplexGetSellQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Simplex request failed with error (');
+        err.message.should.equal('Failed to get Simplex sell quote');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.simplex.request = fakeRequest2;
+      try {
+        await server.externalServices.simplex.simplexGetSellQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex did not return a sell quote');
       }
     });
 
@@ -266,6 +394,76 @@ describe('Simplex integration', () => {
       should.exist(data);
     });
 
+    it('should forward the deviceIp as account_details.signup_login.ip for web context', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: {} });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.simplex.simplexPaymentRequest(req);
+      capturedBody.account_details.signup_login.ip.should.equal('203.0.113.42');
+    });
+
+    it('should canonicalize an IPv4-mapped IPv6 deviceIp for web context', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: {} });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '::ffff:203.0.113.42';
+      await server.externalServices.simplex.simplexPaymentRequest(req);
+      capturedBody.account_details.signup_login.ip.should.equal('203.0.113.42');
+    });
+
+    it('should not leak deviceIp into the body sent to Simplex', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: {} });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.simplex.simplexPaymentRequest(req);
+      should.not.exist(capturedBody.deviceIp);
+    });
+
+    it('should ignore a body deviceIp for non-web context and use the request IP', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: {} });
+        },
+      };
+      req.headers['x-forwarded-for'] = '198.51.100.7';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.simplex.simplexPaymentRequest(req);
+      capturedBody.account_details.signup_login.ip.should.equal('198.51.100.7');
+    });
+
+    it('should fall back to the request IP for web context when deviceIp is not forwarded', async () => {
+      let capturedBody;
+      server.externalServices.simplex.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: {} });
+        },
+      };
+      req.body.context = 'web';
+      req.headers['x-forwarded-for'] = '198.51.100.7';
+      await server.externalServices.simplex.simplexPaymentRequest(req);
+      capturedBody.account_details.signup_login.ip.should.equal('198.51.100.7');
+    });
+
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
@@ -276,7 +474,23 @@ describe('Simplex integration', () => {
         await server.externalServices.simplex.simplexPaymentRequest(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Simplex request failed with error (');
+        err.message.should.equal('Failed to get Simplex payment data');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.simplex.request = fakeRequest2;
+      try {
+        await server.externalServices.simplex.simplexPaymentRequest(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex did not return payment data');
       }
     });
 
@@ -337,7 +551,23 @@ describe('Simplex integration', () => {
         await server.externalServices.simplex.simplexSellPaymentRequest(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Simplex request failed with error (');
+        err.message.should.equal('Failed to initiate Simplex sell payment');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.simplex.request = fakeRequest2;
+      try {
+        await server.externalServices.simplex.simplexSellPaymentRequest(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex did not return sell data');
       }
     });
 
@@ -361,24 +591,6 @@ describe('Simplex integration', () => {
       } catch (err) {
         err.message.should.equal('Simplex missing credentials');
       }
-    });
-  });
-
-  describe('#simplexGetEvents', () => {
-    beforeEach(() => {
-      req = {
-        env: 'production'
-      };
-
-      fakeRequest = {
-        get: (_url, _opts, _cb) => { return _cb(null, { body: {} }); },
-      };
-      server.externalServices.simplex.request = fakeRequest;
-    });
-
-    it('should work properly if req is OK', async () => {
-      const data = await server.externalServices.simplex.simplexGetEvents(req);
-      should.exist(data);
     });
   });
 });

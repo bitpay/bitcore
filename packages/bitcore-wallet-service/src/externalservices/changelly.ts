@@ -96,8 +96,16 @@ export class ChangellyService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`Changelly request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to fetch Changelly currencies'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Changelly request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Changelly did not return currencies'));
+            }
             return resolve(data.body);
           }
         }
@@ -147,8 +155,16 @@ export class ChangellyService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`Changelly request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to fetch Changelly pairs params'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Changelly request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Changelly did not return pairs params'));
+            }
             return resolve(data.body);
           }
         }
@@ -199,8 +215,16 @@ export class ChangellyService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`Changelly request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to fetch Changelly fix rate for amount'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Changelly request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Changelly did not return fix rate for amount'));
+            }
             return resolve(data.body);
           }
         }
@@ -262,8 +286,16 @@ export class ChangellyService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`Changelly request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to create Changelly fix transaction'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Changelly request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Changelly did not return fix transaction'));
+            }
             return resolve(data.body);
           }
         }
@@ -312,8 +344,16 @@ export class ChangellyService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`Changelly request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Changelly transactions'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Changelly request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Changelly did not return transactions'));
+            }
             return resolve(data.body);
           }
         }
@@ -360,8 +400,16 @@ export class ChangellyService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`Changelly request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Changelly status'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Changelly request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Changelly did not return status'));
+            }
             return resolve(data.body);
           }
         }

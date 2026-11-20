@@ -1,6 +1,7 @@
 'use strict';
 var BufferUtil = require('./util/buffer');
 var JSUtil = require('./util/js');
+
 var networks = [];
 var networkMaps = {};
 
@@ -79,7 +80,7 @@ function is(str) {
  */
 function addNetwork(data) {
 
-  var network = new Network();
+  const network = new Network();
 
   JSUtil.defineImmutable(network, {
     name: data.name,
@@ -110,12 +111,6 @@ function addNetwork(data) {
   if (data.dnsSeeds) {
     JSUtil.defineImmutable(network, {
       dnsSeeds: data.dnsSeeds
-    });
-  }
-
-  if (data.bech32prefix) {
-    JSUtil.defineImmutable(network, {
-      bech32prefix: data.bech32prefix
     });
   }
 
@@ -151,12 +146,12 @@ function removeNetwork(network) {
   if (typeof network !== 'object') {
     network = get(network);
   }
-  for (var i = 0; i < networks.length; i++) {
+  for (let i = 0; i < networks.length; i++) {
     if (networks[i] === network) {
       networks.splice(i, 1);
     }
   }
-  for (var key in networkMaps) {
+  for (const key in networkMaps) {
     if (networkMaps[key].length) {
       const index = networkMaps[key].indexOf(network);
       if (index >= 0) {
@@ -218,7 +213,7 @@ addNetwork({
     dnsSeeds: [
       'testnet-seed.litecointools.com',
       'seed-b.litecoin.loshan.co.uk'
-   ]
+    ]
   }]
 });
 

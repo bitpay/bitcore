@@ -11,6 +11,9 @@ import { Common } from '../src/lib/common';
 import { WalletService } from '../src/lib/server';
 import { ExpressApp } from '../src/lib/expressapp';
 import { ClientError } from '../src/lib/errors/clienterror';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import * as TestData from './testdata';
+import { Stats } from '../src/lib/stats';
 
 const Defaults = Common.Defaults;
 const should = chai.should();
@@ -61,6 +64,104 @@ describe('ExpressApp', function() {
 
       afterEach(function() {
         httpServer.close();
+      });
+
+      describe('Public query validation', function() {
+        let runStats, getFiatRate;
+
+        beforeEach(function() {
+          runStats = sandbox.stub(Stats.prototype, 'run').callsArgWith(0, null, {});
+          getFiatRate = sinon.stub().callsArgWith(1, null, {});
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns({ getFiatRate } as any);
+        });
+
+        const targets = [
+          { path: '/v1/stats/', parameter: 'network' },
+          { path: '/v1/stats/', parameter: 'coin' },
+          { path: '/v1/fiatrates/USD/', parameter: 'coin' }
+        ];
+
+        for (const { path, parameter } of targets) {
+          const value = parameter === 'network' ? 'livenet' : 'btc';
+          // Cover operator objects, bracket arrays, and duplicate parameters.
+          const invalidQueries = [
+            `${parameter}[$regex]=.*`,
+            `${parameter}[]=${value}`,
+            `${parameter}=${value}&${parameter}=${value}`
+          ];
+          for (const query of invalidQueries) {
+            it(`should reject ${path}?${query} before accessing data`, function(done) {
+              start(ExpressApp, function() {
+                request({ url: testHost + ':' + testPort + config.basePath + path + '?' + query, json: true }, function(err, res, body) {
+                  should.not.exist(err);
+                  res.statusCode.should.equal(400);
+                  body.code.should.equal('BADREQUEST');
+                  runStats.called.should.equal(false);
+                  getFiatRate.called.should.equal(false);
+                  done();
+                });
+              });
+            });
+          }
+        }
+
+        for (const query of ['', '?coin=&network=']) {
+          it(`should preserve stats defaults for ${query || 'omitted parameters'}`, function(done) {
+            start(ExpressApp, function() {
+              request({ url: testHost + ':' + testPort + config.basePath + '/v1/stats/' + query, json: true }, function(err, res) {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+                runStats.calledOnce.should.equal(true);
+                runStats.firstCall.thisValue.coin.should.equal('btc');
+                runStats.firstCall.thisValue.network.should.equal('livenet');
+                done();
+              });
+            });
+          });
+        }
+
+        it('should pass valid stats filters through unchanged', function(done) {
+          start(ExpressApp, function() {
+            const query = '?coin=eth&network=testnet&from=2026-01-01&to=2026-02-01';
+            request({ url: testHost + ':' + testPort + config.basePath + '/v1/stats/' + query, json: true }, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              runStats.calledOnce.should.equal(true);
+              const stats = runStats.firstCall.thisValue;
+              stats.coin.should.equal('eth');
+              stats.network.should.equal('testnet');
+              stats.from.should.equal('2026-01-01');
+              stats.to.should.equal('2026-02-01');
+              done();
+            });
+          });
+        });
+
+        for (const query of ['', '?coin=']) {
+          it(`should preserve the fiat coin default for ${query || 'omitted parameters'}`, function(done) {
+            start(ExpressApp, function() {
+              request({ url: testHost + ':' + testPort + config.basePath + '/v1/fiatrates/USD/' + query, json: true }, function(err, res) {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+                getFiatRate.calledOnceWithExactly({ code: 'USD', coin: 'btc', ts: null }, sinon.match.func).should.equal(true);
+                done();
+              });
+            });
+          });
+        }
+
+        it('should pass a valid fiat coin and numeric timestamp through unchanged', function(done) {
+          start(ExpressApp, function() {
+            const query = '?coin=eth&ts=1700000000000';
+            request({ url: testHost + ':' + testPort + config.basePath + '/v1/fiatrates/EUR/' + query, json: true }, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              getFiatRate.calledOnceWithExactly({ code: 'EUR', coin: 'eth', ts: 1700000000000 }, sinon.match.func).should.equal(true);
+              done();
+            });
+          });
+        });
       });
 
       it('/v2/wallets', function(done) {
@@ -192,7 +293,7 @@ describe('ExpressApp', function() {
         };
         
         sandbox.stub(WalletService, 'initialize').callsArg(1);
-        sandbox.stub(WalletService, 'getInstance').returns(server);        
+        sandbox.stub(WalletService, 'getInstance').returns(server as any);        
         start(ExpressApp, function() {
           const requestOptions = {
             url: testHost + ':' + testPort + config.basePath + '/latest-version',
@@ -271,6 +372,32 @@ describe('ExpressApp', function() {
                 args.twoStep.should.equal(true);
                 done();
               });
+            });
+          });
+        });
+
+        it('should get the balance at a given time', function(done) {
+          const server = {
+            getBalanceAtTime: sinon.stub().callsArgWith(1, null, { balance: 123 }),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
+          start(ExpressApp, function() {
+            const reqOpts = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/balance/2025-01-15T12%3A00%3A00.000Z?tokenAddress=0xToken',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(reqOpts, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              server.getBalanceAtTime.calledOnce.should.be.true;
+              server.getBalanceAtTime.getCall(0).args[0].time.should.equal('2025-01-15T12:00:00.000Z');
+              server.getBalanceAtTime.getCall(0).args[0].tokenAddress.should.equal('0xToken');
+              JSON.parse(body).balance.should.equal(123);
+              done();
             });
           });
         });
@@ -368,7 +495,7 @@ describe('ExpressApp', function() {
       describe('/v1/notifications', function() {
         let server, clock;
         beforeEach(function() {
-          clock = sinon.useFakeTimers(2000000000, 'Date');
+          clock = sinon.useFakeTimers({ now: 2000000000, toFake: ['Date'] });
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
@@ -490,7 +617,7 @@ describe('ExpressApp', function() {
             getAaveUserAccountData: sinon.stub().resolves({ totalCollateralBase: '1000', healthFactor: '2.0' }),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/userAccountData',
@@ -512,7 +639,7 @@ describe('ExpressApp', function() {
             getAaveUserAccountData: sinon.stub().rejects(new ClientError('getAaveUserAccountData request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/userAccountData',
@@ -532,7 +659,7 @@ describe('ExpressApp', function() {
             getAaveReserveData: sinon.stub().resolves({ currentVariableBorrowRate: '35000000' }),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveData',
@@ -553,7 +680,7 @@ describe('ExpressApp', function() {
             getAaveReserveData: sinon.stub().rejects(new ClientError('getAaveReserveData request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveData',
@@ -573,7 +700,7 @@ describe('ExpressApp', function() {
             getAaveReserveTokensAddresses: sinon.stub().resolves({ variableDebtTokenAddress: '0xdef' }),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveTokensAddresses',
@@ -594,7 +721,7 @@ describe('ExpressApp', function() {
             getAaveReserveTokensAddresses: sinon.stub().rejects(new ClientError('getAaveReserveTokensAddresses request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveTokensAddresses',
@@ -604,6 +731,37 @@ describe('ExpressApp', function() {
             request(requestOptions, function(err, res) {
               should.not.exist(err);
               res.statusCode.should.equal(400);
+              done();
+            });
+          });
+        });
+      });
+
+      describe('Transak routes', function() {
+        it('/v1/service/transak/orderDetails should check the order against the authenticated wallet', function(done) {
+          const transakGetOrderDetails = sinon.stub().resolves({ data: { status: 'COMPLETED' } });
+          const server = {
+            walletId: 'authenticatedWalletId',
+            externalServices: { transak: { transakGetOrderDetails } },
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/transak/orderDetails',
+              method: 'post',
+              json: { env: 'sandbox', orderId: 'order1', walletId: 'someOtherWalletId' },
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.data.status.should.equal('COMPLETED');
+              transakGetOrderDetails.calledOnce.should.equal(true);
+              transakGetOrderDetails.firstCall.args[1].should.equal('authenticatedWalletId');
               done();
             });
           });
@@ -626,7 +784,7 @@ describe('ExpressApp', function() {
             moralisGetMultipleERC20TokenPrices: sinon.stub().resolves([{ tokenAddress: '0xaaa', usdPrice: 1 }]),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/moralis/getMultipleERC20TokenPrices',
@@ -650,7 +808,7 @@ describe('ExpressApp', function() {
             moralisGetMultipleERC20TokenPrices: sinon.stub().resolves([{ tokenAddress: '0xaaa', usdPrice: 1 }]),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
           start(ExpressApp, function() {
             const requestOptions = {
@@ -699,7 +857,7 @@ describe('ExpressApp', function() {
             getTokenAllowance: sinon.stub().resolves(5000000),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/token/allowance',
@@ -720,7 +878,7 @@ describe('ExpressApp', function() {
             getTokenAllowance: sinon.stub().rejects(new ClientError('getTokenAllowance request missing arguments')),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
-          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstance').returns(server as any);
           start(ExpressApp, function() {
             const requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/token/allowance',
@@ -732,6 +890,148 @@ describe('ExpressApp', function() {
               res.statusCode.should.equal(400);
               done();
             });
+          });
+        });
+      });
+
+      describe('/v1/wallets/exist', function() {
+        const idA = 'a'.repeat(64);
+        const idB = 'b'.repeat(64);
+        const idC = 'c'.repeat(64);
+        let storage;
+
+        function sign(message) {
+          const hash = Common.Utils.hashMessage(message, false);
+          return BitcoreLib.crypto.ECDSA.sign(hash, new BitcoreLib.PrivateKey(TestData.keyPair.priv), { endian: 'little' }).toString();
+        }
+
+        // posts each body in turn, and calls back with each response's status and body
+        function postEach(bodies, cb) {
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getStorage').returns(storage);
+          start(ExpressApp, function() {
+            const results = [];
+            (function next() {
+              if (results.length === bodies.length) {
+                return cb(null, results);
+              }
+              request({
+                url: testHost + ':' + testPort + config.basePath + '/v1/wallets/exist',
+                method: 'post',
+                json: true,
+                body: bodies[results.length]
+              }, function(err, res, body) {
+                if (err) {
+                  return cb(err);
+                }
+                results.push({ status: res.statusCode, body });
+                next();
+              });
+            })();
+          });
+        }
+
+        function post(body, cb) {
+          postEach([body], (err, results) => (err ? cb(err) : cb(null, { statusCode: results[0].status }, results[0].body)));
+        }
+
+        beforeEach(function() {
+          const copayer = { requestPubKeys: [{ key: TestData.keyPair.pub }] };
+          storage = {
+            fetchCopayerLookup: sinon.stub().callsFake(async id => (id === idA || id === idB ? copayer : undefined))
+          };
+        });
+
+        it('returns the copayers whose signature verifies against their request key', function(done) {
+          post({
+            copayers: [
+              { copayerId: idA, signature: sign(idA) },
+              { copayerId: idB, signature: sign(idA) },
+              { copayerId: idC, signature: sign(idC) }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            storage.fetchCopayerLookup.args.should.deep.equal([[idA], [idB], [idC]]);
+            done();
+          });
+        });
+
+        it('returns no copayers when given none to check', function(done) {
+          postEach([
+            {},
+            { copayers: null },
+            { copayers: idA },
+            { copayers: { copayerId: idA, signature: sign(idA) } },
+            { copayers: [] }
+          ], function(err, results) {
+            should.not.exist(err);
+            results.should.deep.equal(Array(5).fill({ status: 200, body: [] }));
+            storage.fetchCopayerLookup.callCount.should.equal(0);
+            done();
+          });
+        });
+
+        it('does not verify a copayer whose signature is not a string', function(done) {
+          post({
+            copayers: [
+              { copayerId: idA, signature: 1 },
+              { copayerId: idA, signature: [sign(idA)] },
+              { copayerId: idB, signature: {} },
+              { copayerId: idB }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([]);
+            storage.fetchCopayerLookup.callCount.should.equal(4);
+            done();
+          });
+        });
+
+        it('treats a copayer that fails to load as not found', function(done) {
+          storage.fetchCopayerLookup.withArgs(idB).rejects(new Error('lookup failed'));
+          post({
+            copayers: [
+              { copayerId: idA, signature: sign(idA) },
+              { copayerId: idB, signature: sign(idB) }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            done();
+          });
+        });
+
+        it('looks up only copayer ids that are strings', function(done) {
+          post({
+            copayers: [
+              { copayerId: { id: idB }, signature: sign(idB) },
+              { copayerId: [idB], signature: sign(idB) },
+              { copayerId: 1, signature: sign(idB) },
+              { signature: sign(idB) },
+              { copayerId: idA, signature: sign(idA) }
+            ]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            storage.fetchCopayerLookup.args.should.deep.equal([[idA]]);
+            done();
+          });
+        });
+
+        it('skips copayers that are not objects', function(done) {
+          post({
+            copayers: [null, idB, { copayerId: idA, signature: sign(idA) }]
+          }, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            body.should.deep.equal([idA]);
+            storage.fetchCopayerLookup.args.should.deep.equal([[idA]]);
+            done();
           });
         });
       });

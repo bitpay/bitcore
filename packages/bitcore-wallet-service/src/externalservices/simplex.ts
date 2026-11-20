@@ -3,6 +3,7 @@ import Uuid from 'uuid';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class SimplexService {
@@ -32,6 +33,18 @@ export class SimplexService {
     return keys;
   }
 
+  private simplexGetUserIp(req): string {
+    const isWebContext = req.body?.context === 'web';
+    let userIp = (isWebContext && req.body.deviceIp) || Utils.getIpFromReq(req);
+    delete req.body.deviceIp;
+    if (userIp) {
+      // Canonicalize IPv4-mapped IPv6 (dual-stack sockets report IPv4 clients as
+      // ::ffff:1.2.3.4) so Simplex sees a plain IPv4 address.
+      userIp = String(userIp).trim().replace(/^::ffff:/i, '');
+    }
+    return userIp || '';
+  }
+
   simplexGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.simplexGetKeys(req);
@@ -52,9 +65,17 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex supported currencies'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return supported currencies'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -63,11 +84,11 @@ export class SimplexService {
 
   simplexGetQuote(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      const ip = this.simplexGetUserIp(req);
       const keys = this.simplexGetKeys(req);
 
       const API = keys.API;
       const API_KEY = keys.API_KEY;
-      const ip = Utils.getIpFromReq(req);
 
       req.body.client_ip = ip;
       req.body.wallet_id = keys.APP_PROVIDER_ID;
@@ -82,8 +103,10 @@ export class SimplexService {
         req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
       }
 
+      const URL: string = API + '/wallet/merchant/v2/quote';
+
       this.request.post(
-        API + '/wallet/merchant/v2/quote',
+        URL,
         {
           headers,
           body: req.body,
@@ -91,9 +114,17 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex quote'));
           } else {
-            return resolve(data.body ? data.body : null);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return a quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -136,9 +167,17 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex sell quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return a sell quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -147,6 +186,7 @@ export class SimplexService {
 
   simplexPaymentRequest(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      const ip = this.simplexGetUserIp(req);
       const keys = this.simplexGetKeys(req);
 
       const API = keys.API;
@@ -155,7 +195,6 @@ export class SimplexService {
       const paymentId = Uuid.v4();
       const orderId = Uuid.v4();
       const apiHost = keys.API;
-      const ip = Utils.getIpFromReq(req);
 
       if (
         !checkRequired(req.body, ['account_details', 'transaction_details']) &&
@@ -184,8 +223,10 @@ export class SimplexService {
         Authorization: 'ApiKey ' + API_KEY
       };
 
+      const URL: string = API + '/wallet/merchant/v2/payments/partner/data';
+
       this.request.post(
-        API + '/wallet/merchant/v2/payments/partner/data',
+        URL,
         {
           headers,
           body: req.body,
@@ -193,8 +234,16 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Simplex payment data'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return payment data'));
+            }
             data.body.payment_id = paymentId;
             data.body.order_id = orderId;
             data.body.app_provider_id = appProviderId;
@@ -230,8 +279,10 @@ export class SimplexService {
         headers['x-country-code'] = req.body.userCountry.toUpperCase();
       }
 
+      const URL: string = API + '/v3/initiate-sell/widget';
+
       this.request.post(
-        API + '/v3/initiate-sell/widget',
+        URL,
         {
           headers,
           body: req.body,
@@ -239,40 +290,18 @@ export class SimplexService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Simplex request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to initiate Simplex sell payment'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Simplex request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Simplex did not return sell data'));
+            }
             data.body.app_sell_ref_id = appSellRefId;
             return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  simplexGetEvents(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
-      if (!req.env || (req.env != 'sandbox' && req.env != 'production'))
-        return reject(new Error("Simplex's request wrong environment"));
-
-      const API = config.simplex[req.env].api;
-      const API_KEY = config.simplex[req.env].apiKey;
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'ApiKey ' + API_KEY
-      };
-
-      this.request.get(
-        API + '/wallet/merchant/v2/events',
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : null);
-          } else {
-            return resolve(data.body ? data.body : null);
           }
         }
       );

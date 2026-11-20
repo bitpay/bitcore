@@ -1,11 +1,10 @@
-import os from 'os';
 import { ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
 import { BaseModel } from './base';
 
 export interface IState {
   _id?: ObjectID;
-  initialSyncComplete: any;
+  initialSyncComplete: string[];
   verifiedBlockHeight?: {
     [chain: string]: {
       [network: string]: number;
@@ -30,36 +29,49 @@ export class StateModel extends BaseModel<IState> {
     return this.collection.findOneAndUpdate(
       {},
       { $setOnInsert: { created: new Date() } },
-      { upsert: true, returnOriginal: false }
+      { upsert: true, returnDocument: 'after' }
     );
+  }
+
+  async findSingletonState() {
+    // read from the primary: a stale heartbeat would make renewals fail
+    const state = await this.collection.findOne({}, { readPreference: 'primary' });
+    return state || (await this.getSingletonState()).value!;
+  }
+
+  // the heartbeat, with the id of the state document that holds it so a renewal or resign needn't read it again
+  async findSyncingNode(params: { chain: string; network: string }): Promise<{ heartBeat: string; stateId: ObjectID }> {
+    const { chain, network } = params;
+    const state = await this.findSingletonState();
+    return { heartBeat: state[`syncingNode:${chain}:${network}`], stateId: state._id! };
   }
 
   async getSyncingNode(params: { chain: string; network: string }): Promise<string> {
-    const { chain, network } = params;
-    const state = await this.getSingletonState();
-    return state.value![`syncingNode:${chain}:${network}`];
+    return (await this.findSyncingNode(params)).heartBeat;
   }
 
-  async selfNominateSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
-    const { chain, network, lastHeartBeat } = params;
-    const singleState = await this.getSingletonState();
+  // replaces lastHeartBeat with heartBeat, which the worker builds so that it can recognize it when it reads it back
+  async selfNominateSyncingNode(params: {
+    chain: string;
+    network: string;
+    lastHeartBeat: any;
+    heartBeat: string;
+    stateId?: ObjectID;
+  }) {
+    const { chain, network, lastHeartBeat, heartBeat } = params;
+    const stateId = params.stateId || (await this.findSingletonState())._id;
     return this.collection.findOneAndUpdate(
-      {
-        _id: singleState.value!._id,
-        $or: [
-          { [`syncingNode:${chain}:${network}`]: { $exists: false } },
-          { [`syncingNode:${chain}:${network}`]: lastHeartBeat }
-        ]
-      },
-      { $set: { [`syncingNode:${chain}:${network}`]: `${os.hostname}:${process.pid}:${Date.now()}` } }
+      // renew only the heartbeat this node read, and claim one only when there is none
+      { _id: stateId, [`syncingNode:${chain}:${network}`]: lastHeartBeat || { $exists: false } },
+      { $set: { [`syncingNode:${chain}:${network}`]: heartBeat } }
     );
   }
 
-  async selfResignSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
+  async selfResignSyncingNode(params: { chain: string; network: string; lastHeartBeat: any; stateId?: ObjectID }) {
     const { chain, network, lastHeartBeat } = params;
-    const singleState = await this.getSingletonState();
+    const stateId = params.stateId || (await this.findSingletonState())._id;
     return this.collection.findOneAndUpdate(
-      { _id: singleState.value!._id, [`syncingNode:${chain}:${network}`]: lastHeartBeat },
+      { _id: stateId, [`syncingNode:${chain}:${network}`]: lastHeartBeat },
       { $unset: { [`syncingNode:${chain}:${network}`]: true } }
     );
   }

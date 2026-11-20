@@ -15,6 +15,7 @@ import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import config from './data/test-config';
 import Client from '../src';
 import { Utils, Constants } from '../src/lib/common';
+import type { Key as KeyType } from '../src/lib/key';
 
 const $ = singleton();
 const should = chai.should();
@@ -95,7 +96,15 @@ export const helpers = {
     });
     return utxos;
   },
-  createAndJoinWallet: async (clients, keys, m, n, opts, cb?) => {
+  createAndJoinWallet: async (
+    clients: Client[],
+    keys: Array<KeyType>,
+    m: number,
+    n: number,
+    opts?,
+    /** @deprecated */
+    cb?: (retval: any) => void
+  ) => {
     opts = opts || {};
 
     try {
@@ -132,7 +141,7 @@ export const helpers = {
           chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
           network: network,
           singleAddress: !!opts.singleAddress,
-          doNotCheck: true,
+          // doNotCheck: true,
           useNativeSegwit: !!opts.useNativeSegwit,
           tssKeyId: opts.tssKeyId
         }
@@ -222,6 +231,17 @@ export const helpers = {
         return cb(err, db, connection);
       });
     });
+  },
+  finishIndexCreation: async (db) => {
+    let inprog;
+    do {
+      ({ inprog } = await db.admin().command({
+        currentOp: 1,
+        'command.createIndexes': { $exists: true },
+        'command.$db': db.databaseName
+      }));
+      if (inprog.length > 0) await new Promise(r2 => setTimeout(r2, 10));
+    } while (inprog.length > 0);
   }
 };
 

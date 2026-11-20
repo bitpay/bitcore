@@ -13,11 +13,12 @@ export class ApiErrorHelper {
   returnError(err: any, res: express.Response, req: express.Request): void {
     // make sure headers have not been sent as this leads to an uncaught error
     if (res.headersSent) {
+      res.end();
       return;
     }
     if (err instanceof ClientError) {
       const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
-      if (!this.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
+      if (!this.disableLogs) logger.info('Client Err: ' + status + ' ' + req?.url + ' ' + JSON.stringify(err));
 
       const clientError: { code: string; message: string; messageData?: object } = {
         code: err.code,
@@ -38,7 +39,7 @@ export class ApiErrorHelper {
 
       const m = message || err.toString();
 
-      if (!this.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
+      if (!this.disableLogs) logger.error(req?.url + ' :' + code + ':' + m);
 
       res
         .status(code || 500)

@@ -77,13 +77,21 @@ describe('ETH Chain State Provider', function() {
       processed: true
     } as MongoBound<IEVMBlock>;
     mockModel('blocks', mockBlock);
-    sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
+    const getReceipt = sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
     const found = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
     expect(found).to.exist;
     expect(found!.fee).to.eq(21000 * 10);
     expect(found!.confirmations).to.eq(1);
+    getReceipt.resolves({ gasUsed: 21000, effectiveGasPrice: 25000000000 });
+    mockModel('transactions', { ...mockTx, receipt: undefined, gasPrice: 0 });
+    const type2 = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
+    expect(type2!.fee).to.eq(525000000000000);
+    getReceipt.resolves({ gasUsed: 21000, effectiveGasPrice: 0 });
+    mockModel('transactions', { ...mockTx, receipt: undefined });
+    const zeroFee = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
+    expect(zeroFee!.fee).to.eq(0);
     sandbox.restore();
   });
 
@@ -400,13 +408,34 @@ describe('ETH Chain State Provider', function() {
 
     it('it should return gas', async () => {
       web3Stub.currentProvider.request.resolves({ result: '12345' });
-      const gas = await ETH.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
+      const gas = await ETH.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: '0x10' });
       expect(gas).to.equal(12345);
+    });
+
+    it('should send value and override the sender balance for a blind estimate', async () => {
+      web3Stub.currentProvider.request.resetHistory();
+      web3Stub.currentProvider.request.resolves({ result: '21000' });
+      await ETH.estimateGas({ network, to: '0xABC', from: '0xDEF', gasPrice: 123, value: '0x10' });
+      const { params } = web3Stub.currentProvider.request.lastCall.args[0];
+      expect(params[0]).to.deep.include({ to: '0xabc', from: '0xdef', value: '0x10' });
+      expect(params[0]).to.not.have.property('gasPrice');
+      expect(params[1]).to.equal('latest');
+      expect(params[2]).to.have.all.keys('0xdef');
+      expect(params[2]['0xdef'].balance).to.match(/^0xf+$/);
+    });
+
+    it('should default value to 0x0 and skip the override when there is no sender', async () => {
+      web3Stub.currentProvider.request.resetHistory();
+      web3Stub.currentProvider.request.resolves({ result: '21000' });
+      await ETH.estimateGas({ network, to: '0xabc' });
+      const { params } = web3Stub.currentProvider.request.lastCall.args[0];
+      expect(params[0].value).to.equal('0x0');
+      expect(params).to.have.length(2);
     });
 
     it('should return gas for optional params', async () => {
       web3Stub.currentProvider.request.resolves({ result: '1234' });
-      
+
       const gas = await ETH.estimateGas({ network });
       expect(gas).to.equal(1234);
     });

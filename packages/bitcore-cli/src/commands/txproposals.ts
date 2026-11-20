@@ -1,6 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { ITokenObj } from '../../types/wallet';
 import { UserCancelled } from '../errors';
 import { getFileName } from '../prompts';
@@ -16,47 +17,40 @@ enum ViewAction {
   EXPORT = 'e'
 }
 
-export function command(args: CommonArgs) {
-  const { wallet, program } = args;
-  program
+export function command() {
+  return new Command('txproposals')
     .description('View or perform actions on transaction proposals for a wallet')
-    .usage('<walletName> --command txproposals [options]')
     .optionsGroup('Tx Proposals Options')
     .option('--action <action>', `Action to perform on transaction proposals: ${Object.entries(ViewAction).map(([k, v]) => `${k.toLowerCase().replace(v, `(${v})`)}`).join(' | ')}`)
     .option('--proposalId <proposalId>', 'ID of the transaction proposal to act upon')
     .option('--page <page>', 'Page number to view (only 1 proposal is displayed per page)')
     .option('--raw', 'Print raw transaction proposal objects instead of formatted output')
-    .option('--file <filename>', `Specify the file to save the tx proposal to when using \`--action export\` (default: ~/${wallet.name}_txproposal_<proposalId>.json)`)
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-
-  if (opts.proposalId && opts.page) {
-    throw new Error('--page option does not make sense with --proposalId.');
-  }
-  if (opts.action) {
-    if (!opts.proposalId) {
-      throw new Error('--proposalId option must be provided when using --action.');
-    }
-    // Map the input to the corresponding ViewAction value
-    if (ViewAction[opts.action.toUpperCase()]) {
-      opts.action = ViewAction[opts.action.toUpperCase()] as ViewAction;
-    } else if (Object.values(ViewAction).includes(opts.action.toLowerCase())) {
-      opts.action = opts.action.toLowerCase() as ViewAction;
-    } else {
-      throw new Error(`Invalid action: ${opts.action}`);
-    }
-  }
-  if (opts.file) {
-    opts.export = opts.file;
-    if (ViewAction.EXPORT !== opts.action) {
-      throw new Error('--file option can only be used with `--action export`.');
-    }
-  }
-  return opts;
+    .option('--file <filename>', 'Specify the file to save the tx proposal to when using `--action export` (default: ~/<walletName>_txproposal_<proposalId>.json)')
+    .hook('preAction', (thisCommand) => {
+      const opts = thisCommand.opts();
+      if (opts.proposalId && opts.page) {
+        throw new Error('--page option does not make sense with --proposalId.');
+      }
+      if (opts.action) {
+        if (!opts.proposalId) {
+          throw new Error('--proposalId option must be provided when using --action.');
+        }
+        // Map the input to the corresponding ViewAction value
+        if (ViewAction[opts.action.toUpperCase()]) {
+          opts.action = ViewAction[opts.action.toUpperCase()] as ViewAction;
+        } else if (Object.values(ViewAction).includes(opts.action.toLowerCase())) {
+          opts.action = opts.action.toLowerCase() as ViewAction;
+        } else {
+          throw new Error(`Invalid action: ${opts.action}`);
+        }
+      }
+      if (opts.file) {
+        opts.export = opts.file;
+        if (ViewAction.EXPORT !== opts.action) {
+          throw new Error('--file option can only be used with `--action export`.');
+        }
+      }
+    });
 }
 
 
@@ -70,9 +64,6 @@ export async function getTxProposals(
   }>
 ) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
   
   const myCopayerId = wallet.client.credentials.copayerId;
 

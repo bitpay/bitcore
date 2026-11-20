@@ -1,4 +1,5 @@
 import { CacheStorage } from '../../../models/cache';
+import { Event } from '../../../services/event';
 import { NetworkType } from '../../../types/ChainNetwork';
 import { SmartFeeResponse } from '../../../types/FeeProvider';
 import { GetEstimateSmartFeeParams } from '../../../types/namespaces/ChainStateProvider';
@@ -13,7 +14,7 @@ export class BTCStateProvider extends InternalStateProvider {
   async getFee(params: GetEstimateSmartFeeParams) {
     const { chain, network, target, mode } = params;
     const cacheKey = `getFee-${chain}-${network}-${target}${mode ? '-' + mode.toLowerCase() : ''}`;
-    return CacheStorage.getGlobalOrRefresh(
+    return CacheStorage.getGlobalAndRefresh(
       cacheKey,
       async () => {
         const rpcEstimate = await this.getRPC(chain, network).getEstimateSmartFee(Number(target), mode) as SmartFeeResponse;
@@ -37,7 +38,8 @@ export class BTCStateProvider extends InternalStateProvider {
           blocks: target,
         };
       },
-      5 * CacheStorage.Times.Minute
+      5 * CacheStorage.Times.Minute,
+      Event.lastBlockTime(chain, network)
     );
   }
 }

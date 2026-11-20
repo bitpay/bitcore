@@ -10,6 +10,7 @@ export const Constants = {
     ARB: 'arb',
     BASE: 'base',
     OP: 'op',
+    ARC: 'arc',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
@@ -37,8 +38,10 @@ export const Constants = {
     WBTC: 'wbtc',
     EUROC: 'euroc',
     USDT: 'usdt',
+    XAUT: 'xaut',
     WETH: 'weth',
-    SOL: 'sol'
+    SOL: 'sol',
+    ARC: 'arc'
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
@@ -60,6 +63,7 @@ export const Constants = {
 
   BITPAY_USD_STABLECOINS: {
     // used for rates
+    ARC: 'arc',
     USDC: 'usdc',
     PYUSD: 'pyusd',
     USDP: 'usdp',
@@ -88,6 +92,7 @@ export const Constants = {
     ARB: 'arb',
     BASE: 'base',
     OP: 'op',
+    ARC: 'arc',
   },
 
   EVM_CHAINS_WITH_ETH_GAS: {
@@ -112,8 +117,9 @@ export const Constants = {
     arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
     base: ['livenet', 'sepolia', 'holesky', 'regtest'],
     op: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    arc: ['livenet', 'testnet'],
     sol: ['livenet', 'testnet', 'devnet', 'regtest']
-  } as { [chain: string]: Array<string> },
+  } as const satisfies Record<string, readonly string[]>,
 
   // These aliases are here to support legacy clients so don't change them lightly
   NETWORK_ALIASES: {
@@ -155,6 +161,9 @@ export const Constants = {
     op: {
       mainnet: 'livenet',
       testnet: 'sepolia'
+    },
+    arc: {
+      mainnet: 'livenet'
     },
     sol: {
       mainnet: 'livenet',
@@ -200,6 +209,8 @@ export const Constants = {
   ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,
   OP_TOKEN_OPTS: CWC.Constants.OP_TOKEN_OPTS,
   BASE_TOKEN_OPTS: CWC.Constants.BASE_TOKEN_OPTS,
+  ARC_TOKEN_OPTS: CWC.Constants.ARC_TOKEN_OPTS,
+  ARC: CWC.Constants.ARC,
   SOL_TOKEN_OPTS: CWC.Constants.SOL_TOKEN_OPTS,
 
   BITPAY_CONTRACTS: {
@@ -219,14 +230,21 @@ export const Constants = {
     bch: { testnet: 300, livenet: 0 },
     eth: { testnet: 300, livenet: 0 },
     matic: { testnet: 300, livenet: 12 }, // MATIC set to 12 because blocks normally occur every 1-2 seconds
+    arc: { testnet: 0, livenet: 0 },
     xrp: { testnet: 300, livenet: 0 },
     doge: { testnet: 300, livenet: 0 },
     ltc: { testnet: 300, livenet: 0 }
-  } as { [chain: string]: { [network: string]: number } },
+  } as const satisfies Record<string, { [network: string]: number }>,
+
+  /**
+   * Highest round a KeyGen client submits. The DKG library's final local result (round 4) is never posted: the client skips it
+   * once the keychain is ready, and the library's "ready" state (5) is not a submitted round either.
+   */
+  TSS_KEYGEN_MAX_SUBMITTED_ROUND: 3,
 
   // May be different from the defaults if we rollback
   // or want to beta test new versions.
-  TSS_KEYGEN_SCHEME_VERSION_MAX: 1.1,
+  TSS_KEYGEN_SCHEME_VERSION_MAX: 1.3,
   TSS_SIGGEN_SCHEME_VERSION_MAX: 1.1,
   
   TSS_KEYGEN_SCHEME_VERSION_MIN: 1,

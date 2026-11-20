@@ -5,23 +5,33 @@ import sinon from 'sinon';
 import util from 'util';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { BlockchainMonitor } from '../../src/lib/blockchainmonitor';
+import { ChainService } from '../../src/lib/chain';
 import { Constants } from '../../src/lib/common/constants';
 import helpers from './helpers';
+import type { Storage } from '../../src/lib/storage';
+import type { V8 } from '../../src/lib/blockchainexplorers/v8';
+import type { WalletService } from '../../src/lib/server';
+import type { Wallet } from '../../src/lib/model';
 
 const should = chai.should();
-let storage, blockchainExplorer, blockchainExplorerEVM, bcmonitor;
 
-const socket = {
-  handlers: {},
-  on: (name, handler) => {}
-};
-socket.on = function(eventName, handler) {
-  this.handlers[eventName] = handler;
-};
 
 describe('Blockchain monitor', function() {
-  this.timeout(5000);
-  let server, wallet;
+  this.timeout(Math.max(this['_timeout'] || 0, 5000));
+  let server: WalletService;
+  let wallet: Wallet;
+  let storage: Storage;
+  let blockchainExplorer: V8;
+  let blockchainExplorerEVM: V8;
+  let bcmonitor: BlockchainMonitor;
+
+  const socket = {
+    handlers: {},
+    on: (name, handler) => {}
+  };
+  socket.on = function(eventName, handler) {
+    this.handlers[eventName] = handler;
+  };
 
   before(async function() {
     const res = await helpers.before();
@@ -69,9 +79,6 @@ describe('Blockchain monitor', function() {
     await helpers.after();
   });
   beforeEach(async function() {
-    blockchainExplorer.last = [];
-    blockchainExplorer.lastTx = [];
-    // TODO
     const collections = {
       WALLETS: 'wallets',
       TXS: 'txs',
@@ -187,6 +194,49 @@ describe('Blockchain monitor', function() {
           });
         }, 100);
       });
+    });
+  });
+
+  describe('EVM tx events, as bitcore-node emits them', function() {
+    const token = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+    const sender = '0xC877cBCF020A8AA259A1Efab1559B2A3A7259086';
+    // passes a tx event through the chain's onTx to the monitor, as the v8 explorer's wallets socket does
+    const receive = tx => bcmonitor._handleIncomingPayments('eth', 'livenet', ChainService.onTx('eth', tx));
+    const incomingNotifications = async s => {
+      const notifications = await util.promisify(s.getNotifications).call(s, {});
+      return notifications.filter(n => n.type === 'NewIncomingTx');
+    };
+    const ethAddress = async () => {
+      const { server: s } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' });
+      const address = await util.promisify(s.createAddress).call(s, {});
+      return { s, address: address.address };
+    };
+
+    it('notifies the recipient of a native transfer', async function() {
+      const { s, address } = await ethAddress();
+      receive({ chain: 'ETH', network: 'mainnet', txid: '0x01', to: address, from: sender, value: 5000, effects: [] });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const notifications = await incomingNotifications(s);
+      notifications.length.should.equal(1);
+      notifications[0].data.should.include({ txid: '0x01', address, amount: 5000 });
+      should.not.exist(notifications[0].data.tokenAddress);
+    });
+
+    it('notifies the recipient of an ERC20 transfer, with the token', async function() {
+      const { s, address } = await ethAddress();
+      receive({
+        chain: 'ETH',
+        network: 'mainnet',
+        txid: '0x02',
+        to: token,
+        from: sender,
+        value: 0,
+        effects: [{ type: 'ERC20:transfer', to: address, from: sender, amount: '1000000', contractAddress: token, callStack: '' }]
+      });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const notifications = await incomingNotifications(s);
+      notifications.length.should.equal(1);
+      notifications[0].data.should.include({ txid: '0x02', address, amount: '1000000', tokenAddress: token });
     });
   });
 
@@ -315,7 +365,7 @@ describe('Blockchain monitor', function() {
   describe('Block Notify Throttling', function() {
     it('should throttle _notifyNewBlock if setting requires', function(done) {
       const notifyNewBlockSpy = sinon.spy(bcmonitor, '_notifyNewBlock');
-      bcmonitor.blockThrottleSettings = { btc: { livenet: 2 } };
+      bcmonitor.blockThrottleSettings = { btc: { livenet: 2 } } as any;
 
       blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
       socket.handlers['block']('block1');
@@ -338,7 +388,7 @@ describe('Blockchain monitor', function() {
 
     it('should not throttle _notifyNewBlock if setting doesn"t exist', function(done) {
       const notifyNewBlockSpy = sinon.spy(bcmonitor, '_notifyNewBlock');
-      bcmonitor.blockThrottleSettings = { btc: {} };
+      bcmonitor.blockThrottleSettings = { btc: {} } as any;
 
       blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
       socket.handlers['block']('block1');
@@ -359,7 +409,7 @@ describe('Blockchain monitor', function() {
 
     it('should not throttle _notifyNewBlock if setting is zero', function(done) {
       const notifyNewBlockSpy = sinon.spy(bcmonitor, '_notifyNewBlock');
-      bcmonitor.blockThrottleSettings = { btc: { livenet: 0 } };
+      bcmonitor.blockThrottleSettings = { btc: { livenet: 0 } } as any;
 
       blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
       socket.handlers['block']('block1');

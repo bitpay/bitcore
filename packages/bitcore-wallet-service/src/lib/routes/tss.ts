@@ -1,9 +1,10 @@
 import express from 'express';
 import * as Types from '../../types/expressapp';
 import { TssKeyGen, TssSign } from '../tss';
-import { authRequest } from './middleware/authRequest';
-import { authTssRequest } from './middleware/authTssRequest';
+import { authTssKeyGenRequest, authTssSignRequest } from './middleware/authTssRequest';
 import { createWalletLimiter } from './middleware/createWalletLimiter';
+import { validateTssKeyGenMessage } from './middleware/validateTssKeyGenMessage';
+import { validateTssKeyGenRegistration } from './middleware/validateTssKeyGenRegistration';
 import { verifyTssMessage } from './middleware/verifyTssMessage';
 
 
@@ -23,12 +24,12 @@ export class TssRouter {
     
     /** Key generation methods */
 
-    router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), verifyTssMessage, async function(req, res) {
+    router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), validateTssKeyGenMessage, authTssKeyGenRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
         const { message, n, password, version = 1.0, timeLimit } = req.body;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         await TssKeyGen.processMessage({ id, message, n, password, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
@@ -36,25 +37,87 @@ export class TssRouter {
       }
     });
 
-    router.get('/v1/tss/keygen/:id/:round', authTssRequest(), async function(req, res) {
+    router.post('/v1/tss/keygen/:id/register', validateTssKeyGenRegistration, authTssKeyGenRequest(), async function(req, res) {
       try {
-        const { id, round } = req.params as { [key: string]: string };
-        const copayerId = req.headers['x-identity'];
-        if (round === 'secret') {
-          const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-          return res.json({ secret });
-        }
-        const { messages, publicKey } = await TssKeyGen.getMessagesForParty({ id, round: parseInt(round), copayerId });
-        return res.json({ messages, publicKey });
+        const id = req.params.id;
+        const copayerId = req.headers['x-identity'] as string;
+        const data = req.body;
+
+        await TssKeyGen.registerParty({ id, copayerId, data });
+        return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
       }
     });
 
-    router.post('/v1/tss/keygen/:id/store', authTssRequest(), async function(req, res) {
+    // Must be before /keygen/:id/:round so "secret" doesn't get interpreted as a round number
+    router.get('/v1/tss/keygen/:id/secret', authTssKeyGenRequest({ bypassExpired: true }), async function(req, res) {
       try {
         const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
+        const { chain, network } = req.query as { [key: string]: string };
+        const secret = await TssKeyGen.getBwsJoinSecret({ id, chain, network, copayerId });
+        return res.json({ secret });
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.post('/v1/tss/keygen/:id/secret', authTssKeyGenRequest({ bypassExpired: true }), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const { chain, network, secrets, secret } = req.body;
+        const copayerId = req.headers['x-identity'] as string;
+        if (secrets == null && secret != null) {
+          // Legacy (< v1.3) clients send a single unencrypted secret
+          await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
+        } else {
+          await TssKeyGen.storeBwsJoinSecrets({ id, chain, network, secrets, copayerId });
+        }
+        return res.send();
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.get('/v1/tss/keygen/:id/:round', authTssKeyGenRequest(), async function(req, res) {
+      let interval: NodeJS.Timeout;
+      try {
+        const abort = new AbortController();
+        res.on('close', () => { clearInterval(interval); abort.abort(); });
+
+        const { id, round } = req.params as { [key: string]: string };
+        const { maxWaitTime } = req.query as { [key: string]: string };
+        const copayerId = req.headers['x-identity'] as string;
+
+        // Validate access and fetch session before committing to a streaming response, so that errors like
+        //   "session not found" or "not a participant" can still be returned with a proper
+        //   HTTP status instead of silently becoming an empty 200 (see below).
+        const session = await TssKeyGen.getSessionForCopayer({ id, copayerId });
+
+        if (abort.signal.aborted || res.closed) {
+          return; // Connection closed by client, stop processing
+        }
+
+        // Keep the connection alive while waiting for the change stream to return a result.
+        // Headers must be finalized before writing the first heartbeat byte.
+        // Flush ensures the heartbeat is sent immediately to keep the connection alive.
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        interval = setInterval(() => { res.write('\n'); res.flush(); }, 1000);
+
+        const { messages, publicKey } = await TssKeyGen.getMessagesForParty({ session, round: parseInt(round), copayerId, maxWaitTimeSec: parseInt(maxWaitTime), abortSignal: abort.signal });
+        return res.end(JSON.stringify({ messages, publicKey }));
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      } finally {
+        clearInterval(interval);
+      }
+    });
+
+    router.post('/v1/tss/keygen/:id/store', authTssKeyGenRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const copayerId = req.headers['x-identity'] as string;
         const message = req.body;
 
         await TssKeyGen.storeKey({ id, message, copayerId });
@@ -64,38 +127,15 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const { secret } = req.body;
-        const copayerId = req.headers['x-identity'];
-        await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
-        return res.send();
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
-
-    router.get('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
-        const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-        return res.json({ secret });
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
-
 
     /** Signature Methods */
 
-    router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
+    router.post('/v1/tss/sign/:id', authTssSignRequest({ joinable: true }), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
         const { message, m, version = 1.0, timeLimit } = req.body;
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.headers['x-identity'] as string;
         await TssSign.processMessage({ id, message, m, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
@@ -103,22 +143,47 @@ export class TssRouter {
       }
     });
 
-    router.get('/v1/tss/sign/:id/:round', authTssRequest(), async function(req, res) {
+    router.get('/v1/tss/sign/:id/:round', authTssSignRequest(), async function(req, res) {
+      let interval: NodeJS.Timeout;
       try {
+        const abort = new AbortController();
+        res.on('close', () => { clearInterval(interval); abort.abort(); });
+
         const { id, round } = req.params as { [key: string]: string };
-        const copayerId = req.headers['x-identity'];
-        const { messages, signature, participants } = await TssSign.getMessagesForParty({ id, round: parseInt(round), copayerId });
-        return res.json({ messages, signature, participants });
+        const { maxWaitTime } = req.query as { [key: string]: string };
+        const copayerId = req.headers['x-identity'] as string;
+
+        // Validate access and fetch session before committing to a streaming response, so that errors like
+        //   "session not found" or "not a participant" can still be returned with a proper
+        //   HTTP status instead of silently becoming an empty 200 (see below).
+        const session = await TssSign.getSessionForCopayer({ id, copayerId });
+
+        if (abort.signal.aborted || res.closed) {
+          return; // Connection closed by client, stop processing
+        }
+
+        // Keep the connection alive while waiting for the change stream to return a result.
+        // Headers must be finalized before writing the first heartbeat byte.
+        // Flush ensures the heartbeat is sent immediately to keep the connection alive.
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        interval = setInterval(() => { res.write('\n'); res.flush(); }, 1000);
+
+        const { messages, signature, participants } = await TssSign.getMessagesForParty({ session, round: parseInt(round), copayerId, maxWaitTimeSec: parseInt(maxWaitTime), abortSignal: abort.signal });
+        clearInterval(interval);
+        return res.end(JSON.stringify({ messages, signature, participants }));
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
+      } finally {
+        clearInterval(interval);
       }
     });
 
-    router.post('/v1/tss/sign/:id/store', authTssRequest(), async function(req, res) {
+    router.post('/v1/tss/sign/:id/store', authTssSignRequest(), async function(req, res) {
       try {
         const id = req.params.id;
         const { signature } = req.body;
-        await TssSign.storeSignature({ id, signature });
+        const copayerId = req.headers['x-identity'] as string;
+        await TssSign.storeSignature({ id, signature, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

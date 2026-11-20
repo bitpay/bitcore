@@ -2,7 +2,6 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import url from 'url';
 import {
   API,
   Utils as BWCUtils,
@@ -104,7 +103,7 @@ export class Wallet implements IWallet {
     const { mustBeNew, mustExist, doNotComplete } = args;
 
     this.client = new Client({
-      baseUrl: url.resolve(this.host, '/bws/api'),
+      baseUrl: new URL('/bws/api', this.host).href,
       supportStaffWalletId: this.walletId
     });
 
@@ -237,9 +236,27 @@ export class Wallet implements IWallet {
     if (_hasLockFile) {
       return;
     }
+    const getPidCommand = function(pid) {
+      if (os.platform() === 'win32') {
+        // TODO
+        return '';
+      } else {
+        try {
+          // This command should be compatible with both Linux and macOS
+          const runningCmd = execSync(`ps -p ${pid} -o args=`, { encoding: 'utf-8' });
+          return runningCmd;
+        } catch (e) {
+          if (!e.stderr && !e.stdout) {
+            return '';
+          }
+          throw e;
+        }
+      }
+    };
     const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
     try {
-      fs.writeFileSync(lockFilename, process.pid.toString(), { flag: 'wx', mode: 0o444 }); // wx flag ensures it fails if the file already exists
+      const processArgv = getPidCommand(process.pid);
+      fs.writeFileSync(lockFilename, process.pid.toString() + '\n' + processArgv, { flag: 'wx', mode: 0o444 }); // wx flag ensures it fails if the file already exists
       _hasLockFile = true;
       process.on('exit', () => {
         try {
@@ -252,16 +269,22 @@ export class Wallet implements IWallet {
     } catch (e) {
       if (e.code === 'EEXIST') {
         // Check if process is still running
-        const pid = fs.readFileSync(lockFilename, 'utf-8')?.trim();
+        const lockFileData = fs.readFileSync(lockFilename, 'utf-8')?.trim();
+        const [pid, lockedFullCommand] = lockFileData.split('\n');
         if (os.platform() === 'win32') {
           // TODO
         } else {
           const stat = fs.statSync(lockFilename);
           if (stat.uid === process.getuid()) { // make sure the lock file belongs to the current user
-            const response = execSync(`ps -q ${pid} -o args || true`, { encoding: 'utf-8' });
-            const command = response?.split('\n')[1] || '';
-            if (!command.includes(`bitcore-cli ${this.name}`) && !command.includes(`build/src/cli.js ${this.name}`)) {
+            const runningPid = getPidCommand(pid);
+            // Ensure the PID hasn't been re-assigned to another process
+            // Resolve both paths (relative to this process' cwd) since argv[1] may be relative or absolute
+            // depending on how bitcore-cli was invoked. The lock file name includes the wallet name, so the
+            // lock should indeed be for this wallet.
+            const isSameProcess = !!runningPid && !!lockedFullCommand && runningPid.trim() === lockedFullCommand.trim();
+            if (!isSameProcess) {
               // Stale lock file, remove it and continue
+              prompt.log.warn('Stale wallet lock file detected. Removing it now, but please make sure you do not have another instance of bitcore-cli running for this wallet.');
               fs.rmSync(lockFilename);
               return this.lockLoadedWallet();
             }
@@ -476,6 +499,9 @@ export class Wallet implements IWallet {
     }
     if (!this.client.credentials) {
       Utils.die('Wallet credentials not initialized. Call load() first.');
+    }
+    if (this.isTss() && this.client.credentials.publicKeyRing.length !== (this.#walletData.key as TssKey.TssKey).metadata.n) {
+      return false;
     }
     return this.client.credentials.isComplete();
   }
@@ -766,6 +792,19 @@ export class Wallet implements IWallet {
     return this.client.credentials.clientDerivedPublicKey || this.client.credentials.xPubKey;
   }
 
+  getScheme() {
+    if (this.isTss()) {
+      return {
+        m: (this.#walletData.key as TssKey.TssKey).metadata?.m,
+        n: (this.#walletData.key as TssKey.TssKey).metadata?.n
+      };
+    }
+    return {
+      m: this.client.credentials.m || 1,
+      n: this.client.credentials.n || 1
+    };
+  }
+
   isMultiSig() {
     return this.client.credentials.n > 1;
   }
@@ -816,5 +855,106 @@ export class Wallet implements IWallet {
 
     const flags: xrpl.AccountInfoAccountFlags = await this.client.getAccountFlags({ account: 0 });
     return flags;
+  }
+
+  async updatePassword(currentPassword: string, newPassword: string, opts?: { silent?: boolean }) {
+    const { silent } = opts || {};
+
+    // Decrypt
+    this.#walletData.key.decrypt(currentPassword);
+    if (this.isSvm()) {
+      // Note: EDDSA keys are not currently supported by TssKey,
+      //  so if isSvm() then key must be of type BWC Key
+      (this.#walletData.key as Key).decrypt(currentPassword, 'EDDSA');
+    }
+
+    // Re-encrypt with new password
+    this.#walletData.key.encrypt(newPassword);
+    if (this.isSvm()) {
+      this.#walletData.key.encrypt(newPassword, null, 'EDDSA');
+    }
+
+    await this.save();
+
+    if (!silent) prompt.log.success('Wallet password updated successfully');
+    
+    // Update state files with new password
+    const stateStoragePath = await this.storage.getStatePath();
+    const dir = fs.readdirSync(stateStoragePath);
+    if (dir.length) {
+      if (!silent) prompt.log.info('Re-encrypting state files...');
+      for (const item of dir) {
+        const itemPath = path.join(stateStoragePath, item);
+        try {
+          const stat = fs.statSync(itemPath);
+          if (stat.isFile()) {
+            let decrypted: Buffer;
+            const tempFile = itemPath + '-temp';
+            try {
+              const content = fs.readFileSync(itemPath, 'utf-8');
+              decrypted = Encryption.decryptWithPassword(content, currentPassword);
+              const updatedContent = JSON.stringify(Encryption.encryptWithPassword(decrypted, newPassword));
+              // Write the updated content to a temporary file first.
+              // This ensures that a corrupted save can be rolled back (e.g. filesystem full)
+              fs.writeFileSync(tempFile, updatedContent, { encoding: 'utf-8', flag: 'w' });
+              fs.renameSync(tempFile, itemPath);
+            } finally {
+              decrypted?.fill(0); // Clear the decrypted buffer from memory
+              fs.rmSync(tempFile, { force: true }); // Remove the temporary file (if it exists)
+            }
+          }
+        } catch (err) {
+          prompt.log.warn(`Failed to re-encrypt state file ${itemPath}: "${err.message || err}". This might be ok if you're changing back to a previous password, otherwise you'll probably need to delete the associated transaction proposal.`);
+        }
+      }
+
+      if (!silent) prompt.log.success('Done');
+    }
+  }
+
+  /**
+   * Create a wallet on another chain and/or network with this wallet's TSS key (e.g. an ARB wallet for an ETH TSS wallet)
+   * and save it as `walletName` in this wallet's directory.
+   * The TSS session leader must create the sibling wallet before the other parties can join it.
+   */
+  async createSiblingWallet(params: {
+    walletName: string;
+    chain: string;
+    network: Network;
+  }): Promise<Wallet> {
+    const { walletName, chain, network } = params;
+    const key = this.#walletData.key;
+    if (!(key instanceof TssKey.TssKey)) {
+      throw new Error('Sibling wallets are only supported for TSS wallets');
+    }
+    const sibling = new Wallet({ name: walletName, dir: this.dir, host: this.host });
+    if (sibling.storage.exists()) {
+      throw new Error(`Wallet file ${walletName}.json already exists in ${this.dir}`);
+    }
+
+    const tssWalletParams = {
+      baseKey: key,
+      baseCredentials: this.client.credentials,
+      baseUrl: this.client.request.baseUrl,
+      copayerName: this.client.credentials.copayerName,
+      opts: { chain, network }
+    };
+    let credentials: Credentials;
+    if (key.metadata.partyId === 0) {
+      ({ credentials } = await TssKey.createWallet({ ...tssWalletParams, walletName }));
+    } else {
+      try {
+        ({ credentials } = await TssKey.joinWallet(tssWalletParams));
+      } catch (err) {
+        if (err.message?.includes('TSS_BWS_JOIN_SECRET_NOT_FOUND')) {
+          throw new Error('The TSS session leader needs to create the wallet first before other copayers can join.');
+        }
+        throw err;
+      }
+    }
+
+    sibling.#walletData = { key, credentials };
+    await sibling.save({ encryptAll: this.isFullyEncrypted });
+    return sibling;
   }
 };

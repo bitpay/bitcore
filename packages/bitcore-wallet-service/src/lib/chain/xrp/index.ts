@@ -29,6 +29,7 @@ export class XrpChain implements IChain {
       totalConfirmedAmount: confirmed,
       lockedAmount: activatedLocked,
       lockedConfirmedAmount: activatedLocked,
+      reserve: balance > 0 ? reserve : 0,
       availableAmount: balance - activatedLocked,
       availableConfirmedAmount: confirmed - activatedLocked,
       byAddress: []
@@ -68,7 +69,7 @@ export class XrpChain implements IChain {
             return sum + BigInt(txp.amount || 0) + BigInt(txp.fee || 0);
           }, 0n) || 0n;
           const convertedBalance = this.convertBitcoreBalance(balance, Number(lockedSum), reserve);
-          server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+          server.storage.fetchAddressesPage(server.walletId, { limit: 1 }, (err, addresses: IAddress[]) => {
             if (err) return cb(err);
             if (addresses.length > 0) {
               const byAddress = [
@@ -141,6 +142,10 @@ export class XrpChain implements IChain {
         return resolve({ feePerKb });
       });
     });
+  }
+
+  isPrePublishRawBound(txp) {
+    return Common.Utils.isPrePublishRawBound(this, txp);
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
@@ -218,9 +223,9 @@ export class XrpChain implements IChain {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       const minXrpBalance = Defaults.MIN_XRP_BALANCE;
-      if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
+      if (totalAmount - minXrpBalance < txp.getTotalAmountBigInt()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (availableAmount < txp.getTotalAmount()) {
+      } else if (availableAmount < txp.getTotalAmountBigInt()) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
         return cb(this.checkTx(txp));

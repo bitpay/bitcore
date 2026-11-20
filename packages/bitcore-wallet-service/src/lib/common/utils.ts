@@ -3,7 +3,8 @@ import {
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc,
-  Constants as CWConstants
+  Constants as CWConstants,
+  Transactions
 } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
@@ -12,6 +13,8 @@ import Config from '../../config';
 import { logger } from '../logger';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
+import type { IChain } from '../../types/chain';
+import type { TxProposal } from '../model/txproposal';
 
 const $ = singleton();
 const Bitcore_ = {
@@ -22,6 +25,54 @@ const Bitcore_ = {
 };
 
 export const Utils = {
+
+  /**
+   * txp.prePublishRaw as a list of raw transactions, or null when it isn't one. An empty list is truthy and
+   * hashes to nothing, so without this the value reaches the tx provider and fails as a thrown error rather
+   * than a refused check. Mirrors the client-side Verifier helper so both ends agree on a usable fallback.
+   *
+   * @param txp - the transaction proposal
+   */
+  prePublishRawParts(txp: TxProposal<any>): string[] | null {
+    if (!txp?.prePublishRaw) {
+      return null;
+    }
+    const parts = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+    if (!parts.length || parts.some(raw => !raw || typeof raw !== 'string')) {
+      return null;
+    }
+    return parts;
+  },
+
+  /**
+   * Shared implementation of IChain.isPrePublishRawBound for account-based chains (SVM/EVM/XRP). True only if
+   * txp.prePublishRaw is the same transaction as the current proposal, differing solely in the field BWS
+   * mutates at publish (blockhash on SVM, nonce on EVM/XRP). Recovers that field from prePublishRaw, rebuilds
+   * the proposal via the chain's own getBitcoreTx, and requires byte-for-byte equality, so a tampered stored
+   * proposal cannot reuse an old, still-valid proposalSignature. Fails closed on any error.
+   *
+   * @param chain - the IChain implementation (provides chain + getBitcoreTx)
+   * @param txp - the transaction proposal (must carry prePublishRaw)
+   */
+  isPrePublishRawBound(chain: IChain, txp: TxProposal<any>): boolean {
+    try {
+      const prePublishRaw = Utils.prePublishRawParts(txp);
+      if (!prePublishRaw) return false;
+      const provider = Transactions.get({ chain: txp.chain }) as any;
+      if (typeof provider?.getMutableFields !== 'function') return false;
+      const mutableFields = provider.getMutableFields(prePublishRaw[0]);
+      if (!mutableFields || Object.values(mutableFields).every(v => v == null)) return false;
+      const cloned = Object.assign(Object.create(Object.getPrototypeOf(txp)), txp, mutableFields);
+      // signed: false to match prePublishRaw, which is captured before any copayer signature exists.
+      const rebuilt = chain.getBitcoreTx(cloned, { signed: false }).uncheckedSerialize();
+      const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
+      if (rebuiltArr.length !== prePublishRaw.length) return false;
+      return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
+    } catch (err) {
+      logger.warn('prePublishRaw binding check failed for txp %s on %s: %o', txp?.id, txp?.chain, err.stack || err.message || err);
+      return false;
+    }
+  },
 
   /**
    * @deprecated
@@ -48,8 +99,11 @@ export const Utils = {
     }
   },
 
-  isObject(obj) {
-    return obj && typeof obj === 'object' && !Array.isArray(obj);
+  /**
+   * True for a non-null, non-array object. Always returns a boolean, never the falsy input itself.
+   */
+  isObject(obj: unknown): obj is Record<string, any> {
+    return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
   },
 
   /**
@@ -60,6 +114,14 @@ export const Utils = {
    */
   isNumber(val) {
     return val != null && !isNaN(val);
+  },
+
+  /**
+   * True for a numeric, non-negative safe integer, excluding negative zero and numeric strings.
+   * Does not enforce JavaScript's array-index limit or an application-specific upper bound.
+   */
+  isCanonicalIndex(value: unknown): value is number {
+    return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && !Object.is(value, -0);
   },
 
   /**
@@ -99,6 +161,14 @@ export const Utils = {
       ret = new BitcoreLib.encoding.BufferReader(ret).readReverse();
     }
     return ret;
+  },
+
+  /**
+   * True for a hex-encoded compressed or uncompressed secp256k1 public key that is a point on the curve.
+   * BitcoreLib.PublicKey.isValid alone accepts strings of the wrong length, so the format is checked first.
+   */
+  isValidSecp256k1PublicKey(value: unknown): value is string {
+    return typeof value === 'string' && /^(0[23][0-9a-f]{64}|04[0-9a-f]{128})$/i.test(value) && BitcoreLib.PublicKey.isValid(value);
   },
 
   verifyMessage(message, signature, publicKey) {
@@ -520,5 +590,22 @@ export const Utils = {
     return retval;
   },
 
-  sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  },
+
+  convertXPubKeyForNetwork(xPubKey: string, chain: string, network: string) {
+    // Convert named network for non-UTXO chains to generic name (e.g. sepolia -> testnet)
+    network = !Bitcore_[chain] ? Utils.getGenericName(network) : network;
+    const lib = Bitcore_[chain] || BitcoreLib;
+    $.checkArgument(xPubKey, 'xPubKey is required at <convertXPubKeyForNetwork()>');
+    $.checkArgument(chain, 'chain is required at <convertXPubKeyForNetwork()>');
+    $.checkArgument(lib.Networks.get(network), 'invalid network at <convertXPubKeyForNetwork()>: ' + network);
+    const hdPubKeyObj = new lib.HDPublicKey(xPubKey).toObject();
+    hdPubKeyObj.network = network;
+    delete hdPubKeyObj.checksum;
+    delete hdPubKeyObj.xpubkey;
+    const newHdPubKey = lib.HDPublicKey.fromObject(hdPubKeyObj);
+    return newHdPubKey.toString();
+  }
 };

@@ -23,7 +23,7 @@ export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   ARB_mainnet: 42161,
   BASE_mainnet: 8453,
   OP_mainnet: 10,
-  ARC_mainnet: 'unsupported',
+  ARC_mainnet: 5042,
   // ETH testnets
   ETH_holesky: 17000,
   ETH_sepolia: 11155111,

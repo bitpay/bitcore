@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise */
 'use strict';
 
 const should = require('chai').should();
@@ -12,7 +13,6 @@ const BN = bitcore.crypto.BN;
 const BufferWriter = bitcore.encoding.BufferWriter;
 const BufferReader = bitcore.encoding.BufferReader;
 const Opcode = bitcore.Opcode;
-const _ = require('lodash');
 
 const script_tests = require('../data/bitcoind/script_tests');
 const script_asset_tests = require('../data/bitcoind/script_assets_test.json');
@@ -343,21 +343,21 @@ describe('Interpreter', function() {
 
     const testAllFixtures = function(set) {
       let c = 0;
-      set.forEach(function(vector) {
+      for (const vector of set) {
         if (vector.length === 1) {
-          return;
+          continue;
         }
         c++;
 
         let witness, amount;
-        if (_.isArray(vector[0])) {
+        if (Array.isArray(vector[0])) {
           const extra = vector.shift();
           amount = extra.pop() * 1e8;
-          witness = extra.map(function(x) { 
+          witness = extra.map(function(x) {
             return Buffer.from(x, 'hex');
           });
         } else {
-          return;
+          continue;
         }
 
         const fullScriptString = vector[0] + ' ' + vector[1];
@@ -370,10 +370,9 @@ describe('Interpreter', function() {
         function() {
           testFixture(vector, expected, witness, amount);
         });
-      });
+      }
     };
     testAllFixtures(script_tests);
-
   });
   describe('bitcoind transaction evaluation fixtures', function() {
     const test_txs = function(set, expected) {

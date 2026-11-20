@@ -31,6 +31,7 @@ const Bitcore_ = {
   arb: CWC.BitcoreLib,
   base: CWC.BitcoreLib,
   op: CWC.BitcoreLib,
+  arc: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
   ltc: CWC.BitcoreLibLtc,
@@ -45,8 +46,6 @@ const NetworkChar = {
 for (const network in NetworkChar) { // invert NetworkChar
   NetworkChar[NetworkChar[network]] = network;
 }
-
-const defaultNumberFormat = 'number'; // 'number' | 'string' | 'hex'
 
 const BASE_URL = 'http://localhost:3232/bws/api';
 
@@ -792,6 +791,7 @@ export class API extends EventEmitter {
       case 'arb':
       case 'base':
       case 'op':
+      case 'arc':
       case 'sol':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
@@ -845,6 +845,13 @@ export class API extends EventEmitter {
       clientDerivedPublicKey?: string;
       dryRun?: boolean;
       supportBIP44AndP2PKH?: boolean;
+      /** 
+       * Allows BWS to verify copayerId participation in the TSS keygen session.
+       * This is only needed when joining a TSS wallet for a different chain than the TSS keygen session. 
+       * E.g., the TSS key generation session has a copayerId for 'eth', but the wallet being joined is on 'arb'
+       * This is because the TSS keygen session uses copayerId for authentication which is chain-specific.
+      */
+      tssKeygenChain?: string;
     },
   ) {
     opts = opts || {};
@@ -864,7 +871,8 @@ export class API extends EventEmitter {
       requestPubKey,
       customData: encCustomData,
       hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
-      clientDerivedPublicKey: opts.clientDerivedPublicKey
+      clientDerivedPublicKey: opts.clientDerivedPublicKey,
+      tssKeygenChain: opts.tssKeygenChain
     };
     if (opts.dryRun) args.dryRun = true;
 
@@ -1043,7 +1051,6 @@ export class API extends EventEmitter {
       const c = this.credentials;
       c.addWalletPrivateKey(walletPrivKey.toString());
       const encWalletName = Utils.encryptMessage(walletName, c.sharedEncryptingKey);
-
       const args = {
         name: encWalletName,
         m,
@@ -1060,7 +1067,8 @@ export class API extends EventEmitter {
         hardwareSourcePublicKey: c.hardwareSourcePublicKey,
         clientDerivedPublicKey: c.clientDerivedPublicKey,
         tssVersion: opts.tssVersion,
-        tssKeyId: opts.tssKeyId
+        tssKeyId: opts.tssKeyId,
+        tssKeygenCopayerId: opts.tssKeygenCopayerId,
       };
       const { body: res } = await this.request.post('/v2/wallets/', args);
 
@@ -1088,7 +1096,8 @@ export class API extends EventEmitter {
           coin,
           chain,
           hardwareSourcePublicKey: c.hardwareSourcePublicKey,
-          clientDerivedPublicKey: c.clientDerivedPublicKey
+          clientDerivedPublicKey: c.clientDerivedPublicKey,
+          tssKeygenChain: opts.tssKeygenChain
         }
       );
 
@@ -1123,6 +1132,11 @@ export class API extends EventEmitter {
       chain?: string;
       /** Simulate wallet join. Default: false */
       dryRun?: boolean;
+      /**
+       * The chain for the TSS keygen session. Only needed when joining a TSS wallet for a different chain than the TSS keygen session.
+       * e.g., 'the TSS keygen session was for 'eth', but the wallet being joined is on 'arb'
+       */
+      tssKeygenChain?: string;
     },
     /**
      * @deprecated
@@ -1160,7 +1174,8 @@ export class API extends EventEmitter {
         {
           coin,
           chain,
-          dryRun: !!opts.dryRun
+          dryRun: !!opts.dryRun,
+          tssKeygenChain: opts.tssKeygenChain
         }
       );
       if (!opts.dryRun) {
@@ -1407,7 +1422,6 @@ export class API extends EventEmitter {
       qs.push(`includeExtendedInfo=${opts.includeExtendedInfo ? '1' : '0'}`);
       qs.push(`twoStep=${opts.twoStep ? '1' : '0'}`);
       qs.push('serverMessageArray=1');
-      qs.push('numberFormat=' + defaultNumberFormat); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
 
       if (opts.tokenAddress) {
         qs.push('tokenAddress=' + opts.tokenAddress);
@@ -1638,6 +1652,14 @@ export class API extends EventEmitter {
       feeLevel?: 'priority' | 'normal' | 'economy' | 'superEconomy';
       /** Specify the fee per kilobyte for this tx (in satoshis). */
       feePerKb?: number | bigint;
+      /** Numeric EVM transaction type (0 or 2 for gas fee overrides), or named XRP transaction type. */
+      txType?: number | string;
+      /** Type 0 gas price in wei. Overrides feeLevel; cannot be combined with fee, feePerKb, or sendMax. */
+      gasPrice?: number;
+      /** Type 2 maximum fee per gas in wei; requires priorityGasFee. Cannot be combined with gasPrice, fee, feePerKb, or sendMax. */
+      maxGasFee?: number;
+      /** Positive type 2 priority fee per gas in wei; requires maxGasFee and must not exceed it. */
+      priorityGasFee?: number;
       /** Use this address as the change address for the tx. The address should belong to the wallet. In the case of singleAddress wallets, the first main address will be used. */
       changeAddress?: string;
       /** Send maximum amount of funds that make sense under the specified fee/feePerKb conditions. */
@@ -1718,8 +1740,7 @@ export class API extends EventEmitter {
       /** The transaction proposal object returned by the API#createTxProposal method */
       txp: Txp;
       /** 
-       * Number format for the tx-building numbers (e.g. amounts, nonce, etc.). Default: 'hex'
-       * Note: The given `txp` will be converted server-side and returned in the specified format.
+       * Number format for the tx-building numbers (e.g. amounts, nonce, etc.). Omitted by default, which returns the stored values unconverted.
       */
       numberFormat?: 'hex' | 'number' | 'string';
     },
@@ -1740,9 +1761,9 @@ export class API extends EventEmitter {
       const args = {
         proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
       };
-      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
+      const qs = opts.numberFormat ? `?numberFormat=${opts.numberFormat}` : '';
 
-      const url = `/v2/txproposals/${opts.txp.id}/publish?${qs}`;
+      const url = `/v2/txproposals/${opts.txp.id}/publish${qs}`;
       const { body: txp } = await this.request.post<object, PublishedTxp>(url, args);
       this._processTxps(txp);
       if (cb) { cb(null, txp); }
@@ -1879,6 +1900,8 @@ export class API extends EventEmitter {
       tokenAddress?: string;
       /** MULTISIG ETH Contract Address */
       multisigContractAddress?: string;
+      /** Get the balance as of this date/time instead of the current balance */
+      time?: string;
     },
     /** @deprecated */
     cb?: (err?: Error, balance?: any) => void
@@ -1910,7 +1933,8 @@ export class API extends EventEmitter {
         qs = '?' + args.join('&');
       }
 
-      const { body } = await this.request.get('/v1/balance/' + qs);
+      const url = opts.time ? `/v1/balance/${encodeURIComponent(opts.time)}/` : '/v1/balance/';
+      const { body } = await this.request.get(url + qs);
       if (cb) { cb(null, body); }
       return body;
     } catch (err) {
@@ -1930,7 +1954,7 @@ export class API extends EventEmitter {
       forAirGapped?: boolean;
       /** Do not encrypt the public key ring */
       doNotEncryptPkr?: boolean;
-      /** Number format for the tx-building numbers (e.g. amounts, fee, nonce, etc.). Default: 'hex' */
+      /** Number format for the tx-building numbers (e.g. amounts, fee, nonce, etc.). Omitted by default, which returns the stored values unconverted. */
       numberFormat?: 'hex' | 'number' | 'string';
     },
     /** @deprecated */
@@ -1945,9 +1969,9 @@ export class API extends EventEmitter {
 
       opts = opts || {};
       const { doNotVerify, forAirGapped, doNotEncryptPkr } = opts;
-      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
+      const qs = opts.numberFormat ? `?numberFormat=${opts.numberFormat}` : '';
 
-      const { body: txps } = await this.request.get(`/v2/txproposals?${qs}`);
+      const { body: txps } = await this.request.get(`/v2/txproposals${qs}`);
       this._processTxps(txps);
       
       if (!doNotVerify) {
@@ -2076,18 +2100,8 @@ export class API extends EventEmitter {
       const isLegit = Verifier.checkTxProposal(this.credentials, txp, { paypro });
       if (!isLegit) throw new Errors.SERVER_COMPROMISED();
 
-      // Determine number format for the API request based on the given txp's values.
-      // This ensures the server maintains number precision when verifying signatures.
-      const amt = txp.amount || txp.outputs?.[0]?.amount;
-      const numberFormat = typeof amt === 'number'
-        ? 'number'
-        : amt.startsWith('0x')
-          ? 'hex'
-          : 'string';
-
-      const qs = `numberFormat=${numberFormat}`;
       baseUrl = baseUrl || '/v2/txproposals/';
-      const url = `${baseUrl}${txp.id}/signatures?${qs}`;
+      const url = `${baseUrl}${txp.id}/signatures`;
       const args: any = { signatures, nonce: txp.nonce };
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
@@ -2109,18 +2123,7 @@ export class API extends EventEmitter {
   }): Promise<Txp> {
     $.checkState(this.credentials?.isComplete(), 'Failed state: this.credentials at <prepareTx()>');
 
-    // Determine number format for the API request based on the type of txp.amount.
-    // This ensures the server maintains number precision when verifying signatures.
-    const amt = opts.txp.amount || opts.txp.outputs?.[0]?.amount;
-    const numberFormat = typeof amt === 'number'
-      ? 'number'
-      : amt.startsWith('0x')
-        ? 'hex'
-        : 'string';
-
-    const qs = `numberFormat=${numberFormat}`;
-
-    const url = `/v1/txproposals/${opts.txp.id}/prepare?${qs}`;
+    const url = `/v1/txproposals/${opts.txp.id}/prepare`;
     const { body: txp } = await this.request.post<object, Txp>(url, {});
     this._processTxps(txp);
     return txp;
@@ -3052,6 +3055,8 @@ export class API extends EventEmitter {
       feeLevel?: 'priority' | 'normal' | 'economy' | 'superEconomy';
       /** Specify the fee per KB (in satoshi) */
       feePerKb?: number;
+      /** Transaction type for Arc gas fee estimation. */
+      txType?: number;
       /** Indicates it if should use (or not) the unconfirmed utxos */
       excludeUnconfirmedUtxos?: boolean;
       /** Return the inputs used to build the tx */
@@ -3069,6 +3074,7 @@ export class API extends EventEmitter {
       const args = [];
       if (opts.feeLevel) args.push('feeLevel=' + opts.feeLevel);
       if (opts.feePerKb != null) args.push('feePerKb=' + opts.feePerKb);
+      if (opts.txType != null) args.push('txType=' + opts.txType);
       if (opts.excludeUnconfirmedUtxos) args.push('excludeUnconfirmedUtxos=1');
       if (opts.returnInputs) args.push('returnInputs=1');
 
@@ -3422,6 +3428,10 @@ export class API extends EventEmitter {
       throw new Error('Could not recognize old version');
     }
 
+    v1 = { ...v1 };
+    v1.derivationStrategy = v1.derivationStrategy ?? Constants.DERIVATION_STRATEGIES.BIP45;
+    v1.compliantDerivation = v1.compliantDerivation ?? false;
+
     let k: Key;
     if (v1.xPrivKey || v1.xPrivKeyEncrypted) {
       k = new Key({ seedData: v1, seedType: 'objectV1' });
@@ -3680,6 +3690,7 @@ export class API extends EventEmitter {
           { coin: 'eth', chain: 'arb', network: 'livenet' },
           { coin: 'eth', chain: 'base', network: 'livenet' },
           { coin: 'eth', chain: 'op', network: 'livenet' },
+          { coin: 'arc', chain: 'arc', network: 'livenet' },
           { coin: 'xrp', chain: 'xrp', network: 'livenet' },
           { coin: 'sol', chain: 'sol', network: 'livenet' },
           { coin: 'doge', chain: 'doge', network: 'livenet' },
@@ -3890,6 +3901,8 @@ export class API extends EventEmitter {
               { chain: 'arb', tokenAddresses: status.preferences.arbTokenAddresses, multisigInfo: status.preferences.multisigArbInfo, tokenOpts: Constants.ARB_TOKEN_OPTS },
               { chain: 'op', tokenAddresses: status.preferences.opTokenAddresses, multisigInfo: status.preferences.multisigOpInfo, tokenOpts: Constants.OP_TOKEN_OPTS },
               { chain: 'base', tokenAddresses: status.preferences.baseTokenAddresses, multisigInfo: status.preferences.multisigBaseInfo, tokenOpts: Constants.BASE_TOKEN_OPTS },
+              { chain: 'arc', tokenAddresses: (status.preferences.arcTokenAddresses || []).filter(address =>
+                address.toLowerCase() !== CWC.Constants.ARC.USDC_CONTRACT_ADDRESS), tokenOpts: Constants.ARC_TOKEN_OPTS },
               { chain: 'sol', tokenAddresses: status.preferences.solTokenAddresses, multisigInfo: status.preferences.multisigSolInfo, tokenOpts: Constants.SOL_TOKEN_OPTS },
             ];
 
@@ -4076,10 +4089,6 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/simplex/sellPaymentRequest', data);
   }
 
-  async simplexGetEvents(data) {
-    return this.request.get(`/v1/service/simplex/events/?env=${data.env}`);
-  }
-
   async thorswapGetSwapQuote(data) {
     return this.request.post('/v1/service/thorswap/getSwapQuote', data);
   }
@@ -4102,14 +4111,6 @@ export class API extends EventEmitter {
 
   async transakGetOrderDetails(data) {
     return this.request.post('/v1/service/transak/orderDetails', data);
-  }
-
-  async wyreWalletOrderQuotation(data) {
-    return this.request.post('/v1/service/wyre/walletOrderQuotation', data);
-  }
-
-  async wyreWalletOrderReservation(data) {
-    return this.request.post('/v1/service/wyre/walletOrderReservation', data);
   }
 
   async changellyGetPairsParams(data) {
@@ -4220,6 +4221,17 @@ export interface CreateWalletOpts {
    * Threshold signature key id
    */
   tssKeyId?: string;
+  /**
+   * The chain for the TSS keygen session. Only needed when joining a TSS wallet for a different chain than the TSS keygen session.
+   * e.g., 'the TSS keygen session was for 'eth', but the wallet being joined is on 'arb'
+   */
+  tssKeygenChain?: string;
+  /**
+   * The copayer ID of the wallet creator in the TSS keygen session.
+   * Needed when the wallet's network differs from the keygen session's, since the ID depends on the network the xPubKey is serialized for.
+   * Default: derived from the credentials' xPubKey and `tssKeygenChain`
+   */
+  tssKeygenCopayerId?: string;
 };
 
 
@@ -4237,6 +4249,7 @@ export interface Status {
     availableConfirmedAmount: number;
     lockedAmount: number;
     lockedConfirmedAmount: number;
+    reserve?: number;
     totalAmount: number;
     totalConfirmedAmount: number;
     byAddress: Array<{
@@ -4255,6 +4268,7 @@ export interface Status {
     arbTokenAddresses?: string[]; // for Arbitrum
     opTokenAddresses?: string[]; // for Optimism
     baseTokenAddresses?: string[]; // for Base
+    arcTokenAddresses?: string[]; // for Arc
     solTokenAddresses?: string[]; // for Solana
     multisigEthInfo?: Array<MultisigInfo>;
     multisigMaticInfo?: Array<MultisigInfo>;
@@ -4415,4 +4429,3 @@ export interface PublishedTxp extends Txp {
   tokenAddress?: string;
   txType?: number; // or string?
 };
-

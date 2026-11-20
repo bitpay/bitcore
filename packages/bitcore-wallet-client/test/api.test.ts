@@ -11,8 +11,10 @@ import log from '../src/lib/log';
 import oldCredentials from './data/legacyCredentialsExports';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
+import { CoinGeckoService } from '@bitpay-labs/bitcore-wallet-service/ts_build/src/externalservices/coingecko';
 import Client, { Credentials } from '../src';
 import { Request } from '../src/lib/request';
+import { Verifier } from '../src/lib/verifier';
 import { Utils } from '../src/lib/common';
 import * as TestData from './data/testdata';
 import { Errors } from '../src/lib/errors';
@@ -597,6 +599,44 @@ describe('client API', function() {
         rawTxp.should.deep.equal([
           '0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080'
         ]);
+      });
+      it('should build unsigned ERC-20 approve/pay transactions in PayPro instruction order', () => {
+        // The verifier compares txp.outputs against the signed PayPro
+        // instructions as logical arrays; this proves the security-relevant
+        // result - the actual unsigned transactions handed to the signer -
+        // also preserves that same approve-then-pay order and nonce spacing.
+        const erc20Body = JSON.parse(TestData.payProJsonV2Body.erc20);
+        const [approveInstruction, payInstruction] = erc20Body.instructions;
+        const from = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+        const baseNonce = 5;
+
+        const txp = {
+          version: 3,
+          chain: 'eth',
+          coin: 'usdc',
+          from,
+          payProUrl: erc20Body.paymentUrl,
+          amount: 0,
+          nonce: baseNonce,
+          gasPrice: 20000000000,
+          outputs: [
+            { toAddress: approveInstruction.toAddress, amount: 0, data: approveInstruction.data, gasLimit: 60000 },
+            { toAddress: payInstruction.toAddress, amount: 0, data: payInstruction.data, gasLimit: 120000 }
+          ]
+        };
+
+        const rawTxs = Utils.buildTx(txp).uncheckedSerialize();
+        rawTxs.should.have.lengthOf(2);
+
+        const [approveTx, payTx] = rawTxs.map(raw => CWC.ethers.Transaction.from(raw));
+
+        approveTx.to.toLowerCase().should.equal(approveInstruction.toAddress.toLowerCase());
+        approveTx.data.toLowerCase().should.equal(approveInstruction.data.toLowerCase());
+        approveTx.nonce.should.equal(baseNonce);
+
+        payTx.to.toLowerCase().should.equal(payInstruction.toAddress.toLowerCase());
+        payTx.data.toLowerCase().should.equal(payInstruction.data.toLowerCase());
+        payTx.nonce.should.equal(baseNonce + 1);
       });
       it('should build a matic txp correctly', () => {
         const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
@@ -1678,6 +1718,35 @@ describe('client API', function() {
           balance.lockedAmount.should.equal(0);
           done();
         });
+      });
+    });
+
+    it('should request balance at a specific time when time is provided', function(done) {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'livenet',
+          account: 0,
+          n: 1
+        })
+      );
+
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        const getStub = sinon.stub(clients[0].request, 'get').resolves({ body: { totalAmount: 0 }, header: {} });
+        clients[0]
+          .getBalance({
+            time: '2024-01-01T00:00:00.000Z',
+            tokenAddress: '0xTOKEN'
+          })
+          .then(() => {
+            getStub.calledOnce.should.be.true;
+            const url = getStub.getCall(0).args[0];
+            url.should.contain('/v1/balance/2024-01-01T00%3A00%3A00.000Z/');
+            url.should.contain('tokenAddress=0xTOKEN');
+            getStub.restore();
+            done();
+          })
+          .catch(done);
       });
     });
 
@@ -2947,6 +3016,28 @@ describe('client API', function() {
         done();
       });
     });
+  });
+
+  it('should quote and create Arc send-max proposals with numeric and BigInt fee rates', async () => {
+    await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'arc', chain: 'arc' });
+    await clients[0].createAddress();
+    sandbox.stub(blockchainExplorerMock, 'getBalance').callsArgWith(1, null, {
+      balance: 2e18, confirmed: 2e18, unconfirmed: 0
+    });
+    sandbox.stub(blockchainExplorerMock, 'estimateFeeV2').callsArgWith(1, null, 30000000000);
+    sandbox.stub(blockchainExplorerMock, 'estimatePriorityFee').callsArgWith(1, null, 0);
+    for (const [txType, feePerKb] of [[0, 25000000000], [0, 25000000000n],
+      [undefined, 25000000000n], [2, 25000000000]] as const) {
+      const info = await clients[0].getSendMaxInfo({ feePerKb: Number(feePerKb), txType });
+      info.fee.should.equal((txType === 2 ? 30000000000 : Number(feePerKb)) * 21000);
+      info.amount.should.equal(2e18 - info.fee);
+      const opts = { feePerKb, txType, sendMax: true,
+        outputs: [{ toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: null, gasLimit: 21000 }] };
+      const txp = await clients[0].createTxProposal(opts);
+      txp.amount.should.equal(info.amount);
+      txp.fee.should.equal(info.fee);
+      Number(txp.feePerKb).should.equal(Number(feePerKb));
+    }
   });
 
   describe('Address Creation', () => {
@@ -5321,6 +5412,292 @@ describe('client API', function() {
         });
       });
     });
+
+    // Unlike 'Payment Protocol V2 account-chain boundary' below, this suite
+    // drives a genuinely signed ERC-20 PayPro fixture through the real
+    // getPayProV2 -> selectPaymentOption -> signature verification ->
+    // processResponse path, so it proves the *signed* instruction order
+    // survives to checkPaypro, not just that some ordering is enforced.
+    describe('signed account-chain instruction ordering', function() {
+      let savedTrustedKeys;
+      const erc20Body = JSON.parse(TestData.payProJsonV2Body.erc20);
+      const [approveInstruction, payInstruction] = erc20Body.instructions;
+      const approveOutput = { toAddress: approveInstruction.toAddress, amount: 0, data: approveInstruction.data };
+      const payOutput = { toAddress: payInstruction.toAddress, amount: 0, data: payInstruction.data };
+      const createUsdcTxp = outputs => ({
+        id: 'txp-usdc-erc20-ordering',
+        version: 3,
+        chain: 'eth',
+        coin: 'usdc',
+        network: 'livenet',
+        amount: 0,
+        from: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+        outputs,
+        payProUrl: erc20Body.paymentUrl,
+        creatorId: 'creator'
+      });
+
+      beforeEach(function(done) {
+        savedTrustedKeys = Client.PayProV2.trustedKeys;
+        Client.PayProV2.trustedKeys = {
+          ...savedTrustedKeys,
+          [TestData.payProJsonV2TestKey.identity]: TestData.payProJsonV2TestKey.keyData
+        };
+        mockRequest(TestData.payProJsonV2.erc20.body, TestData.payProJsonV2.erc20.headers);
+        // The wallet itself is a plain ETH wallet - BWS only registers a
+        // copayer's coin as a chain name (see Copayer.create's
+        // Constants.CHAINS check), never a token symbol. The token being
+        // spent (USDC) lives on the transaction proposal's own `coin`
+        // field below, not on the wallet.
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
+          sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+          done();
+        });
+      });
+
+      afterEach(function() {
+        Client.PayProV2.trustedKeys = savedTrustedKeys;
+      });
+
+      it('accepts a BWS proposal whose approve/pay outputs match the signed PayPro instruction order', function(done) {
+        const selectPaymentOptionSpy = sandbox.spy(Client.PayProV2, 'selectPaymentOption');
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [createUsdcTxp([approveOutput, payOutput])] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            should.not.exist(err);
+            should.exist(txps);
+            txps.should.have.lengthOf(1);
+            sinon.assert.calledOnce(selectPaymentOptionSpy);
+            txps[0].outputs[0].toAddress.should.equal(approveOutput.toAddress);
+            txps[0].outputs[1].toAddress.should.equal(payOutput.toAddress);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED when BWS reverses the signed approve/pay order', function(done) {
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [createUsdcTxp([payOutput, approveOutput])] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+
+    // drives historical *native* ETH PayPro fixture 
+    describe('signed native ETH instruction fidelity', function() {
+      let savedTrustedKeys;
+      const ethBody = JSON.parse(TestData.payProJsonV2Body.eth);
+      const [ethInstruction] = ethBody.instructions;
+      const createEthTxp = (overrides: any = {}) => ({
+        id: 'txp-eth-native-fidelity',
+        version: 3,
+        chain: 'eth',
+        coin: 'eth',
+        network: 'livenet',
+        amount: ethInstruction.amount,
+        outputs: [{ toAddress: ethInstruction.toAddress, amount: ethInstruction.amount, data: ethInstruction.data }],
+        payProUrl: ethBody.paymentUrl,
+        creatorId: 'creator',
+        ...overrides
+      });
+
+      beforeEach(function(done) {
+        savedTrustedKeys = Client.PayProV2.trustedKeys;
+        Client.PayProV2.trustedKeys = {
+          ...savedTrustedKeys,
+          [TestData.payProJsonV2TestKey.identity]: TestData.payProJsonV2TestKey.keyData
+        };
+        mockRequest(TestData.payProJsonV2.eth.body, TestData.payProJsonV2.eth.headers);
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
+          sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+          done();
+        });
+      });
+
+      afterEach(function() {
+        Client.PayProV2.trustedKeys = savedTrustedKeys;
+      });
+
+      it('accepts a BWS proposal whose native ETH output matches the signed PayPro instruction', function(done) {
+        const selectPaymentOptionSpy = sandbox.spy(Client.PayProV2, 'selectPaymentOption');
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp()] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            should.not.exist(err);
+            should.exist(txps);
+            txps.should.have.lengthOf(1);
+            sinon.assert.calledOnce(selectPaymentOptionSpy);
+            txps[0].outputs[0].toAddress.should.equal(ethInstruction.toAddress);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED for a substituted native ETH destination', function(done) {
+        const substitutedAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+        const txp = createEthTxp({
+          outputs: [{ toAddress: substitutedAddress, amount: ethInstruction.amount, data: ethInstruction.data }]
+        });
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED when the proposal drops the signed invoice calldata', function(done) {
+        const txp = createEthTxp({
+          outputs: [{ toAddress: ethInstruction.toAddress, amount: ethInstruction.amount }]
+        });
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+  });
+
+  // `getPayProV2` and the txproposals response are stubbed directly, rather
+  // than driven through a fully signed PayProV2 fixture, because the point
+  // here is caller-boundary reachability, not instruction-shape fidelity:
+  // there's no UTXO condition between getTxProposals() and checkPaypro(), so
+  // an ETH proposal must reach the same SERVER_COMPROMISED gate a BTC one does.
+  describe('Payment Protocol V2 account-chain boundary', function() {
+    const amount = 10000;
+    const merchantAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
+    const substitutedAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    // A real getPayProV2 result always carries the signed chain/network
+    // (see PayProV2.processResponse); checkPaypro rejects one without them.
+    const payproMeta = { chain: 'eth', network: 'livenet', currency: 'ETH' };
+    const paypro = { ...payproMeta, instructions: [{ toAddress: merchantAddress, amount }] };
+    const createEthTxp = toAddress => ({
+      id: 'txp-eth-paypro-boundary',
+      version: 3,
+      chain: 'eth',
+      coin: 'eth',
+      network: 'livenet',
+      amount,
+      outputs: [{ toAddress, amount }],
+      payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
+      creatorId: 'creator'
+    });
+    let checkTxProposalSignatureStub, getPayProV2Stub, requestGetStub;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
+        checkTxProposalSignatureStub = sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+        getPayProV2Stub = sandbox.stub(clients[0], 'getPayProV2').resolves(paypro);
+        done();
+      });
+    });
+
+    it('accepts a matching ETH PayPro proposal through getTxProposals', function(done) {
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp(merchantAddress)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          should.not.exist(err);
+          sinon.assert.calledOnce(getPayProV2Stub);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('raises SERVER_COMPROMISED for a substituted ETH PayPro destination through getTxProposals', function(done) {
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp(substitutedAddress)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    // Same destination and amount, different calldata - proves the
+    // destination/amount check alone is not enough to catch a tampered
+    // EVM PayPro proposal at this caller boundary.
+    const evmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda94000000000000000000000000000000000000000000000000000000000000989680';
+    const differentEvmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda940000000000000000000000000000000000000000000000000000000000000001';
+    const dataPaypro = { ...payproMeta, instructions: [{ toAddress: merchantAddress, amount, to: merchantAddress, value: amount, data: evmData }] };
+    const createEthTxpWithData = data => ({
+      id: 'txp-eth-paypro-boundary-data',
+      version: 3,
+      chain: 'eth',
+      coin: 'eth',
+      network: 'livenet',
+      amount,
+      outputs: [{ toAddress: merchantAddress, amount, data }],
+      payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
+      creatorId: 'creator'
+    });
+
+    it('accepts a matching ETH PayPro proposal with identical calldata through getTxProposals', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxpWithData(evmData)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          should.not.exist(err);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('raises SERVER_COMPROMISED for an ETH PayPro proposal whose calldata was substituted', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxpWithData(differentEvmData)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    // Output-level calldata matches the signed instruction, but Utils.buildTx()
+    // (common/utils.ts) still applies the top-level `txp.data` BWC <= 8.9.0
+    // compatibility field by overwriting outputs[0].data at sign time - after
+    // checkPaypro has already accepted the proposal based on outputs[0].data
+    // alone. This lets a matching output carry a top-level override that
+    // signs different calldata than what was verified.
+    it('raises SERVER_COMPROMISED for an ETH PayPro proposal whose top-level legacy txp.data overrides the accepted calldata', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      const txp: any = createEthTxpWithData(evmData);
+      txp.data = differentEvmData;
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
   });
 
   describe('Proposals with explicit ID', () => {
@@ -6242,6 +6619,23 @@ describe('client API', function() {
           }
         });
       }
+
+      it('should default missing derivation settings to BIP45 and non-compliant', () => {
+        const master = new Bitcore.HDPrivateKey({
+          network: 'livenet', depth: 0, parentFingerPrint: 0, childIndex: 0,
+          chainCode: Buffer.alloc(32, 7),
+          privateKey: Buffer.concat([Buffer.alloc(31), Buffer.from([1])])
+        });
+        const xPubKey = master.deriveNonCompliantChild("m/45'").hdPublicKey.toString();
+        const { key, credentials } = Client.upgradeCredentialsV1({
+          network: 'livenet', xPrivKey: master.toString(), xPubKey, m: 1, n: 1
+        });
+
+        credentials.rootPath.should.equal("m/45'");
+        key.BIP45.should.equal(true);
+        key.compliantDerivation.should.equal(false);
+        (key.derive(null, credentials.rootPath).hdPublicKey.toString() === xPubKey).should.equal(true);
+      });
     });
 
     describe('#upgradeMultipleCredentialsV1', () => {
@@ -6685,6 +7079,15 @@ describe('client API', function() {
         addr = await clients[0].createAddress();
         should.exist(addr);
         addrs.add(addr.address);
+        const arcAddressesByNetwork = new Map();
+        for (const network of ['livenet', 'testnet']) {
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'arc', chain: 'arc', network, key });
+          walletCnt++;
+          const arcAddress = await clients[0].createAddress();
+          should.exist(arcAddress);
+          addrs.add(arcAddress.address);
+          arcAddressesByNetwork.set(network, arcAddress.address);
+        }
         {
           const account = 1;
           await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'btc', chain: 'btc', key, account });
@@ -6732,6 +7135,15 @@ describe('client API', function() {
         const retVal = await Client.serverAssistedImport({ words, includeTestnetWallets: true, includeLegacyWallets: true }, helpers.newClient(app));
         const { key: k, clients: c } = retVal;
         c.length.should.equal(walletCnt);
+        const arcClients = c.filter(client => client.credentials.chain === 'arc');
+        arcClients.should.have.length(2);
+        arcClients.map(client => client.credentials.network).sort().should.deep.equal(['livenet', 'testnet']);
+        for (const arcClient of arcClients) {
+          arcClient.credentials.coin.should.equal('arc');
+          should.not.exist(arcClient.credentials.token);
+          const arcAddresses = await arcClient.getMainAddresses({});
+          arcAddresses[0].address.should.equal(arcAddressesByNetwork.get(arcClient.credentials.network));
+        }
         const recoveryClient = c[0];
         await recoveryClient.openWallet();
         recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6742,6 +7154,39 @@ describe('client API', function() {
         addrs.has(list[0].address).should.be.true;
       });
 
+
+      it('should recover native Arc wallets without importing the USDC token view', async function() {
+        const usdcAddress = CWC.Constants.ARC.USDC_CONTRACT_ADDRESS;
+        let injectedPreferences = 0;
+        const getTokens = sandbox.stub(CoinGeckoService.prototype, 'coinGeckoGetTokens').resolves([]);
+        const get = Request.prototype.get;
+        sandbox.stub(Request.prototype, 'get').callsFake(async function(url, ...args) {
+          const response = await get.call(this, url, ...args);
+          for (const result of Array.isArray(response.body) ? response.body : []) {
+            if (result.status?.wallet?.chain === 'arc') {
+              result.status.preferences.arcTokenAddresses = [usdcAddress];
+              injectedPreferences++;
+            }
+          }
+          return response;
+        });
+
+        for (const network of ['livenet', 'testnet']) {
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'arc', chain: 'arc', network });
+          const walletId = clients[0].credentials.walletId;
+          const words = keys[0].get(null, true).mnemonic;
+          const previousInjections = injectedPreferences;
+          const recovered = await Client.serverAssistedImport({ words, includeTestnetWallets: true }, helpers.newClient(app));
+          injectedPreferences.should.be.greaterThan(previousInjections);
+          recovered.clients.should.have.length(1);
+          const nativeClient = recovered.clients[0];
+          nativeClient.credentials.coin.should.equal('arc');
+          nativeClient.credentials.walletId.should.equal(walletId);
+          nativeClient.credentials.network.should.equal(network);
+          should.not.exist(nativeClient.credentials.token);
+        }
+        getTokens.called.should.equal(false);
+      });
 
       it('should be able to gain access to eth tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
@@ -8978,7 +9423,9 @@ describe('client API', function() {
 
       const client = new Client();
 
-      const _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
+      // _fetchLatestNotifications is async, so the fake needs to return a Promise too even though 
+      // _initNotifications' setInterval callback fires it off without awaiting the result.
+      const _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(async (interval, cb) => {
         cb(new Errors.NOT_FOUND());
       });
 
@@ -8998,7 +9445,7 @@ describe('client API', function() {
 
       const client = new Client();
 
-      const _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
+      const _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(async (interval, cb) => {
         cb(new Errors.NOT_AUTHORIZED());
       });
 

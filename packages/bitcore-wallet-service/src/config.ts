@@ -130,6 +130,14 @@ const Config = (): any => {
           url: 'https://api-eth.bitcore.io'
         }
       },
+      arc: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-eth.bitcore.io'
+        }
+      },
       sol: {
         livenet: {
           url: 'https://api-sol.bitcore.io'
@@ -227,10 +235,6 @@ const Config = (): any => {
           removed: false
         },
         transak: {
-          disabled: false,
-          removed: false
-        },
-        wyre: {
           disabled: false,
           removed: false
         }
@@ -440,22 +444,6 @@ const Config = (): any => {
     //     secretKey: 'transak_production_web_secret_key_here',
     //   },
     //   whitelist: []
-    // },
-    // wyre: {
-    //   sandbox: {
-    //     apiKey: 'wyre_sandbox_api_key_here',
-    //     secretApiKey: 'wyre_sandbox_secret_api_key_here',
-    //     api: 'https://api.testwyre.com',
-    //     widgetUrl: 'https://pay.testwyre.com',
-    //     appProviderAccountId: 'wyre_provider_sandbox_account_id_here'
-    //   },
-    //   production: {
-    //     apiKey: 'wyre_production_api_key_here',
-    //     secretApiKey: 'wyre_production_secret_api_key_here',
-    //     api: 'https://api.sendwyre.com',
-    //     widgetUrl: 'https://pay.sendwyre.com/',
-    //     appProviderAccountId: 'wyre_provider_production_account_id_here'
-    //   }
     // },
     // changelly: {
     //   v1: {

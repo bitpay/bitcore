@@ -6,7 +6,6 @@ import {
   BitcoreLibLtc
 } from '@bitpay-labs/crypto-wallet-core';
 import * as async from 'async';
-import _ from 'lodash';
 import { singleton } from 'preconditions';
 import * as request from 'request-promise-native';
 import * as io from 'socket.io-client';
@@ -29,6 +28,7 @@ const Bitcore_ = {
   arb: Bitcore,
   op: Bitcore,
   base: Bitcore,
+  arc: Bitcore,
   sol: Bitcore
 };
 
@@ -63,7 +63,7 @@ export class V8 {
   host: string;
   userAgent: string;
   baseUrl: string;
-  request: request;
+  request: typeof request;
   Client: typeof Client;
   private _cachedReserve: number;
   private _cachedReserveTs: number;
@@ -74,7 +74,7 @@ export class V8 {
     url: string;
     apiPrefix?: string;
     userAgent?: string;
-    request?: request;
+    request?: typeof request;
     client?: typeof Client;
   }) {
     $.checkArgument(opts);
@@ -178,17 +178,26 @@ export class V8 {
       .catch(cb);
   }
 
+  async getBalanceAtTime(wallet: WalletWithOpts, time: string, cb) {
+    const client = this._getAuthClient(wallet);
+    const { tokenAddress } = wallet;
+    client
+      .getBalanceAtTime({ pubKey: wallet.beAuthPublicKey2, payload: {}, time, tokenAddress })
+      .then(ret => {
+        return cb(null, ret);
+      })
+      .catch(cb);
+  }
+
   getConnectionInfo() {
     return 'V8 (' + this.chain + '/' + this.v8network + ') @ ' + this.host;
   }
 
   _transformUtxos(utxos, bcheight: number) {
     $.checkState(bcheight > 0, 'Failed state: No BC height passed to _transformUtxos()');
-    const ret = _.map(
-      _.reject(utxos, x => {
-        return x.spentHeight && x.spentHeight <= -3; // -3 is conflicted status
-      }),
-      x => {
+    const ret = utxos
+      .filter(x => !x.spentHeight || x.spentHeight > -3) // -3 => "conflicting" (per BCN/src/types/Coin.ts -> SpentHeightIndicators)
+      .map(x => {
         const u = {
           address: x.address,
           satoshis: x.value,
@@ -203,8 +212,7 @@ export class V8 {
 
         // v8 field name differences
         return u;
-      }
-    );
+      });
 
     return ret;
   }
@@ -385,7 +393,7 @@ export class V8 {
       }
       console.timeEnd(perfKey);
       // blockTime on unconf is 'seenTime';
-      return cb(null, _.flatten(sortDesc(unconf, 'blockTime').concat(sortDesc(txs, 'height'))));
+      return cb(null, sortDesc(unconf, 'blockTime').concat(sortDesc(txs, 'height')).flat());
     });
 
     txStream.on('error', e => {
@@ -564,7 +572,7 @@ export class V8 {
               ret = JSON.parse(ret);
 
               // only process right responses.
-              if (!_.isUndefined(ret.blocks) && ret.blocks != x) {
+              if (ret.blocks != null && ret.blocks != x) {
                 logger.info(`[v8.js] Ignoring response for ${x}: %o`, ret?.body || ret);
                 return icb();
               }
@@ -657,7 +665,7 @@ export class V8 {
       .then(ret => {
         try {
           ret = JSON.parse(ret);
-          const res = _.map(ret, 'txid');
+          const res = ret.map(x => x.txid);
           return cb(null, res);
         } catch {
           return cb(new Error('Could not get height from block explorer'));

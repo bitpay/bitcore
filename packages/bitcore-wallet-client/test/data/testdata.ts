@@ -103,9 +103,42 @@ export const payProJson = {
 const bodyV2 = {
   bch: '{"time":"2019-11-05T17:05:31.791Z","expires":"2019-11-05T17:20:31.791Z","memo":"Payment request for BitPay invoice XM8XbreRs6cnKkR3yYT6qQ for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/XM8XbreRs6cnKkR3yYT6qQ","paymentId":"XM8XbreRs6cnKkR3yYT6qQ","chain":"BCH","network":"main","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":337900,"address":"qpymzlw4dfgawe2hy6xalj0qnzwedrqfvg96jl5ev6"}]}]}',
   btc: '{"time":"2019-11-05T15:21:09.047Z","expires":"2019-11-05T15:36:09.047Z","memo":"Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X","paymentId":"LanynqCPoL2JQb8z8s5Z3X","chain":"BTC","network":"main","instructions":[{"type":"transaction","requiredFeeRate":34.337,"outputs":[{"amount":19800,"address":"1CpEMwff6DA52FLoq4JAhd2xFSEjQxyokm"}]}]}',
-  eth: '{"time":"2019-10-10T14:57:01.924Z","expires":"2019-10-10T15:12:01.924Z","memo":"Payment request for BitPay invoice GsbhMZeeUebqzEeDmNubEP for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/GsbhMZeeUebqzEeDmNubEP","paymentId":"GsbhMZeeUebqzEeDmNubEP","chain":"ETH","network":"main","currency":"ETH","instructions":[{"type":"transaction","amount":5214000000000000,"toAddress":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","value":5214000000000000,"to":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","data":"0xb6b4af050000000000000000000000000000000000000000000000000012861af9dbe00000000000000000000000000000000000000000000000000000000005a43875660000000000000000000000000000000000000000000000000000016db9644f77cadbc5e4ee0119e349b39e42a049f5526b4eca8c225709d3fd73550c87de3d2096c9e28e9f3b440d991720673f01a67d3f74a912339beb77ed696f65f35e5bc4000000000000000000000000000000000000000000000000000000000000001c84ebb3c8fdeb8c59e35b1248a1af05ba8a332d745cc38a3193b1792e414dbdae41b55cbb5dbddf27fc539dd13a3bf1c72671d744b8706fcfb3eb2fce968456b40000000000000000000000000000000000000000000000000000000000000000","gasPrice":24229999974}]}'
+  eth: '{"time":"2019-10-10T14:57:01.924Z","expires":"2019-10-10T15:12:01.924Z","memo":"Payment request for BitPay invoice GsbhMZeeUebqzEeDmNubEP for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/GsbhMZeeUebqzEeDmNubEP","paymentId":"GsbhMZeeUebqzEeDmNubEP","chain":"ETH","network":"main","currency":"ETH","instructions":[{"type":"transaction","amount":5214000000000000,"toAddress":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","value":5214000000000000,"to":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","data":"0xb6b4af050000000000000000000000000000000000000000000000000012861af9dbe00000000000000000000000000000000000000000000000000000000005a43875660000000000000000000000000000000000000000000000000000016db9644f77cadbc5e4ee0119e349b39e42a049f5526b4eca8c225709d3fd73550c87de3d2096c9e28e9f3b440d991720673f01a67d3f74a912339beb77ed696f65f35e5bc4000000000000000000000000000000000000000000000000000000000000001c84ebb3c8fdeb8c59e35b1248a1af05ba8a332d745cc38a3193b1792e414dbdae41b55cbb5dbddf27fc539dd13a3bf1c72671d744b8706fcfb3eb2fce968456b40000000000000000000000000000000000000000000000000000000000000000","gasPrice":24229999974}]}',
+  // Two ordered EVM instructions - an ERC-20 `approve` followed by BitPay's
+  // `pay` contract call - both with a zero visible amount, matching real
+  // token PayPro requests where the actual payment amount lives in calldata.
+  // `0xA0b8...eB48` is mainnet USDC's real contract address
+  // (crypto-wallet-core's token registry); `approve`/`pay` calldata is
+  // ABI-encoded with `ethers.Interface` against `approve(address,uint256)`
+  // and BWS's real `Invoice.pay(...)` signature
+  // (chain/eth/abi-invoice.ts), not hand-written hex, so the selectors
+  // (`0x095ea7b3`, `0xb6b4af05`) and argument layout are genuine.
+  // `0x1BA1...f7C1` (the `pay` target) is an arbitrary but validly
+  // EIP-55-checksummed placeholder for BitPay's invoice contract, not a
+  // real deployed address.
+  erc20: '{"time":"2026-08-01T00:00:00.000Z","expires":"2026-08-01T00:15:00.000Z","memo":"Payment request for BitPay invoice UsdcErc20Fixture1 for merchant Test Merchant","paymentUrl":"https://bitpay.com/i/UsdcErc20Fixture1","paymentId":"UsdcErc20Fixture1","chain":"ETH","network":"main","currency":"USDC","instructions":[{"type":"transaction","amount":0,"toAddress":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","value":0,"to":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","data":"0x095ea7b30000000000000000000000001ba1e35a29e2a52a1b1a1e2c8dbb28b9b5b6f7c10000000000000000000000000000000000000000000000000000000000989680"},{"type":"transaction","amount":0,"toAddress":"0x1BA1E35A29E2A52a1b1A1e2c8dbB28B9B5B6f7C1","value":0,"to":"0x1BA1E35A29E2A52a1b1A1e2c8dbB28B9B5B6f7C1","data":"0xb6b4af05000000000000000000000000000000000000000000000000000000000098968000000000000000000000000000000000000000000000000000000009502f9000000000000000000000000000000000000000000000000000000001b8dac5b40000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001b00000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"}]}',
+  xrp: '{"time":"2026-08-01T00:00:00.000Z","expires":"2026-08-01T00:15:00.000Z","memo":"Payment request for BitPay invoice XrpFixture1 for merchant Test Merchant","paymentUrl":"https://bitpay.com/i/XrpFixture1","paymentId":"XrpFixture1","chain":"XRP","network":"main","currency":"XRP","instructions":[{"type":"transaction","requiredFeeRate":12,"outputs":[{"address":"rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh","amount":10000,"destinationTag":12345,"invoiceID":"0000000000000000000000000000000000000000000000000000000000000001"}]}]}',
+  sol: '{"time":"2026-08-01T00:00:00.000Z","expires":"2026-08-01T00:15:00.000Z","memo":"Payment request for BitPay invoice SolFixture1 for merchant Test Merchant","paymentUrl":"https://bitpay.com/i/SolFixture1","paymentId":"SolFixture1","chain":"SOL","network":"main","currency":"SOL","instructions":[{"type":"transaction","outputs":[{"address":"5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d","amount":10000,"invoiceID":"SolInvoiceFixture1"}]}]}'
 };
 export const payProJsonV2Body = bodyV2;
+
+// Identity/pubkey for the fixtures below that are signed with a test-only
+// keypair rather than a real BitPay production key. `PayProV2.trustedKeys`
+// only trusts a fixed set of production keys, so any test that verifies one
+// of these fixtures through the real `PayProV2.verifyResponse` path must
+// first merge this entry into `PayProV2.trustedKeys` (see the existing
+// `domains` stub pattern in api.test.ts's "Payment Protocol V2" suite).
+// Private key (test-only, never used for anything real):
+// 4e7f2a6c1d9b8e3f05a1c7d4b6e9f2038a4c6d8e0f123456789abcdef0123ab
+export const payProJsonV2TestKey = {
+  identity: '1CxjbDcNzxEGxRBiiCmPm2HZneedE4FQz8',
+  keyData: {
+    owner: 'IS-1413 test fixture key (NOT a real BitPay key)',
+    networks: ['main'],
+    domains: ['bitpay.com'],
+    publicKey: '0227a3a3ef276d0e8fd39b1b9bb02123103be427ef1edf10815059dace6e98b1c7'
+  }
+};
 
 
 export const payProJsonV2 = {
@@ -127,12 +160,48 @@ export const payProJsonV2 = {
       'x-signature-type': 'ecc'
     }
   },
+  // Signed with `payProJsonV2TestKey`, not a real BitPay production key -
+  // BitPay's real private keys aren't available to this test suite. Any
+  // caller must register `payProJsonV2TestKey` into `PayProV2.trustedKeys`
+  // first, or verification fails with "signed by unknown key"
   'eth': {
-    body: Buffer.from(bodyV2.bch),
+    body: Buffer.from(bodyV2.eth),
     headers: {
-      'x-identity': '1EMqSoDzMdBuuvM2RUnup3FnDeo6wuHxEg',
-      signature: '1701100e5bda63e7d4c311ab3c58d6edd01b6aa7b8cb314f36303dda3ce6a53b7ddebb9f9afe05fc6dd250cad215f8010472e57c4b71cab95e122d9fadb39957',
-      digest: 'SHA-256=1c1c47d338efaf7a45e693051b04e50eb0a86c1fec0e3882b1987c58bfe7d058',
+      'x-identity': payProJsonV2TestKey.identity,
+      signature: '683801508575cc7077897814f8ffcfc07038a78a42bf19c6491013287865acb10ad25c71e8e3310296085a2865ba8ddc38c9f1904fd345bcdb452f6182add40e',
+      digest: 'SHA-256=337b16645745e48f0eeef01e596abbc52c7a833c0bafb661979838bc3b3f4ef1',
+      'x-signature-type': 'ecc'
+    }
+  },
+  // Two ordered EVM instructions (ERC-20 `approve` + BitPay `pay`), both with
+  // a zero visible amount. Signed with `payProJsonV2TestKey`.
+  'erc20': {
+    body: Buffer.from(bodyV2.erc20),
+    headers: {
+      'x-identity': payProJsonV2TestKey.identity,
+      signature: '02df4ad64811ef08486bbc223e2d3bf8d173d25bf5b3ff6de46c5b97bffd70c1281ca277daf47c6e66c150c50305b6d2d1ec72774bd1bfca41d2e3ebea947b70',
+      digest: 'SHA-256=b69afce8f0665d60187263bf74d34e2742d0a590c97abdb1fda6919a0ccc0a7d',
+      'x-signature-type': 'ecc'
+    }
+  },
+  // XRP instruction carrying a destination tag and invoice ID. Signed with
+  // `payProJsonV2TestKey`.
+  'xrp': {
+    body: Buffer.from(bodyV2.xrp),
+    headers: {
+      'x-identity': payProJsonV2TestKey.identity,
+      signature: '7cdf731d005fe1cecd3989b1a203a3c77240468f583977290d22f163ebb2b94f0d15bcdbd1cacd36e3493ade08e25adc3e098a05bf4159395588cc015f0d31c2',
+      digest: 'SHA-256=0f092ea4ba9f5b5f27051ba9370977518a780fa542e4e18086ae54bb4a60355a',
+      'x-signature-type': 'ecc'
+    }
+  },
+  // SOL instruction carrying an invoice memo/ID. Signed with `payProJsonV2TestKey`.
+  'sol': {
+    body: Buffer.from(bodyV2.sol),
+    headers: {
+      'x-identity': payProJsonV2TestKey.identity,
+      signature: '7677376aedabe1a1108eb06547b700d217d5215f092f710d277363d59217c7a40f2076bb1c8649652f74249fa609985421a2229bc72e22ac5ea6ea1fb2adbbda',
+      digest: 'SHA-256=9439d49538617c2dd5c179e6eecdf793ccd8ca046cc3055d2cb804de605d88f3',
       'x-signature-type': 'ecc'
     }
   }

@@ -3,8 +3,6 @@
 /* jshint unused: false */
 /* jshint latedef: false */
 const should = require('chai').should();
-const expect = require('chai').expect;
-const _ = require('lodash');
 
 const bitcore = require('../..');
 
@@ -13,8 +11,6 @@ const BufferWriter = bitcore.encoding.BufferWriter;
 const BufferReader = bitcore.encoding.BufferReader;
 const Output = bitcore.Transaction.Output;
 const Script = bitcore.Script;
-
-const errors = bitcore.errors;
 
 describe('Output', function() {
   const output = new Output({

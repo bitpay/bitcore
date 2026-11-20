@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import * as helpers from './helpers';
 import { Wallet } from '../src/wallet';
 import { startTssWallets, TssTransform } from './tssCoordinator';
+import { Utils } from '../src/utils';
 
 describe('Create', function() {
   this.timeout(Math.max(this['_timeout'] || 0, 10000));
@@ -428,7 +429,7 @@ describe('Create', function() {
           try {
             assert.equal(code, 0);
             const lines = checkpointOutput.split('\n').filter(l => l.trim() !== '');
-            const expectedMessage = 'This multisig wallet is not fully set up yet. You need to wait for all copayers to join.';
+            const expectedMessage = 'This multi-party wallet is not fully set up yet. You need to wait for all copayers to join.';
             // Uncomment to see CLI output during test
             // console.log(lines);
             assert.ok(lines[lines.length - 1].includes(expectedMessage), 'Did not find expected message about multisig wallet not being fully set up.');
@@ -526,6 +527,9 @@ describe('Create', function() {
             await w.getClient({ mustExist: true });
             const copayer1_afterLoad = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
             assert.strictEqual(copayer1_afterLoad.credentials.publicKeyRing.length, 2);
+            // Remove the lock file for copayer1's wallet to allow subsequent tests to run without interference
+            const lockfile = Utils.getWalletLockFileName(walletName1, TEMP_DIR);
+            fs.rmSync(lockfile);
             done();
           } catch (e) {
             done(e);
@@ -583,7 +587,7 @@ describe('Create', function() {
         child.on('close', (code) => {
           try {
             assert.equal(code, 0);
-            assert.ok(!checkpointOutput.includes('This multisig wallet is not fully set up yet.'), 'Expected multisig wallet to be completed');
+            assert.ok(!checkpointOutput.includes('This multi-party wallet is not fully set up yet.'), 'Expected multisig wallet to be completed');
             done();
           } catch (e) {
             done(e);

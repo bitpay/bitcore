@@ -1,36 +1,236 @@
+import { EventEmitter } from 'events';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Constants } from './common/constants';
+import { Utils } from './common/utils';
 import { Errors } from './errors/errordefinitions';
 import logger from './logger';
-import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
-import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
+import { TssKeyGenModel } from './model/tsskeygen';
+import { TssSigGenModel } from './model/tsssign';
 import { WalletService, checkRequired } from './server';
 import { Storage } from './storage';
+import type { INotification } from './model/notification';
+import type { ITssKeyMessageObject } from './model/tsskeygen';
+import type { ITssSigMessageObject } from './model/tsssign';
+
+type SessionHandler = (message: INotification) => Promise<void>;
+
+const sessionRegistry = new Map<string, Set<SessionHandler>>();
+let dispatcherRegistered = false;
+
+function sessionKey(type: string, id: string | number): string {
+  return JSON.stringify([type, id]);
+}
+
+function dispatchSessionMessage(message: INotification): void {
+  const handlers = sessionRegistry.get(sessionKey(message.type, message.id));
+  for (const notify of [...(handlers ?? [])]) {
+    void notify(message).catch(err => {
+      logger.error('Error handling TSS session update: %o', err);
+    });
+  }
+}
+
+function subscribeToSession(type: string, id: string, handler: SessionHandler): () => void {
+  if (!dispatcherRegistered) {
+    WalletService.getMessageBroker().onMessage(dispatchSessionMessage);
+    dispatcherRegistered = true;
+  }
+
+  const key = sessionKey(type, id);
+  let handlers = sessionRegistry.get(key);
+  if (!handlers) {
+    handlers = new Set();
+    sessionRegistry.set(key, handlers);
+  }
+  handlers.add(handler);
+
+  return () => {
+    if (!handlers.delete(handler)) {
+      return;
+    }
+    if (handlers.size === 0) {
+      sessionRegistry.delete(key);
+    }
+  };
+}
+
+/**
+ * Get a bounded wait time in milliseconds for TSS message retrieval. The wait time is bounded between 0 and 20 seconds.
+ * If no maxWaitTimeSec is provided, the default is maxSec seconds (default: 20).
+ * @param {number} maxWaitTimeSec The value to be bounded
+ * @param {number} maxSec The maximum wait time in seconds (default: 20)
+ * @param {number} minSec The minimum wait time in seconds (default: 0)
+ */
+function getBoundedWaitTime(maxWaitTimeSec?: number, maxSec = 20, minSec = 0): number {
+  maxWaitTimeSec = Math.max(isNaN(maxWaitTimeSec) ? maxSec : maxWaitTimeSec, minSec);
+  const maxWaitTime = Math.min(maxWaitTimeSec, maxSec) * 1000;
+  return maxWaitTime;
+}
+
+/**
+ * Common function for listening to the completion of a TSS session's round.
+ */
+async function listenForSessionComplete<T extends TssKeyGenModel | TssSigGenModel>(params: {
+  /** Message type to listen for */
+  messageType: typeof TssKeyGenClass.TSS_KEYGEN_MESSAGE_TYPE | typeof TssSignClass.TSS_SIGGEN_MESSAGE_TYPE;
+  /** Session to listen for updates */
+  session: T;
+  /** Function to determine if the round is complete */
+  isComplete: (session: T) => boolean;
+  /** Function to fetch the latest session state */
+  fetchSession: (params: { id: string }) => Promise<T>;
+  /** Maximum time (in milliseconds) to wait for the round to complete */
+  maxWaitTime: number;
+  /** Abort signal to cancel waiting for a complete round */
+  abortSignal?: AbortSignal;
+}): Promise<T> {
+  const { messageType, isComplete, fetchSession, maxWaitTime, abortSignal } = params;
+  let { session } = params;
+
+  const events = new EventEmitter();
+  const sessionUpdateHandler = async () => {
+    try {
+      const _session = await fetchSession({ id: session.id });
+      if (isComplete(_session)) {
+        unsubscribe();
+        events.emit('session', _session);
+      }
+    } catch (err) {
+      // Do not throw on possibly transient db connection errors. At worst, this runs until the maxWaitTime expires
+      logger.error('Error fetching updated TSS session: %o - %o', session.id, err);
+    }
+  };
+  const unsubscribe = subscribeToSession(messageType, session.id, sessionUpdateHandler);
+  
+  // Listen for session update events over the message broker service
+  let timer: NodeJS.Timeout;
+  const sessionUpdate = Promise.race([
+    new Promise<T>(r => events.once('session', r)),
+    new Promise<T>(r => timer = setTimeout(() => { unsubscribe(); r(session); }, maxWaitTime)),
+    new Promise<T>((_, j) => abortSignal?.addEventListener('abort', () => { unsubscribe(); j(new Error('Aborted')); }))
+  ]);
+  sessionUpdate.catch(() => {}); // marks sessionUpdate as "handled" immediately; the await below still sees the rejection
+
+  try {
+    // Check for an updated session one last time before awaiting the subscription.
+    // This is to prevent a race condition where the update arrives before we start listening for it.
+    const _session = await fetchSession({ id: session.id });
+    if (isComplete(_session)) {
+      session = _session;
+    } else if (!abortSignal?.aborted) {
+      session = await sessionUpdate;
+    }
+    return session;
+  } finally {
+    unsubscribe();
+    clearTimeout(timer);
+    events.removeAllListeners();
+  }
+}
 
 class TssKeyGenClass {
+  static TSS_KEYGEN_MESSAGE_TYPE = 'TssKeyGenMessage' as const;
+
   /**
-   * Get messages for a given party in a TSS keygen session.
-   * Only returns messages if all other parties have sent their messages for the round.
+   * Check if a copayer is a participant in a TSS keygen session and return the session.
+   * Throws an error if the copayer is not a participant or if the session does not exist.
    */
-  async getMessagesForParty(params: {
+  async getSessionForCopayer(params: {
     /** Session ID */
     id: string;
-    /** Round number */
-    round: number;
     /** Copayer ID of the requesting party */
     copayerId: string;
-  }): Promise<{
-    messages?: ITssKeyMessageObject[];
-    publicKey?: string;
-    hasKeyBackup?: boolean;
-  }> {
-    const { id, round, copayerId } = params;
-    
+  }): Promise<TssKeyGenModel> {
+    const { id, copayerId } = params;
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssKeyGenSession({ id });
     if (!session) {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
+
+    const isParticipant = session.participants.includes(copayerId);
+    if (!isParticipant) {
+      throw Errors.TSS_NON_PARTICIPANT;
+    }
+
+    return session;
+  }
+
+  async registerParty(params: {
+    /** Session ID */
+    id: string;
+    /** Copayer ID of the requesting party */
+    copayerId: string;
+    /* Copayer data to register */
+    data: {
+      /** Party ID */
+      partyId: string | number;
+      /** Public key/Copayer ID of the party */
+      partyPubKey: string;
+    };
+  }) {
+    const { id, copayerId, data } = params;
+
+    const session = await this.getSessionForCopayer({ id, copayerId });
+    const reqPartyId = session.participants.indexOf(copayerId);
+    if (reqPartyId !== 0) {
+      throw Errors.TSS_NON_PARTICIPANT.withMessage('Only the first participant can register a party');
+    }
+
+    if (data.partyId == null || isNaN(data.partyId as number)) {
+      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid partyId: ${data.partyId}`);
+    }
+
+    const partyId = parseInt(data.partyId as string);
+    const pubKey = data.partyPubKey?.trim();
+
+    if (!(partyId > 0) || !pubKey || pubKey === copayerId || partyId >= session.n) {
+      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid data for party ${partyId} registration`);
+    }
+
+    if (session.authPublicKeys.includes(pubKey)) {
+      if (session.authPublicKeys.indexOf(pubKey) === partyId) {
+        // Already registered at partyId -> return idempotently
+        return;
+      } else {
+        // Trying to re-register a party that is already registered under a different party ID
+        throw Errors.TSS_PARTY_ALREADY_REGISTERED;
+      }
+    }
+    
+    // Has party already submitted initial rounds message? (case when this is a re-register)
+    if (session.rounds?.[0]?.some(round => round.fromPartyId === partyId)) {
+      throw Errors.TSS_ROUNDS_ALREADY_STARTED.withMessage(`Party ${partyId} has already submitted an initial message. Cannot register a new party ${partyId}`);
+    }
+
+    const storage = WalletService.getStorage();
+    await storage.storeTssKeyGenAuthPublicKey({ id, partyId, authPublicKey: pubKey, __v: session.__v });
+  }
+
+  /**
+   * Get messages for a given party in a TSS keygen session.
+   * Only returns messages if all other parties have sent their messages for the round.
+   */
+  async getMessagesForParty(params: {
+    /** Session */
+    session: TssKeyGenModel;
+    /** Round number */
+    round: number;
+    /** Copayer ID of the requesting party */
+    copayerId: string;
+    /** Maximum time (in seconds) to wait for a complete round */
+    maxWaitTimeSec?: number;
+    /** Abort signal to cancel waiting for a complete round */
+    abortSignal?: AbortSignal;
+  }): Promise<{
+    messages?: ITssKeyMessageObject[];
+    publicKey?: string;
+    hasKeyBackup?: boolean;
+  }> {
+    const { round, copayerId, abortSignal } = params;
+    let { session } = params;
+    const maxWaitTime = getBoundedWaitTime(params.maxWaitTimeSec);
+    
     if (!session.rounds[round]) {
       return {};
     }
@@ -40,15 +240,33 @@ class TssKeyGenClass {
       throw Errors.TSS_NON_PARTICIPANT;
     }
 
-    const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != partyId);
+    const isRoundComplete = (session) => {
+      const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != partyId);
+      return otherPartyMsgs.length === session.n - 1;
+    };
+
+    if (!isRoundComplete(session)) {
+      const storage = WalletService.getStorage();
+      session = await listenForSessionComplete<TssKeyGenModel>({
+        messageType: TssKeyGenClass.TSS_KEYGEN_MESSAGE_TYPE,
+        session,
+        isComplete: isRoundComplete,
+        fetchSession: storage.fetchTssKeyGenSession.bind(storage),
+        maxWaitTime,
+        abortSignal
+      });
+    }
+
+
     // Only return message if all other parties have sent their messages.
     // This is to prevent complexity in TSS session management when processing rounds. There's
     //   no value in partially processing rounds with missing messages and messages can't be
     //   re-processed, so it makes sense to only return messages when the round is complete.
-    if (otherPartyMsgs.length !== session.n - 1) {
+    if (!isRoundComplete(session)) {
       return {};
     }
 
+    const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != partyId);
     const messages = otherPartyMsgs.map(m => m.messages);
     for (const m of messages) {
       m.p2pMessages = m.p2pMessages.filter(m => m.to == partyId);
@@ -113,15 +331,34 @@ class TssKeyGenClass {
 
 
       if (!session.participants[message.partyId]) {
+        if (session.participants.includes(copayerId)) {
+          throw Errors.TSS_PARTY_ALREADY_REGISTERED;
+        }
         if (!this._checkPassword({ session, password })) {
           throw Errors.TSS_INVALID_PASSWORD;
         }
-        await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId });
+        // Sanity check for the public key of the participant in the session
+        // session.authPublicKeys was not added until version 1.2
+        if (session.schemeVersion >= 1.2 && session.authPublicKeys[message.partyId] !== message.publicKey) {
+          throw Errors.NOT_AUTHORIZED;
+        }
+        try {
+          await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId, __v: session.__v });
+        } catch (e) {
+          if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
+            return this.processMessage(params);
+          } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+            throw Errors.TSS_SESSION_NOT_FOUND;
+          }
+          throw e;
+        }
+      } else if (session.participants[message.partyId] !== copayerId) {
+        throw Errors.TSS_NON_PARTICIPANT.withMessage('Incorrect copayerId for this partyId');
       }
 
       let result = false;
       while (!result) {
-        result = await this._pushMessage({ id, session, message, storage });
+        result = await this._pushMessage({ session, message, storage });
         if (!result) {
           session = await storage.fetchTssKeyGenSession({ id });
         }
@@ -225,8 +462,6 @@ class TssKeyGenClass {
    * This will fail if the round is already complete or if the message is from a party that has already sent a message for the round.
    */
   private async _pushMessage(params: {
-    /** Session ID */
-    id: string;
     /** TSS keygen session fetched from BWS storage */
     session: TssKeyGenModel;
     /** Message to push to the session */
@@ -234,7 +469,8 @@ class TssKeyGenClass {
     /** BWS storage instance */
     storage: Storage;
   }) {
-    const { id, session, message, storage } = params;
+    const { session, message, storage } = params;
+    const { id } = session;
     const { round } = message;
 
     const currentRound = session.getCurrentRound();
@@ -248,6 +484,8 @@ class TssKeyGenClass {
     if (existing) {
       throw Errors.TSS_ROUND_MESSAGE_EXISTS;
     }
+    
+    const messageBroker = WalletService.getMessageBroker();
 
     try {
       const result = await storage.storeTssKeyGenMessage({ id, message, __v: session.__v });
@@ -255,10 +493,13 @@ class TssKeyGenClass {
         logger.error('Failed to store TSS key generation message %o %o %o', id, result, message);
         throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation message');
       }
+      messageBroker.send({ type: TssKeyGenClass.TSS_KEYGEN_MESSAGE_TYPE, id } as INotification);
       return true;
     } catch (e) {
       if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
         return false;
+      } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+        throw Errors.TSS_SESSION_NOT_FOUND;
       }
       throw e;
     }
@@ -313,7 +554,10 @@ class TssKeyGenClass {
     // }
   }
 
-  /** Store the BWS join secret for the TSS keygen session */
+  /**
+   * Store the BWS join secret for the TSS keygen session
+   * @deprecated Use storeBwsJoinSecrets instead.
+   */
   async storeBwsJoinSecret(params: {
     /** Session ID */
     id: string;
@@ -347,10 +591,77 @@ class TssKeyGenClass {
     }
   }
 
-  /** Get the BWS join secret for the TSS keygen session */
+  /**
+   * Store the party-encrypted BWS join secrets for a wallet on `chain`:`network` created with the TSS key.
+   * This can be called after the key generation session has expired to create additional wallets (e.g. other EVM chains) for the same key.
+   */
+  async storeBwsJoinSecrets(params: {
+    /** Session ID */
+    id: string;
+    /** Blockchain (e.g., 'btc', 'eth') */
+    chain: string;
+    /** Network (e.g., 'livenet', 'testnet') */
+    network: string;
+    /** Party encrypted BWS join secrets, keyed by partyId or by the party's keygen session copayer ID */
+    secrets: { [party: string]: string };
+    /** Copayer ID of the submitting party (must be the session creator) */
+    copayerId: string;
+  }) {
+    const { id, copayerId } = params;
+    const { chain, network } = getSecretChainNetwork(params.chain, params.network);
+    if (!params.secrets || typeof params.secrets !== 'object' || Array.isArray(params.secrets)) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secrets provided');
+    }
+    const storage = WalletService.getStorage();
+    const session = await storage.fetchTssKeyGenSession({ id });
+
+    if (!session) {
+      throw Errors.TSS_SESSION_NOT_FOUND;
+    }
+
+    if (session.participants.indexOf(copayerId) !== 0) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Only the session creator can store the BWS join secret');
+    }
+
+    // Only store secrets keyed by partyId for the other parties (1..n-1)
+    const secrets: { [partyId: number]: string } = {};
+    for (const [party, secret] of Object.entries(params.secrets)) {
+      const partyId = /^\d+$/.test(party) ? parseInt(party) : session.participants.indexOf(party);
+      if (!(partyId > 0 && partyId < session.n) || typeof secret !== 'string' || !secret) {
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secret for party ' + party);
+      }
+      if (secrets[partyId]) {
+        // Malformed secrets objects may be keyed by both partyId (number) and copayerId (string).
+        // While this technically won't break anything (only 1 secret will be stored), it indicates
+        // a malformation which could signal a broader issue with the client.
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Multiple BWS join secret for party ' + party);
+      }
+      secrets[partyId] = secret;
+    }
+
+    if (Object.keys(secrets).length !== session.n - 1) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Missing BWS join secrets for some parties');
+    }
+
+    const result = await storage.storeTssKeyBwsJoinSecrets({ id, chain, network, secrets });
+    if (!result.result.ok) {
+      logger.error('Failed to store TSS key generation BWS join secrets %o %o', id, result);
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation BWS join secrets');
+    }
+  }
+
+  /**
+   * Get the BWS join secret for the TSS keygen session.
+   * If chain & network are given, returns the requesting party's encrypted secret for that chain & network.
+   * Otherwise, returns the legacy (< v1.3) unencrypted secret.
+   */
   async getBwsJoinSecret(params: {
     /** Session ID */
     id: string;
+    /** Blockchain (e.g., 'btc', 'eth'). Omitted by legacy clients */
+    chain?: string;
+    /** Network (e.g., 'livenet', 'testnet'). Omitted by legacy clients */
+    network?: string;
     /** Copayer ID of the requesting party */
     copayerId: string;
   }): Promise<string> {
@@ -360,38 +671,93 @@ class TssKeyGenClass {
     if (!session) {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
-    if (session.participants.indexOf(copayerId) === -1) {
+    const partyId = session.participants.indexOf(copayerId);
+    if (partyId === -1) {
       throw Errors.TSS_NON_PARTICIPANT;
     }
-    if (!session.bwsJoinSecret) {
+
+    if (params.chain == null && params.network == null) {
+      // Legacy clients don't send chain & network
+      if (!session.bwsJoinSecret) {
+        throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
+      }
+      return session.bwsJoinSecret;
+    }
+
+    // Note: sessions < v1.3 can have chain-specific secrets too (i.e. wallets created with an existing TSS key)
+    const { chain, network } = getSecretChainNetwork(params.chain, params.network);
+    const secret = session.bwsJoinSecrets?.[`${chain}:${network}`]?.[partyId];
+    if (typeof secret !== 'string') {
       throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
     }
-    return session.bwsJoinSecret;
+    return secret;
   }
 };
+
+/** Validate and normalize the chain & network used to key the BWS join secrets */
+function getSecretChainNetwork(chain: string, network: string) {
+  chain = typeof chain === 'string' ? chain.toLowerCase() : chain;
+  if (!Utils.checkValueInCollection(chain, Constants.CHAINS)) {
+    throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid chain provided');
+  }
+  network = typeof network === 'string' ? Utils.getNetworkName(chain, Utils.getGenericName(network.toLowerCase())) : network;
+  if (!Utils.checkValueInCollection(network, Constants.NETWORKS[chain])) {
+    throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid network provided');
+  }
+  return { chain, network };
+}
 
 export const TssKeyGen = new TssKeyGenClass();
 
 class TssSignClass {
+  static TSS_SIGGEN_MESSAGE_TYPE = 'TssSigMessage' as const;
+
+  /**
+   * Check if a copayer is a participant in a TSS signature session and return the session.
+   * Throws an error if the copayer is not a participant or if the session does not exist.
+   */
+  async getSessionForCopayer(params: {
+    /** Session ID */
+    id: string;
+    /** Copayer ID of the requesting party */
+    copayerId: string;
+  }): Promise<TssSigGenModel> {
+    const { id, copayerId } = params;
+    const storage = WalletService.getStorage();
+    const session = await storage.fetchTssSigSession({ id });
+    if (!session) {
+      throw Errors.TSS_SESSION_NOT_FOUND;
+    }
+
+    const party = session.participants.find(p => p.copayerId === copayerId);
+    if (!party) {
+      throw Errors.TSS_NON_PARTICIPANT;
+    }
+
+    return session;
+  }
+
+
   /**
    * Get messages for a given party in a TSS signature session.
    * Only returns messages if all other parties have sent their messages for the round.
    */
   async getMessagesForParty(params: {
     /** Session ID */
-    id: string;
+    session: TssSigGenModel;
     /** Round number */
     round: number;
     /** Copayer ID of the requesting party */
     copayerId: string;
+    /** Maximum time (in seconds) to wait for a complete round */
+    maxWaitTimeSec?: number;
+    /** Abort signal to cancel waiting for a complete round */
+    abortSignal?: AbortSignal;
   }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; participants?: string[] }> {
-    const { id, round, copayerId } = params;
+    const { round, copayerId, abortSignal } = params;
+    let { session } = params;
+    const maxWaitTime = getBoundedWaitTime(params.maxWaitTimeSec);
 
-    const storage = WalletService.getStorage();
-    const session = await storage.fetchTssSigSession({ id });
-    if (!session) {
-      throw Errors.TSS_SESSION_NOT_FOUND;
-    }
     if (!session.rounds[round]) {
       return {};
     }
@@ -401,20 +767,38 @@ class TssSignClass {
       throw Errors.TSS_NON_PARTICIPANT;
     }
 
+    const isRoundComplete = (session) => {
+      const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != party.partyId);
+      return otherPartyMsgs.length === session.m - 1;
+    };
+
+    if (!isRoundComplete(session)) {
+      const storage = WalletService.getStorage();
+      session = await listenForSessionComplete<TssSigGenModel>({
+        messageType: TssSignClass.TSS_SIGGEN_MESSAGE_TYPE,
+        session,
+        isComplete: isRoundComplete,
+        fetchSession: storage.fetchTssSigSession.bind(storage),
+        maxWaitTime,
+        abortSignal
+      });
+    }
+
     const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != party.partyId);
     const participants = otherPartyMsgs.map(m => {
       const p = session.participants.find(p => p.partyId === m.fromPartyId);
       return p?.copayerId;
     }).filter(Boolean) as string[];
 
-    if (otherPartyMsgs.length === session.m - 1) {
-      const messages = otherPartyMsgs.map(m => m.messages);
-      for (const m of messages) {
-        m.p2pMessages = m.p2pMessages.filter(m => m.to == party.partyId);
-      }
-      return { messages, signature: session.signature, participants };
+    if (!isRoundComplete(session)) {
+      return { participants };
     }
-    return { participants };
+
+    const messages = otherPartyMsgs.map(m => m.messages);
+    for (const m of messages) {
+      m.p2pMessages = m.p2pMessages.filter(m => m.to == party.partyId);
+    }
+    return { messages, signature: session.signature, participants };
   }
 
   /**
@@ -461,7 +845,8 @@ class TssSignClass {
       if (session.isExpired()) {
         throw Errors.TSS_SESSION_EXPIRED;
       }
-      if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
+      // 1-of-N sessions won't have messages for other recipients
+      if (session.m > 1 && !this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }
 
@@ -479,6 +864,8 @@ class TssSignClass {
         } catch (e) {
           if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
             return this.processMessage(params);
+          } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+            throw Errors.TSS_SESSION_NOT_FOUND;
           }
           throw e;
         }
@@ -486,7 +873,7 @@ class TssSignClass {
 
       let result = false;
       while (!result) {
-        result = await this._pushMessage({ id, session, message, storage });
+        result = await this._pushMessage({ session, message, storage });
         // `result` will be false if the session was stale (version conflict) and we need to retry
         // Any other failure of the message state will result in a throw (e.g. same-message race condition, round already done, etc.)
         if (!result) {
@@ -563,8 +950,6 @@ class TssSignClass {
    * Push a TSS signature message to the session.
    */
   private async _pushMessage(params: {
-    /** Session ID */
-    id: string;
     /** TSS sig generation session fetched from BWS storage */
     session: TssSigGenModel;
     /** TSS signature message to be pushed */
@@ -572,7 +957,8 @@ class TssSignClass {
     /** BWS storage instance */
     storage: Storage;
   }): Promise<boolean> {
-    const { id, session, message, storage } = params;
+    const { session, message, storage } = params;
+    const { id } = session;
     const { round } = message;
 
     const currentRound = session.getCurrentRound();
@@ -587,16 +973,21 @@ class TssSignClass {
       throw Errors.TSS_ROUND_MESSAGE_EXISTS;
     }
 
+    const messageBroker = WalletService.getMessageBroker();
+
     try {
       const result = await storage.storeTssSigMessage({ id, message, __v: session.__v });
       if (!result.result.ok) {
         logger.error('Failed to store TSS key generation message %o %o %o', id, result, message);
         throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation message');
       }
+      messageBroker.send({ type: TssSignClass.TSS_SIGGEN_MESSAGE_TYPE, id } as INotification);
       return true;
     } catch (e) {
       if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
         return false;
+      } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+        throw Errors.TSS_SESSION_NOT_FOUND;
       }
       throw e;
     }
@@ -610,8 +1001,10 @@ class TssSignClass {
     id: string;
     /** Signature to store */
     signature: ITssSigMessageObject['signature'];
+    /** Copayer ID of the sender */
+    copayerId: string;
   }): Promise<void> {
-    const { id, signature } = params;
+    const { id, signature, copayerId } = params;
     if (!signature) {
       throw Errors.TSS_NO_FINAL_SIGNATURE;
     }
@@ -623,6 +1016,10 @@ class TssSignClass {
 
     if (!session) {
       throw Errors.TSS_SESSION_NOT_FOUND;
+    }
+    const party = session.participants.find(p => p.copayerId === copayerId);
+    if (!party) {
+      throw Errors.TSS_NON_PARTICIPANT;
     }
 
     const verifySig = (sig1, sig2) => {

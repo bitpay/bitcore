@@ -3,6 +3,7 @@
 // karma.conf.js
 module.exports = function(config) {
   var fs = require('fs');
+  var path = require('path');
 
   var isDocker;
 
@@ -52,8 +53,13 @@ module.exports = function(config) {
     logLevel: config.LOG_INFO,
     //    port: 9876,  // karma web server port
     autoWatch: false,
+    // gulp runs Karma from the consuming package root, where
+    // browser:maketests writes the generated Browserify test bundle -- the
+    // same consumer-cwd resolution wdio.conf.js already uses, rather than a
+    // path relative to this shared config file's own on-disk location
+    // (which only lined up under Lerna's per-package bootstrap nesting).
     files: [
-      '../../../tests.js'
+      path.join(process.cwd(), 'tests.js')
     ],
     plugins: [
       'karma-mocha',

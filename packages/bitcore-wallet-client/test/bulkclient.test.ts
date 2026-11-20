@@ -21,18 +21,21 @@ describe('Bulk Client', function() {
   let clients, app, sandbox, storage, keys, i;
   let db;
   let connection;
-  this.timeout(8000);
+  this.timeout(Math.max(this['_timeout'], 8000));
 
   before(done => {
     i = 0;
     clients = [];
     keys = [];
     helpers.newDb('', (err, database, conn) => {
+      if (err) return done(err);
       db = database;
       connection = conn;
       storage = new Storage({ db });
       Storage.createIndexes(db);
-      return done(err);
+      helpers.finishIndexCreation(db)
+        .then(() => done())
+        .catch(done);
     });
   });
 

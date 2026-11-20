@@ -1,20 +1,16 @@
 'use strict';
 
 var inherits = require('inherits');
-
-var $ = require('../../util/preconditions');
-var BufferUtil = require('../../util/buffer');
-
 var Hash = require('../../crypto/hash');
-var Input = require('./input');
+var Signature = require('../../crypto/signature');
+var BufferWriter = require('../../encoding/bufferwriter');
+var Script = require('../../script');
+var BufferUtil = require('../../util/buffer');
+var $ = require('../../util/preconditions');
 var Output = require('../output');
 var Sighash = require('../sighash');
-var SighashWitness = require('../sighashwitness');
-var BufferWriter = require('../../encoding/bufferwriter');
-var BufferUtil = require('../../util/buffer');
-var Script = require('../../script');
-var Signature = require('../../crypto/signature');
 var TransactionSignature = require('../signature');
+var Input = require('./input');
 
 /**
  * Represents a special kind of input of PayToPublicKeyHash kind.
@@ -27,9 +23,9 @@ inherits(PublicKeyHashInput, Input);
 
 PublicKeyHashInput.prototype.getRedeemScript = function(publicKey) {
   if (!this.redeemScript) {
-    var redeemScript = Script.buildWitnessV0Out(publicKey);
+    const redeemScript = Script.buildWitnessV0Out(publicKey);
     if (Script.buildScriptHashOut(redeemScript).equals(this.output.script)) {
-      var scriptSig = new Script();
+      const scriptSig = new Script();
       scriptSig.add(redeemScript.toBuffer());
       this.setScript(scriptSig);
       this.redeemScript = redeemScript;
@@ -39,14 +35,14 @@ PublicKeyHashInput.prototype.getRedeemScript = function(publicKey) {
 };
 
 PublicKeyHashInput.prototype.getScriptCode = function(publicKey) {
-  var writer = new BufferWriter();
-  var script;
+  const writer = new BufferWriter();
+  let script;
   if (this.output.script.isScriptHashOut()) {
     script = this.getRedeemScript(publicKey);
   } else {
     script = this.output.script;
   }
-  var scriptBuffer = Script.buildPublicKeyHashOut(script.toAddress()).toBuffer();
+  const scriptBuffer = Script.buildPublicKeyHashOut(script.toAddress()).toBuffer();
   writer.writeVarintNum(scriptBuffer.length);
   writer.write(scriptBuffer);
   return writer.toBuffer();

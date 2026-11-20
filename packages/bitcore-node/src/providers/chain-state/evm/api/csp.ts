@@ -28,6 +28,7 @@ import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
 import { AaveAccountData, AaveReserveData, AaveReserveTokensAddresses, AaveV2AccountData, AaveV3AccountData, AaveVersion, getAavePoolAddress } from './aave';
+import { getArcUsdcEffects } from './arc';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsForAddressTransform } from './populateEffectsTransform';
@@ -70,6 +71,8 @@ export interface BuildWalletTxsStreamResult {
   dispose?: () => void | Promise<unknown>;
 }
 
+// Balance (2^128 - 1 wei) given to the sender via state override so blind gas estimates never fail on insufficient funds
+const BLIND_ESTIMATE_BALANCE = '0xffffffffffffffffffffffffffffffff';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -315,7 +318,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         let feerate;
         if (txType?.toString() === '2') {
           const { rpc } = await this.getWeb3(network, { type: 'historical' });
-          feerate = await rpc.estimateFee({ nBlocks: target, txType: txType?.toString() });
+          // RPC type-2 estimates are BigInt; the Mongo cache and API use numbers.
+          feerate = Number(await rpc.estimateFee({ nBlocks: target, txType: txType?.toString() }));
         } else {
           const txs = await EVMTransactionStorage.collection
             .find({ chain, network, blockHeight: { $gt: 0 } })
@@ -379,8 +383,14 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     let addresses = await this.getWalletAddresses(wallet._id);
     addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
+    // every address is read at the same block, so look it up once
+    const blockNumber = args.time && addresses.length
+      ? await this.getBlockHeightBeforeTime({ chain: this.chain, network, time: args.time })
+      : undefined;
     const addressBalances = await Promise.all<WalletBalanceType>(addresses.map(({ address }) =>
-      this.getBalanceForAddress({ chain: this.chain, network, address, args })
+      blockNumber === undefined
+        ? this.getBalanceForAddress({ chain: this.chain, network, address, args })
+        : this.getBalanceAtBlock({ network, address, args, blockNumber })
     ));
     const balance = addressBalances.reduce(
       (prev, cur) => ({
@@ -399,37 +409,60 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
     const { chain, network, address, args } = params;
-    const { web3 } = await this.getWeb3(network, { type: args?.time ? 'historical' : 'realtime' });
+    if (args?.time) {
+      // only the latest balance is cached
+      const blockNumber = await this.getBlockHeightBeforeTime({ chain, network, time: args.time });
+      return this.getBalanceAtBlock({ network, address, args, blockNumber });
+    }
     const tokenAddress = args?.tokenAddress;
     const addressLower = address.toLowerCase();
-    const hex = args?.hex === 'true' || args?.hex === '1';
-    let blockNumber: number | string = 'latest';
-    if (args?.time) {
-      const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
-      if (!block) {
-        throw new Error(`Balance not found at ${args.time}`);
-      }
-      blockNumber = block.height;
-    }
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
     const balance = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
-      async () => {
-        if (tokenAddress) {
-          const token = new web3.eth.Contract(ERC20Abi, tokenAddress);
-          const balance = await token.methods.balanceOf(address).call<bigint>({}, blockNumber);
-          const numberBalance = '0x' + BigInt(balance).toString(16);
-          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
-        } else {
-          const balance = await web3.eth.getBalance(address, blockNumber);
-          const numberBalance = '0x' + BigInt(balance).toString(16);
-          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
-        }
-      },
-      args?.time ? CacheStorage.Times.None : CacheStorage.Times.Minute
+      () => this.getRawBalance({ network, address, tokenAddress, blockNumber: 'latest' }),
+      CacheStorage.Times.Minute
     );
+    return this.formatBalance(balance, args);
+  }
+
+  async getBlockHeightBeforeTime(params: { chain: string; network: string; time: string }) {
+    const block = await this.getBlockBeforeTime(params);
+    if (!block) {
+      throw new Error(`Balance not found at ${params.time}`);
+    }
+    return block.height;
+  }
+
+  async getBalanceAtBlock(params: { network: string; address: string; args: any; blockNumber: number }) {
+    const { network, address, args, blockNumber } = params;
+    const balance = await this.getRawBalance({ network, address, tokenAddress: args?.tokenAddress, blockNumber });
+    return this.formatBalance(balance, args);
+  }
+
+  async getRawBalance(params: {
+    network: string;
+    address: string;
+    tokenAddress?: string;
+    blockNumber: number | 'latest';
+  }) {
+    const { network, address, tokenAddress, blockNumber } = params;
+    const { web3 } = await this.getWeb3(network, { type: blockNumber === 'latest' ? 'realtime' : 'historical' });
+    if (tokenAddress) {
+      const token = new web3.eth.Contract(ERC20Abi, tokenAddress);
+      const balance = await token.methods.balanceOf(address).call<bigint>({}, blockNumber);
+      const numberBalance = '0x' + BigInt(balance).toString(16);
+      return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
+    } else {
+      const balance = await web3.eth.getBalance(address, blockNumber);
+      const numberBalance = '0x' + BigInt(balance).toString(16);
+      return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
+    }
+  }
+
+  formatBalance(balance: { confirmed: string; unconfirmed: string; balance: string }, args: any): WalletBalanceType {
+    const hex = args?.hex === 'true' || args?.hex === '1';
     return {
       confirmed: hex ? balance.confirmed : Number(balance.confirmed),
       unconfirmed: hex ? balance.unconfirmed : Number(balance.unconfirmed),
@@ -448,13 +481,23 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async populateReceipt(tx: MongoBound<IEVMTransaction>) {
-    if (!tx.receipt) {
+    const isArc = this.chain === 'ARC';
+    if (!tx.receipt || (isArc && !Array.isArray(tx.receipt.logs))) {
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
-        const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
-        await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
+        const fee = Number(BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice ?? tx.gasPrice));
+        await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt: receipt as any, fee } });
         tx.receipt = receipt as any;
         tx.fee = fee;
+      }
+    }
+    // Normalize Arc's native USDC events before discarding the large receipt logs.
+    if (isArc) {
+      const logs = tx.receipt?.logs;
+      if (Array.isArray(logs)) {
+        tx.effects = getArcUsdcEffects(logs, tx.effects, tx.network);
+      } else if ((tx.blockHeight ?? -1) >= 0) {
+        throw new Error(`Missing Arc receipt logs for ${tx.txid}`);
       }
     }
     // logs can be very large and are not currently needed for any use case in this codebase.
@@ -699,7 +742,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const { stream: builtStream, dispose } = await this._buildWalletTransactionsStream(params, streamParams);
     transactionStream = builtStream;
 
-    if (!args.tokenAddress && wallet._id) {
+    // Arc's receipt events are aggregated below instead of expanding native traces.
+    if (!args.tokenAddress && wallet._id && this.chain !== 'ARC') {
       const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
       transactionStream = transactionStream.eventPipe(internalTxTransform);
     }
@@ -803,7 +847,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     windowSize = Utils.BI.min<bigint>([windowSize, endBlock - startBlock]);
     const tokenTransfers: Partial<Web3Types.TransactionInfo>[] = [];
-    while (windowSize > 0n) {
+    while (windowSize >= 0n) {
       const [sent, received] = await Promise.all([
         token.getPastEvents('Transfer', {
           filter: { _from: address },
@@ -890,13 +934,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       return Number(gasLimit);
     }
 
-    let _value;
-    if (data) {
-      // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
-      // We want this method to give a blind fee estimation, though, so we should not include the value
-      // unless it's needed for estimating smart contract execution.
-      _value = Utils.toHex(value);
-    }
+    // Passing `value` makes eth_estimateGas fail with an insufficient funds error if `from` can't cover it.
+    // We want a blind estimate, so override the sender's balance for this call only (state override, 3rd param).
+    // Also, don't pass `gasPrice` or `gasFeeCap`; those are checked against the balance as well.
+    const fromAddr = from && from.toLowerCase();
+    const stateOverride = fromAddr ? { [fromAddr]: { balance: BLIND_ESTIMATE_BALANCE } } : undefined;
 
     const opts = {
       method: 'eth_estimateGas',
@@ -904,10 +946,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         {
           data,
           to: to && to.toLowerCase(),
-          from: from && from.toLowerCase(),
-          // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
-          value: _value
-        }
+          from: fromAddr,
+          value: Utils.toHex(value ?? 0)
+        },
+        'latest',
+        ...(stateOverride ? [stateOverride] : [])
       ],
       jsonrpc: '2.0',
       id: 'bitcore-' + Date.now()
@@ -952,7 +995,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const walletAddressInserts = addressBatch.map(address => {
         return {
           insertOne: {
-            document: { chain, network, wallet: params.wallet._id, address, processed: false }
+            document: { chain, network, wallet: params.wallet._id!, address, processed: false }
           }
         };
       });

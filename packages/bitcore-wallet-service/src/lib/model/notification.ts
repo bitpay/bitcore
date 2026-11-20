@@ -24,7 +24,7 @@
 export interface INotification {
   version: string;
   createdOn: number;
-  id: number;
+  id: string | number;
   type: string;
   data: any;
   walletId: string;
@@ -32,7 +32,7 @@ export interface INotification {
   isCreator: boolean;
 }
 
-export class Notification {
+export class Notification implements INotification {
   version: string;
   createdOn: number;
   id: string | number;

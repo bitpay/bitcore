@@ -1,27 +1,15 @@
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import type { CommonArgs } from '../../types/cli';
 
-export function command(args: CommonArgs) {
-  const { program } = args;
-  program
+export function command() {
+  return new Command('register')
     .description('Register the wallet with the Bitcore Wallet Service')
-    .usage('<walletName> --command register [options]')
-    .optionsGroup('Register Options')
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-
-  return opts;
+    .optionsGroup('Register Options');
 }
 
 export async function registerWallet(args: CommonArgs) {
-  const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
+  const { wallet } = args;
 
   const copayerName = wallet.client.credentials.copayerName || process.env.USER || 'copayer';
   await wallet.register({ copayerName });

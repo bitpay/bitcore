@@ -74,7 +74,7 @@ export class OneInchService {
 
       const chainNetwork: string = req.params?.['chain']
         ? `${req.params['chain'].toUpperCase()}_mainnet`
-        : 'eth_mainnet';
+        : 'ETH_mainnet';
       const chainId: number = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[chainNetwork];
 
       const URL: string = `${credentials.API}/swap/v5.2/${chainId}/swap/?${qs.join('&')}`;
@@ -87,8 +87,16 @@ export class OneInchService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ?? err);
+            logger.error(`1Inch request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get 1Inch swap data'));
           } else {
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`1Inch request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('1Inch did not return swap data'));
+            }
             return resolve(data.body);
           }
         }
@@ -137,12 +145,12 @@ export class OneInchService {
           (err, data) => {
             const tokens = data?.body?.tokens;
             if (err) {
-              logger.warn('An error occured while retrieving the token list', err);
+              logger.error('An error occured while retrieving 1Inch token list: %o', err);
               if (oldvalues) {
                 logger.warn('Using old cached values');
                 return resolve(oldvalues);
               }
-              return reject(err.body ?? err);
+              return reject(new ClientError('Failed to get 1Inch token list'));
             } else if (data?.statusCode === 429 && oldvalues) {
               // oneinch rate limit
               return resolve(oldvalues);
@@ -152,7 +160,7 @@ export class OneInchService {
                   logger.warn('No token list available... using old cached values');
                   return resolve(oldvalues);
                 }
-                return reject(new Error('Could not get tokens list'));
+                return reject(new Error('Could not get 1Inch tokens list'));
               }
               this.storage.storeGlobalCache(cacheKey, tokens, err => {
                 if (err) {

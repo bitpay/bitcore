@@ -1,6 +1,6 @@
+/* eslint-disable no-bitwise */
 'use strict';
 
-const _ = require('lodash');
 const should = require('chai').should();
 const bitcore = require('../..');
 
@@ -92,6 +92,35 @@ describe('Signature', function() {
       }).toString('hex').should.equal('729e85cc46ffab881065ec07694220e71d4df9b2b8c8fd12c3122cf3a5efbcf2');
     });
 
+    describe('schnorr', function() {
+      // r starts with 0x30, which looks like a DER header
+      const r = '30' + '11'.repeat(31);
+      const s = '22'.repeat(32);
+
+      it('should parse a 64 byte schnorr signature whose r starts with 0x30', function() {
+        const buf = Buffer.from(r + s, 'hex');
+        const sig = Signature.fromDER(buf);
+        sig.isSchnorr.should.equal(true);
+        sig.nhashtype.should.equal(Signature.SIGHASH_DEFAULT);
+        sig.toDER().toString('hex').should.equal(r + s);
+      });
+
+      it('should parse a 65 byte schnorr signature whose r starts with 0x30', function() {
+        const buf = Buffer.from(r + s + '01', 'hex');
+        const sig = Signature.fromDER(buf);
+        sig.isSchnorr.should.equal(true);
+        sig.nhashtype.should.equal(Signature.SIGHASH_ALL);
+        sig.toDER().toString('hex').should.equal(r + s + '01');
+      });
+
+      it('should parse a 64 byte schnorr signature', function() {
+        const buf = Buffer.from('ab' + '11'.repeat(31) + s, 'hex');
+        const sig = Signature.fromDER(buf);
+        sig.isSchnorr.should.equal(true);
+        sig.toDER().equals(buf).should.equal(true);
+      });
+    });
+
   });
 
   describe('#fromString', function() {
@@ -143,6 +172,21 @@ describe('Signature', function() {
       const hex = '3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501';
       const buf = Buffer.from(hex, 'hex');
       const sig = Signature.fromTxFormat(buf);
+      sig.toTxFormat().toString('hex').should.equal(hex);
+    });
+
+    it('should parse a 64 byte DER signature as ecdsa, not schnorr', function() {
+      // 29 byte r and s => 2 + (2 + 29) * 2 = 64 byte DER, plus 1 byte nhashtype
+      const r = '11'.repeat(29);
+      const s = '22'.repeat(29);
+      const hex = '303e021d' + r + '021d' + s + '01';
+      const buf = Buffer.from(hex, 'hex');
+      Signature.isTxDER(buf).should.equal(true);
+      const sig = Signature.fromTxFormat(buf);
+      should.not.exist(sig.isSchnorr);
+      sig.r.toString('hex').should.equal(r);
+      sig.s.toString('hex').should.equal(s);
+      sig.nhashtype.should.equal(Signature.SIGHASH_ALL);
       sig.toTxFormat().toString('hex').should.equal(hex);
     });
 
@@ -254,22 +298,20 @@ describe('Signature', function() {
 
     describe('bitcoind fixtures', function() {
       const test_sigs = function(set, expected) {
-        let i = 0;
-        set.forEach(function(vector) {
+        for (let i = 0; i < set.length; i++) {
+          const vector = set[i];
           if (!JSUtil.isHexa(vector)) {
             // non-hex strings are ignored
-            return;
+            continue;
           }
           it('should be ' + (expected ? '' : 'in') + 'valid for fixture #' + i, function() {
             const sighex = vector;
             const interp = Interpreter();
-            interp.flags = Interpreter.SCRIPT_VERIFY_DERSIG |
-              Interpreter.SCRIPT_VERIFY_STRICTENC;
+            interp.flags = Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_STRICTENC;
             const result = interp.checkSignatureEncoding(Buffer.from(sighex, 'hex'));
             result.should.equal(expected);
           });
-          i++;
-        });
+        }
       };
       test_sigs(sig_canonical, true);
       test_sigs(sig_noncanonical, false);
@@ -331,11 +373,10 @@ describe('Signature', function() {
         [(Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE) + 1, false],
         [(Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL) - 1, false],
       ];
-      _.each(testCases, function(testCase) {
+      for (const testCase of testCases) {
         sig.nhashtype = testCase[0];
         sig.hasDefinedHashtype().should.equal(testCase[1]);
-      });
+      };
     });
   });
-
 });

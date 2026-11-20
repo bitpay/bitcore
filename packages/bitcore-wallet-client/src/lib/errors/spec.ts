@@ -83,6 +83,18 @@ export const errorSpec: IErrorSpec[] = [
     message: 'Your linked POLYGON wallet does not have enough MATIC for fee.'
   },
   {
+    name: 'INSUFFICIENT_SOL_FEE',
+    message: 'Your linked SOL wallet does not have enough SOL for fee.'
+  },
+  {
+    name: 'INSUFFICIENT_ARC_FEE',
+    message: 'Your linked ARC wallet does not have enough USDC for fee.'
+  },
+  {
+    name: 'LOCKED_ARC_FEE',
+    message: 'Your linked ARC wallet USDC is locked by pending spend proposals.'
+  },
+  {
     name: 'LOCKED_FUNDS',
     message: 'Locked funds.'
   },
@@ -95,6 +107,11 @@ export const errorSpec: IErrorSpec[] = [
     name: 'LOCKED_MATIC_FEE',
     message:
       'Your POLYGON linked wallet funds are locked by pending spend proposals.'
+  },
+  {
+    name: 'LOCKED_SOL_FEE',
+    message:
+      'Your SOL linked wallet funds are locked by pending spend proposals.'
   },
   {
     name: 'DUST_AMOUNT',
@@ -147,7 +164,7 @@ export const errorSpec: IErrorSpec[] = [
       'We were unable to parse your payment. Please try again or contact your wallet provider.'
   },
   {
-    name: 'NO_TRASACTION',
+    name: 'NO_TRANSACTION',
     message:
       'Your request did not include a transaction. Please try again or contact your wallet provider.'
   },

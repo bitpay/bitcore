@@ -3,6 +3,7 @@
 import * as chai from 'chai';
 import 'chai/register-should';
 import util from 'util';
+import assert from 'assert';
 import sinon from 'sinon';
 import http from 'http';
 import request from 'request';
@@ -12,6 +13,7 @@ import config from '../../src/config';
 import { WalletService, UPGRADES } from '../../src/lib/server';
 import { Storage } from '../../src/lib/storage';
 import { Common } from '../../src/lib/common';
+import logger from '../../src/lib/logger';
 import * as Model from '../../src/lib/model';
 import { TssKeyGenModel } from '../../src/lib/model/tsskeygen';
 import { BCHAddressTranslator } from '../../src/lib/bchaddresstranslator';
@@ -19,6 +21,8 @@ import * as TestData from '../testdata';
 import helpers from './helpers';
 import { ClientError } from '../../src/lib/errors/clienterror';
 import { ExpressApp } from '../../src/lib/expressapp';
+import { ERC20Abi } from '../../src/lib/chain/eth/abi-erc20';
+import { type JoinWalletOpts } from '../../src/lib/server';
 
 const should = chai.should();
 config.moralis = config.moralis ?? {
@@ -1118,7 +1122,7 @@ describe('Wallet service', function() {
           xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
           requestPubKey: TestData.copayers[0].pubKey_1H_0,
         };
-        server.joinWallet(copayerOpts, function(err) {
+        server.joinWallet(copayerOpts as JoinWalletOpts, function(err) {
           should.exist(err);
           err.message.should.contain('argument: copayerSignature missing');
           done();
@@ -1665,7 +1669,7 @@ describe('Wallet service', function() {
           message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
           n: 1,
           copayerId: legitCopayerId,
-          version: 1.1,
+          version: Defaults.TSS_KEYGEN_SCHEME_VERSION
         });
         session.sharedPublicKey = 'dummy-shared-public-key';
         await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
@@ -1732,7 +1736,7 @@ describe('Wallet service', function() {
           message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
           n: 1,
           copayerId: ancillaryDerivedCopayerId,
-          version: 1.1,
+          version: Defaults.TSS_KEYGEN_SCHEME_VERSION
         });
         session.sharedPublicKey = 'dummy-shared-public-key';
         await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
@@ -1770,6 +1774,57 @@ describe('Wallet service', function() {
         const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
         should.exist(wallet);
         wallet.copayers.length.should.equal(0);
+      });
+    });
+
+    describe('TSS wallets (concurrent join)', function() {
+      it('should keep a copayer that joins while the wallet is being registered', async function() {
+        const server = new WalletService();
+        const copayerIds = [0, 1].map(i => Model.Copayer.xPubToCopayerId('btc', TestData.copayers[i].xPubKey_44H_0H_0H));
+
+        const session = TssKeyGenModel.create({
+          id: 'tss-join-during-register-test-session',
+          message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
+          n: 2,
+          copayerId: copayerIds[0],
+          version: Defaults.TSS_KEYGEN_SCHEME_VERSION
+        });
+        session.participants[1] = copayerIds[1];
+        session.sharedPublicKey = 'dummy-shared-public-key';
+        await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
+        await server.storage.storeTssKeyGenSession({ doc: session });
+
+        const walletId = await util.promisify(server.createWallet).call(server, {
+          name: 'tss wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+          coin: 'btc',
+          tssKeyId: session.id,
+        });
+        const [creatorOpts, joinerOpts] = [0, 1].map(i => helpers.getSignedCopayerOpts({
+          walletId,
+          name: 'copayer ' + (i + 1),
+          xPubKey: TestData.copayers[i].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[i].pubKey_1H_0,
+        }));
+        const { copayerId } = await util.promisify(server.joinWallet).call(server, creatorOpts);
+        const creatorServer = await helpers.getAuthServer(copayerId);
+        creatorServer.checkWalletSync = function(a, b, simple, cb) {
+          if (simple) return cb(null, false);
+          return cb(null, true);
+        };
+
+        blockchainExplorer.register = sinon.stub().callsFake((wallet, cb) => server.joinWallet(joinerOpts, cb));
+        await util.promisify(creatorServer.getStatus).call(creatorServer, { includeExtendedInfo: true });
+
+        blockchainExplorer.register.calledOnce.should.equal(true);
+        const registeredWallet = blockchainExplorer.register.firstCall.args[0];
+        const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+        wallet.copayers.length.should.equal(2);
+        wallet.beRegistered.should.equal(true);
+        wallet.beAuthPrivateKey2.should.equal(registeredWallet.beAuthPrivateKey2);
+        wallet.beAuthPublicKey2.should.equal(registeredWallet.beAuthPublicKey2);
       });
     });
   });
@@ -2695,6 +2750,29 @@ describe('Wallet service', function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
     });
 
+    it('should save and merge Arc token preferences without linking native USDC', async function() {
+      ({ server } = await helpers.createAndJoinWallet(1, 1, { coin: 'arc', network: 'livenet' }));
+      await util.promisify(server.savePreferences).call(server, { arcTokenAddresses: [TOKENS[0]], language: 'es' });
+      await util.promisify(server.savePreferences).call(server, {
+        arcTokenAddresses: [TOKENS[1], CWC.ethers.getAddress(TOKENS[0])],
+      });
+      let preferences = await util.promisify(server.getPreferences).call(server, {});
+      preferences.arcTokenAddresses.should.deep.equal(TOKENS);
+      preferences.language.should.equal('es');
+
+      try {
+        await util.promisify(server.savePreferences).call(server, {
+          arcTokenAddresses: [TOKENS[0], CWC.Constants.ARC.USDC_CONTRACT_ADDRESS], language: 'en',
+        });
+        should.fail('Expected native USDC token preference rejection');
+      } catch (err) {
+        err.message.toString().should.contain('arcTokenAddresses');
+      }
+      preferences = await util.promisify(server.getPreferences).call(server, {});
+      preferences.arcTokenAddresses.should.deep.equal(TOKENS);
+      preferences.language.should.equal('es');
+    });
+
     it('should save & retrieve preferences', function(done) {
       server.savePreferences({
         email: 'dummy@dummy.com',
@@ -2894,7 +2972,8 @@ describe('Wallet service', function() {
           unit: 'xxxxx',
         },
         expected: 'unit'
-      },];
+      }, ...['not-an-array', ['invalid']]
+        .map(arcTokenAddresses => ({ preferences: { arcTokenAddresses }, expected: 'arcTokenAddresses' }))];
 
       for (const item of invalid) {
         try {
@@ -2929,30 +3008,23 @@ describe('Wallet service', function() {
             should.exist(address);
             utxo.path.should.equal(address.path);
             utxo.publicKeys.should.deep.equal(address.publicKeys);
+            utxo.isChange.should.equal(false);
             done();
           });
         });
       });
     });
 
+    it('should identify UTXOs for change addresses', async function() {
+      const address = await util.promisify(server.createAddress).call(server, { isChange: true });
+      await helpers.stubUtxos(server, wallet, [1], { addresses: [address] });
 
-    it('should get UTXOs for wallet addresses', function(done) {
-      helpers.stubUtxos(server, wallet, [1, 2]).then(function() {
-        server.getUtxos({}, function(err, utxos) {
-          should.not.exist(err);
-          should.exist(utxos);
-          utxos.length.should.equal(2);
-          utxos.reduce((sum, u) => sum += u.satoshis, 0).should.equal(3 * 1e8);
-          server.getAddresses({ noChange: true }, function(err, addresses) {
-            const utxo = utxos[0];
-            const address = addresses.find(a => a.address === utxo.address);
-            should.exist(address);
-            utxo.path.should.equal(address.path);
-            utxo.publicKeys.should.deep.equal(address.publicKeys);
-            done();
-          });
-        });
-      });
+      const utxos = await util.promisify(server.getUtxos).call(server, {});
+      utxos.length.should.equal(1);
+      utxos[0].address.should.equal(address.address);
+      utxos[0].path.should.equal(address.path);
+      utxos[0].publicKeys.should.deep.equal(address.publicKeys);
+      utxos[0].isChange.should.equal(true);
     });
 
     it('should return empty UTXOs for specific addresses if network mismatch', function(done) {
@@ -3934,6 +4006,45 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#createTx token allowance', function() {
+    let server: WalletService;
+    let wallet: Model.Wallet;
+
+    beforeEach(async function() {
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
+      await util.promisify(server.createAddress).call(server, {});
+    });
+
+    it('should reject a total that a number rounds down to the allowance', async function() {
+      const be = helpers.getBlockchainExplorer();
+      be.getBalance = sinon.stub().callsArgWith(1, null, { unconfirmed: 0, confirmed: '1' + '0'.repeat(20), balance: '1' + '0'.repeat(20) });
+      be.getTokenAllowance = sinon.stub().callsArgWith(1, null, '9007199254740992');
+
+      const opts = {
+        outputs: [
+          { toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: '9007199254740992' },
+          { toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: '1' }
+        ],
+        from: '0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622',
+        tokenAddress: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        multiSendContractAddress: '0x30e5bfa1e83c9c6f0a4c4bd4a1f0e0d7d0c4d3a2',
+        feePerKb: 25000000000,
+        nonce: 5
+      };
+
+      let error;
+      try {
+        await util.promisify(server.createTx).call(server, opts);
+      } catch (e) {
+        error = e;
+      }
+
+      should.exist(error);
+      error.message.should.contain('Insufficient token allowance');
+      error.message.should.contain('Want: 9007199254740993');
+    });
+  });
+
   const testSet = [
     {
       coin: 'btc',
@@ -4911,7 +5022,6 @@ describe('Wallet service', function() {
                   toAddress: addressStr,
                   amount: ts,
                 }],
-                gasPrice: 1,
                 feeLevel: level,
                 from: fromAddr,
               }, flags);
@@ -4926,6 +5036,60 @@ describe('Wallet service', function() {
           });
 
           if (coin === 'btc') {
+            it('should fail with INSUFFICIENT_FUNDS when send max has no spendable funds', function(done) {
+              helpers.stubUtxos(server, wallet, ['500sat'], { coin }).then(function() {
+                const txOpts = Object.assign({
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: null,
+                  }],
+                  sendMax: true,
+                }, flags);
+                server.createTx(txOpts, function(err, txp) {
+                  should.exist(err);
+                  should.not.exist(txp);
+                  err.code.should.equal('INSUFFICIENT_FUNDS');
+                  done();
+                });
+              });
+            });
+
+            it('should fail with INSUFFICIENT_FUNDS when fee is set with empty inputs', function(done) {
+              helpers.stubUtxos(server, wallet, ['500sat'], { coin }).then(function() {
+                const txOpts = Object.assign({
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1000,
+                  }],
+                  inputs: [],
+                  fee: 0,
+                }, flags);
+                server.createTx(txOpts, function(err, txp) {
+                  should.exist(err);
+                  should.not.exist(txp);
+                  err.code.should.equal('INSUFFICIENT_FUNDS');
+                  done();
+                });
+              });
+            });
+
+            it('should keep the fee/inputs message when fee is set without inputs', function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }).then(function() {
+                const txOpts = Object.assign({
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1000,
+                  }],
+                  fee: 1000,
+                }, flags);
+                server.createTx(txOpts, function(err, txp) {
+                  should.exist(err);
+                  err.message.should.equal('fee can only be set when inputs are specified');
+                  done();
+                });
+              });
+            });
+
             it('should use the specified feeLevel when calculating send max', function(done) {
               helpers.stubUtxos(server, wallet, [1, 2], { coin }).then(function() {
                 const getSendMaxInfo = sinon.spy(server, 'getSendMaxInfo');
@@ -6136,6 +6300,113 @@ describe('Wallet service', function() {
     });
   });
 
+  for (const [network, chainId] of [['livenet', 5042n], ['testnet', 5042002n]] as const) {
+    describe(`#createTX ARC ${network}`, () => {
+      let server: WalletService;
+      let from: string;
+      const destination = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+      const usdc = new CWC.ethers.Interface(ERC20Abi);
+      const contractOpts = (data: string) => makeOpts({
+        outputs: [{ toAddress: CWC.Constants.ARC.USDC_CONTRACT_ADDRESS, amount: 0, gasLimit: 100000, data }]
+      });
+      const makeOpts = (overrides = {}) => ({
+        outputs: [{ toAddress: destination, amount: 1e18, gasLimit: 21000 }],
+        nonce: 0, feeLevel: 'normal', ...overrides
+      });
+
+      beforeEach(async () => {
+        ({ server } = await helpers.createAndJoinWallet(1, 1, { coin: 'arc', network }));
+        from = (await util.promisify(server.createAddress).call(server, {})).address;
+        blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, { balance: 2e18, confirmed: 2e18, unconfirmed: 0 });
+        helpers.stubFeeLevels({ 1: 25000000000, 2: 25000000000, 3: 25000000000, 4: 25000000000 }, true, 'arc');
+      });
+
+      for (const [txType, sendMax] of [[0, false], [2, false], [2, true]] as const) {
+        it(`should publish, sign and submit a type ${txType} native USDC ${sendMax ? 'send-max ' : ''}proposal`, async () => {
+          const maxGasFee = sendMax ? 31000000000 : 30000000000;
+          sinon.stub(server, 'estimateFee').resolves(maxGasFee).onFirstCall().resolves(30000000000);
+          sinon.stub(server, 'estimatePriorityFee').resolves(0);
+          const fee = (txType === 2 ? maxGasFee : 25000000000) * 21000;
+          const amount = sendMax ? 2e18 - fee : 1e18;
+          const txp = await util.promisify(server.createTx).call(server, makeOpts({ txType, sendMax,
+            outputs: [{ toAddress: destination, amount: sendMax ? null : amount, gasLimit: 21000 }] }));
+          txp.fee.should.equal(fee);
+          txp.amount.should.equal(amount);
+          await util.promisify(server.publishTx).call(server, helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0));
+          await util.promisify(server.signTx).call(server, { txProposalId: txp.id, signatures: helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H) });
+          const accepted = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
+          accepted.status.should.equal('accepted');
+          const [raw] = accepted.getRawTx();
+          const signed = CWC.ethers.Transaction.from(raw);
+          signed.chainId.should.equal(chainId);
+          signed.value.should.equal(BigInt(amount));
+          BigInt(txp.fee).should.equal((signed.maxFeePerGas ?? signed.gasPrice) * signed.gasLimit);
+          signed.isSigned().should.equal(true);
+          helpers.stubBroadcast(accepted.txid);
+          await util.promisify(server.broadcastTx).call(server, { txProposalId: txp.id });
+          blockchainExplorer.broadcast.firstCall.args[0].should.deep.equal([raw]);
+          (await util.promisify(server.getTx).call(server, { txProposalId: txp.id })).status.should.equal('broadcasted');
+        });
+      }
+
+      it('should reserve wallet-owned USDC contract debits and release them when removed', async () => {
+        for (const [method, args, debit, legacyData] of [
+          ['transfer', [destination, 1000000n], 1e18],
+          ['transferFrom', [from, destination, 1000000n], 1e18],
+          ['transferFrom', [destination, from, 1000000n], 0],
+          ['approve', [destination, 1000000n], 0],
+          ['approve', [destination, 1000000n], 1e18, usdc.encodeFunctionData('transfer', [destination, 1000000n])]
+        ] as Array<[string, any[], number, string?]>) {
+          const data = usdc.encodeFunctionData(method, args);
+          const txp = await util.promisify(server.createTx).call(server, { ...contractOpts(data), data: legacyData });
+          txp.amount.should.equal(0);
+          txp.outputs[0].amount.should.equal(0);
+          txp.outputs[0].data.should.equal(data);
+          CWC.ethers.Transaction.from(txp.getRawTx()[0]).data.should.equal(legacyData || data);
+          await util.promisify(server.publishTx).call(server, helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0));
+          const balance = await util.promisify(server.getBalance).call(server, {});
+          balance.lockedAmount.should.equal(debit + txp.fee);
+          balance.availableAmount.should.equal(2e18 - debit - txp.fee);
+          if (debit) {
+            try {
+              await util.promisify(server.createTx).call(server, makeOpts({ nonce: 1,
+                outputs: [{ toAddress: destination, amount: 1.5e18, gasLimit: 21000 }] }));
+              should.fail('Expected pending USDC funds to be unavailable');
+            } catch (err) {
+              err.code.should.equal('LOCKED_FUNDS');
+            }
+          }
+          await util.promisify(server.removePendingTx).call(server, { txProposalId: txp.id });
+          (await util.promisify(server.getBalance).call(server, {})).lockedAmount.should.equal(0);
+        }
+      });
+
+      it('should reject underpriced proposals, duplicate USDC token views and zero-address transfers', async () => {
+        try {
+          await util.promisify(server.getBalance).call(server, { tokenAddress: CWC.Constants.ARC.USDC_CONTRACT_ADDRESS });
+          throw new Error('Expected duplicate token balance rejection');
+        } catch (err) {
+          err.message.should.contain('omit tokenAddress');
+        }
+        for (const [opts, message] of [
+          [makeOpts({ feeLevel: undefined, feePerKb: 10000000000 }), 'at least 20 gwei'],
+          [makeOpts({ tokenAddress: CWC.Constants.ARC.USDC_CONTRACT_ADDRESS }), 'omit tokenAddress'],
+          [contractOpts(usdc.encodeFunctionData('transfer', [destination, 3000000n])), 'Insufficient funds'],
+          [contractOpts(usdc.encodeFunctionData('transfer', [destination, 2000000n])), 'Insufficient funds for fee'],
+          [contractOpts(usdc.getFunction('transfer').selector), 'Invalid Arc USDC contract call data'],
+          [makeOpts({ outputs: [{ toAddress: '0x0000000000000000000000000000000000000000', amount: 1e18 }] }), 'zero address']
+        ] as Array<[any, string]>) {
+          try {
+            await util.promisify(server.createTx).call(server, opts);
+            throw new Error('Expected proposal rejection');
+          } catch (err) {
+            err.message.should.contain(message);
+          }
+        }
+      });
+    });
+  }
+
   describe('#createTX ETH Only tests', () => {
     let server: WalletService;
     let wallet: Model.Wallet;
@@ -6146,36 +6417,36 @@ describe('Wallet service', function() {
       }));
     });
 
-    it('should allow to create a TX with fee and no inputs', function(done) {
-      helpers.stubFeeLevels({});
-      server.createAddress({}, from => {
-        helpers.stubUtxos(server, wallet, [1, 2]).then(function() {
-          const amount = 0.8 * 1e8;
-          const txOpts = {
-            outputs: [{
-              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
-              amount: amount,
-            }],
-            from,
-            message: 'some message',
-            customData: 'some custom data',
-            fee: 252000000000000,
-          };
-          server.createTx(txOpts, function(err, tx) {
-            should.not.exist(err);
-            should.exist(tx);
-            tx.outputs.should.deep.equal([{
-              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
-              gasLimit: 21000,
-              amount: amount,
-            }]);
-            tx.gasPrice.should.equal(12000000000);
-            tx.outputs[0].gasLimit.should.equal(21000);
-            (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(txOpts.fee);
-            done();
-          });
-        });
-      });
+    it('should allow to create a TX with fee and no inputs', async function() {
+      const feeLevels = sinon.stub(server, 'getFeeLevels').callsArgWith(1, new Error('Unexpected fee estimation'));
+      await util.promisify(server.createAddress).call(server, {});
+      await helpers.stubUtxos(server, wallet, [1, 2]);
+      const amount = 0.8 * 1e8;
+
+      for (const fee of [252000000000000, '252000000000000']) {
+        const txOpts = {
+          outputs: [{
+            toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+            amount: amount,
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          fee,
+        };
+        const tx = await util.promisify(server.createTx).call(server, txOpts);
+        should.exist(tx);
+        tx.outputs.should.deep.equal([{
+          toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+          gasLimit: 21000,
+          amount: amount,
+        }]);
+        tx.fee.should.equal(Number(fee));
+        tx.gasPrice.should.equal(12000000000);
+        (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(Number(fee));
+        const [raw] = tx.getRawTx();
+        CWC.ethers.Transaction.from(raw).gasPrice.should.equal(12000000000n);
+      }
+      feeLevels.called.should.be.false;
     });
 
     it('should allow to create a TX with multiple outputs and set the correct fee', function(done) {
@@ -6241,6 +6512,167 @@ describe('Wallet service', function() {
         });
       });
     });
+  });
+
+  describe('#createTX EVM gas overrides', function() {
+    let server: WalletService;
+    let wallet: Model.Wallet;
+    const destination = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    const makeOpts = (overrides = {}) => ({
+      outputs: [{ toAddress: destination, amount: 1000000, gasLimit: 100000 }],
+      nonce: 1,
+      ...overrides
+    });
+
+    beforeEach(async function() {
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
+      await util.promisify(server.createAddress).call(server, {});
+      await helpers.stubUtxos(server, wallet, [1]);
+    });
+
+    for (const scenario of [
+      { name: 'type 0', fees: { gasPrice: 3000000000 }, tokenAddress: undefined },
+      { name: 'type 0 token', fees: { gasPrice: 3000000000 }, tokenAddress: TOKENS[0] },
+      { name: 'type 2 native', fees: { txType: 2, maxGasFee: 3000000000, priorityGasFee: 1000000000 }, tokenAddress: undefined },
+      { name: 'type 2 token', fees: { txType: 2, maxGasFee: 3000000000, priorityGasFee: 1000000000 }, tokenAddress: TOKENS[0] }
+    ]) {
+      it(`should preserve ${scenario.name} overrides through publication, signing and broadcast`, async function() {
+        const feeLevels = sinon.stub(server, 'getFeeLevels').callsArgWith(1, new Error('Unexpected fee estimation'));
+        const maxFee = sinon.stub(server, 'estimateFee').rejects(new Error('Unexpected fee estimation'));
+        const priorityFee = sinon.stub(server, 'estimatePriorityFee').rejects(new Error('Unexpected fee estimation'));
+        const txp = await util.promisify(server.createTx).call(server, makeOpts({
+          ...scenario.fees, tokenAddress: scenario.tokenAddress, feeLevel: 'economy'
+        }));
+        await util.promisify(server.publishTx).call(server,
+          helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0));
+        await util.promisify(server.signTx).call(server, {
+          txProposalId: txp.id,
+          signatures: helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H)
+        });
+        const accepted = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
+        accepted.status.should.equal('accepted');
+        const signedRaw = accepted.getRawTx();
+        helpers.stubBroadcast(accepted.txid);
+        await util.promisify(server.broadcastTx).call(server, { txProposalId: txp.id });
+        blockchainExplorer.broadcast.calledOnce.should.be.true;
+        blockchainExplorer.broadcast.firstCall.args[0].should.deep.equal(signedRaw);
+        const stored = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
+        stored.status.should.equal('broadcasted');
+        stored.txid.should.equal(accepted.txid);
+        should.not.exist(stored.feeLevel);
+        stored.fee.should.equal(300000000000000);
+        for (const [key, value] of Object.entries(scenario.fees)) {
+          stored[key].should.equal(value);
+        }
+        const [raw] = stored.getRawTx();
+        const tx = CWC.ethers.Transaction.from(raw);
+        tx.isSigned().should.be.true;
+        tx.type.should.equal(scenario.fees.txType || 0);
+        if (scenario.fees.txType === 2) {
+          tx.maxFeePerGas.should.equal(3000000000n);
+          tx.maxPriorityFeePerGas.should.equal(1000000000n);
+        } else {
+          tx.gasPrice.should.equal(3000000000n);
+        }
+        feeLevels.called.should.be.false;
+        maxFee.called.should.be.false;
+        priorityFee.called.should.be.false;
+      });
+    }
+
+    it('should preserve a zero priority fee estimated for ARB', async function() {
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'arb' }));
+      await util.promisify(server.createAddress).call(server, {});
+      sinon.replace(blockchainExplorer, 'getBalance',
+        sinon.stub().callsArgWith(1, null, { confirmed: 1e18, unconfirmed: 0, balance: 1e18 }));
+      helpers.stubFeeLevels({});
+      sinon.stub(server, 'estimateFee').resolves(3000000000);
+      sinon.stub(server, 'estimatePriorityFee').resolves(0);
+      const txp = await util.promisify(server.createTx).call(server, makeOpts({ txType: 2 }));
+      txp.priorityGasFee.should.equal(0);
+      const [raw] = txp.getRawTx();
+      CWC.ethers.Transaction.from(raw).maxPriorityFeePerGas.should.equal(0n);
+    });
+
+    it('should preserve automatic type 2 fee estimation without overrides', async function() {
+      helpers.stubFeeLevels({});
+      sinon.stub(server, 'estimateFee').resolves(4500000000);
+      sinon.stub(server, 'estimatePriorityFee').resolves(1000000000);
+      const txp = await util.promisify(server.createTx).call(server, makeOpts({ txType: 2 }));
+      txp.feeLevel.should.equal('normal');
+      txp.gasPrice.should.equal(4500000000);
+      txp.fee.should.equal(450000000000000);
+      txp.maxGasFee.should.equal(4500000000);
+      txp.priorityGasFee.should.equal(1000000000);
+      const [raw] = txp.getRawTx();
+      const tx = CWC.ethers.Transaction.from(raw);
+      tx.maxFeePerGas.should.equal(4500000000n);
+      tx.maxPriorityFeePerGas.should.equal(1000000000n);
+    });
+
+    it('should enforce the existing MATIC minimum for explicit priority fees', async function() {
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'matic' }));
+      await util.promisify(server.createAddress).call(server, {});
+      sinon.replace(blockchainExplorer, 'getBalance',
+        sinon.stub().callsArgWith(1, null, { confirmed: 1e18, unconfirmed: 0, balance: 1e18 }));
+      const fees = { txType: 2, maxGasFee: 40000000000, priorityGasFee: 30000000000 };
+      await assert.rejects(util.promisify(server.createTx).call(server,
+        makeOpts({ ...fees, priorityGasFee: fees.priorityGasFee - 1 })), {
+        message: 'priorityGasFee must be at least 30000000000 wei for matic'
+      });
+      const txp = await util.promisify(server.createTx).call(server, makeOpts(fees));
+      const [raw] = txp.getRawTx();
+      CWC.ethers.Transaction.from(raw).maxPriorityFeePerGas.should.equal(30000000000n);
+      txp.fee.should.equal(fees.maxGasFee * 100000);
+    });
+
+    it('should reject invalid or conflicting gas overrides', async function() {
+      const requests = [
+        ...[
+          { key: 'gasPrice', values: [0, 1.5, '1000', Number.MAX_SAFE_INTEGER + 1] },
+          { key: 'maxGasFee', values: [0] },
+          { key: 'priorityGasFee', values: [0] }
+        ].flatMap(({ key, values }) =>
+          values.map(value => ({
+            params: { [key]: value }, message: `${key} must be a positive safe integer in wei`
+          }))
+        ),
+        { params: { gasPrice: 1000, txType: 2 }, message: 'gasPrice requires a type 0 transaction' },
+        { params: { maxGasFee: 1000 }, message: 'maxGasFee and priorityGasFee require a type 2 transaction' },
+        { params: { priorityGasFee: 1000, txType: 0 }, message: 'maxGasFee and priorityGasFee require a type 2 transaction' },
+        { params: { maxGasFee: 1000, txType: 2 }, message: 'maxGasFee and priorityGasFee must be supplied together' },
+        { params: { priorityGasFee: 1000, txType: 2 }, message: 'maxGasFee and priorityGasFee must be supplied together' },
+        { params: { gasPrice: 1000, feePerKb: 1000 }, message: 'Gas fee overrides cannot be combined with feePerKb or fee' },
+        { params: { gasPrice: 1000, fee: 1000 }, message: 'Gas fee overrides cannot be combined with feePerKb or fee' },
+        { params: { gasPrice: 1000, sendMax: true }, message: 'Gas fee overrides are not supported with sendMax' },
+        { params: { txType: 2, maxGasFee: 1000, priorityGasFee: 2000 }, message: 'priorityGasFee must not exceed maxGasFee' }
+      ];
+      for (const { params, message } of requests) {
+        await assert.rejects(util.promisify(server.createTx).call(server, makeOpts(params)), { message });
+      }
+      await assert.rejects(util.promisify(server._validateAndSanitizeTxOpts).call(server,
+        { ...wallet, chain: 'btc' }, makeOpts({ gasPrice: 1000 })), {
+        message: 'Gas fee overrides are only supported for EVM chains'
+      });
+    });
+
+    for (const tokenAddress of [undefined, TOKENS[0]]) {
+      it(`should reserve the overridden fee for ${tokenAddress ? 'token' : 'native'} proposals`, async function() {
+        helpers.stubFeeLevels({});
+        // Enough for the default fee, but not the overridden fee.
+        await helpers.stubUtxos(server, wallet, [0.0002]);
+        const defaultTxp = await util.promisify(server.createTx).call(server, makeOpts({ tokenAddress }));
+        defaultTxp.fee.should.equal(100000000000000);
+        sinon.stub(server, 'estimateFee').resolves(3000000000);
+        sinon.stub(server, 'estimatePriorityFee').resolves(1000000000);
+        await assert.rejects(util.promisify(server.createTx).call(server, makeOpts({ txType: 2, tokenAddress })),
+          { code: tokenAddress ? 'INSUFFICIENT_ETH_FEE' : 'INSUFFICIENT_FUNDS_FOR_FEE' });
+        await assert.rejects(util.promisify(server.createTx).call(server, makeOpts({
+          txType: 2, maxGasFee: 3000000000, priorityGasFee: 1000000000, tokenAddress
+        })), { code: tokenAddress ? 'INSUFFICIENT_ETH_FEE' : 'INSUFFICIENT_FUNDS_FOR_FEE' });
+      });
+    }
+
   });
 
   describe('cashAddr backwards compat', function() {
@@ -7672,43 +8104,31 @@ describe('Wallet service', function() {
       },
     ];
 
-    function checkTx(txOpts, x, cb) {
-      function sign(copayerM, tx, cb) {
-        helpers.getAuthServer(wallet.copayers[copayerM].id).then(function(server) {
-          const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
-          server.signTx({
-            txProposalId: tx.id,
-            signatures: signatures,
-          }, function(err, txp) {
-            should.not.exist(err, err);
-
-            if (++copayerM == x.m) {
-              return cb(txp);
-            } else {
-              return sign(copayerM, tx, cb);
-            }
-          });
+    async function checkTx(txOpts, x): Promise<number> {
+      const tx = await helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0);
+      let txp;
+      for (let copayerM = 0; copayerM < x.m; copayerM++) {
+        const authServer = await helpers.getAuthServer(wallet.copayers[copayerM].id);
+        const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
+        txp = await util.promisify(authServer.signTx).call(authServer, {
+          txProposalId: tx.id,
+          signatures: signatures,
         });
       }
+      should.exist(txp.raw);
+      txp.status.should.equal('accepted');
+      const t = ChainService.getBitcoreTx(txp);
 
-      helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0).then(function(tx) {
-        sign(0, tx, (txp) => {
-          should.exist(txp.raw);
-          txp.status.should.equal('accepted');
-          const t = ChainService.getBitcoreTx(txp);
+      // Check size and fee rate
+      (txp.raw.length / 2).should.equal(t.size);
+      const feeRate = t.getFee() / (x.fromSegwit ? t.vsize : t.size) * 1000;
+      console.log(`Wire Size: ${t.size} vSize: ${t.vsize} (Segwit: ${x.fromSegwit}, SegwitVersion: ${x.segwitVersion || 0})  Fee:${t.getFee()} ActualRate:${Math.round(feeRate)} RequiredRate:${x.requiredFeeRate}`);
 
-          // Check size and fee rate
-          (txp.raw.length / 2).should.equal(t.size);
-          const feeRate = t.getFee() / (x.fromSegwit ? t.vsize : t.size) * 1000;
-          console.log(`Wire Size: ${t.size} vSize: ${t.vsize} (Segwit: ${x.fromSegwit}, SegwitVersion: ${x.segwitVersion || 0})  Fee:${t.getFee()} ActualRate:${Math.round(feeRate)} RequiredRate:${x.requiredFeeRate}`);
-
-          // size should be above (or equal) the required FeeRate
-          feeRate.should.not.be.below(x.requiredFeeRate);
-          feeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
-          return cb(feeRate);
-        });
-      });
-    };
+      // size should be above (or equal) the required FeeRate
+      feeRate.should.not.be.below(x.requiredFeeRate);
+      feeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+      return feeRate;
+    }
 
     for (let i = 0; i < cases.length; i++) {
       const x = cases[i];
@@ -7740,7 +8160,7 @@ describe('Wallet service', function() {
           Object.assign(txOpts, { feePerKb: x.requiredFeeRate });
         }
 
-        const fee1 = await new Promise<number>(r => checkTx(txOpts, x, r));
+        const fee1 = await checkTx(txOpts, x);
         should.exist(fee1);
 
         // CASE 8
@@ -7751,7 +8171,7 @@ describe('Wallet service', function() {
           ({ server, wallet } = await helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit }));
           await helpers.stubUtxos(server, wallet, x.utxos);
           txOpts.payProUrl = null;
-          const fee2 = await new Promise<number>(r => checkTx(txOpts, x, r));
+          const fee2 = await checkTx(txOpts, x);
           console.log(`## Fee PayPro: ${fee1} vs ${fee2}`);
           fee1.should.be.above(fee2);
         }
@@ -7840,49 +8260,37 @@ describe('Wallet service', function() {
       },
     ];
 
-    function checkTx(txOpts, x, cb) {
-      function sign(copayerM, tx, cb) {
-        helpers.getAuthServer(wallet.copayers[copayerM].id).then(function(server) {
-          const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
-          server.signTx({
-            txProposalId: tx.id,
-            signatures: signatures,
-          }, function(err, txp) {
-            should.not.exist(err, err);
-
-            if (++copayerM == x.m) {
-              return cb(txp);
-            } else {
-              return sign(copayerM, tx, cb);
-            }
-          });
+    async function checkTx(txOpts, x): Promise<number> {
+      const tx = await helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0);
+      let txp;
+      for (let copayerM = 0; copayerM < x.m; copayerM++) {
+        const authServer = await helpers.getAuthServer(wallet.copayers[copayerM].id);
+        const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
+        txp = await util.promisify(authServer.signTx).call(authServer, {
+          txProposalId: tx.id,
+          signatures: signatures,
         });
       }
+      should.exist(txp.raw);
+      txp.status.should.equal('accepted');
 
-      helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0).then(function(tx) {
-        sign(0, tx, (txp) => {
-          should.exist(txp.raw);
-          txp.status.should.equal('accepted');
+      const t = ChainService.getBitcoreTx(txp);
+      const vSize = x.vSize || t._estimateSize(); // use given vSize if available
+      // Check size and fee rate
+      const actualSize = txp.raw.length / 2;
+      const actualFeeRate = t.getFee() / (x.fromSegwit ? vSize : actualSize) * 1000;
+      console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
 
-          const t = ChainService.getBitcoreTx(txp);
-          const vSize = x.vSize || t._estimateSize(); // use given vSize if available
-          // Check size and fee rate
-          const actualSize = txp.raw.length / 2;
-          const actualFeeRate = t.getFee() / (x.fromSegwit ? vSize : actualSize) * 1000;
-          console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
+      // Fee should be more than min relay fee
+      t.getFee().should.be.gte(CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT);
 
-          // Fee should be more than min relay fee
-          t.getFee().should.be.gte(CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT);
-
-          if (t.getFee() > CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT) {
-            // size should be above (or equal) the required FeeRate
-            actualFeeRate.should.not.be.below(x.requiredFeeRate);
-            actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
-          }
-          return cb(actualFeeRate);
-        });
-      });
-    };
+      if (t.getFee() > CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT) {
+        // size should be above (or equal) the required FeeRate
+        actualFeeRate.should.not.be.below(x.requiredFeeRate);
+        actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+      }
+      return actualFeeRate;
+    }
 
     for (let i = 0; i < cases.length; i++) {
       const x = cases[i];
@@ -7914,7 +8322,7 @@ describe('Wallet service', function() {
           Object.assign(txOpts, { feePerKb: x.requiredFeeRate });
         }
 
-        const fee1 = await new Promise<number>(r => checkTx(txOpts, x, r));
+        const fee1 = await checkTx(txOpts, x);
         should.exist(fee1);
 
         // CASE 8
@@ -7925,7 +8333,7 @@ describe('Wallet service', function() {
           ({ server, wallet } = await helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit }));
           await helpers.stubUtxos(server, wallet, x.utxos);
           txOpts.payProUrl = null;
-          const fee2 = await new Promise<number>(r => checkTx(txOpts, x, r));
+          const fee2 = await checkTx(txOpts, x);
           console.log(`## Fee PayPro: ${fee1} vs ${fee2}`);
           fee1.should.be.above(fee2);
         }
@@ -8389,6 +8797,66 @@ describe('Wallet service', function() {
       txp.nonce.should.equal('5');
     });
 
+    describe('republishing a txp with mutable tx data', function() {
+      let txp, publishOpts;
+
+      beforeEach(async function() {
+        txp = await util.promisify(server.createTx).call(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2,
+          from: fromAddr,
+          deferNonce: true
+        });
+        publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+        await util.promisify(server.publishTx).call(server, publishOpts);
+      });
+
+      const setStatus = async status => {
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status = status;
+        await util.promisify(server.storage.storeTx).call(server.storage, wallet.id, stored);
+      };
+
+      const republishError = async () => {
+        try {
+          await util.promisify(server.publishTx).call(server, publishOpts);
+        } catch (err) {
+          return err;
+        }
+      };
+
+      it('should republish a pending txp', async function() {
+        should.not.exist(await republishError());
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status.should.equal('pending');
+      });
+
+      it('should not republish a broadcasted txp back to pending', async function() {
+        await setStatus('broadcasted');
+        const err = await republishError();
+        should.exist(err);
+        err.code.should.equal('TX_ALREADY_BROADCASTED');
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status.should.equal('broadcasted');
+      });
+
+      it('should not republish an accepted txp back to pending', async function() {
+        await setStatus('accepted');
+        const err = await republishError();
+        should.exist(err);
+        err.code.should.equal('TX_NOT_PENDING');
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status.should.equal('accepted');
+      });
+
+      it('should not republish a rejected txp back to pending', async function() {
+        await setStatus('rejected');
+        const err = await republishError();
+        should.exist(err);
+        err.code.should.equal('TX_NOT_PENDING');
+      });
+    });
+
     it('should publish a deferred-nonce txp and save prePublishRaw', async function() {
       const txOpts = {
         outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
@@ -8821,6 +9289,85 @@ describe('Wallet service', function() {
       result.nonce.should.equal(5);
       // future: result.gasPrice, result.maxFee would also be set here
     });
+
+    describe('prePublishRaw binding (isPrePublishRawBound)', function() {
+      const ATTACKER_ADDR = '0x1111111111111111111111111111111111111111';
+
+      it('accepts prePublishRaw when only the mutable field (nonce) changed', async function() {
+        blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '42');
+        const created = await helpers.createAndPublishTx(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        }, TestData.copayers[0].privKey_1H_0);
+
+        // Server assigns the JIT nonce -> the stored tx now differs from prePublishRaw only in the nonce.
+        await util.promisify(server.prepareTx).call(server, { txProposalId: created.id });
+        const withNonce = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+        should.exist(withNonce.prePublishRaw);
+        withNonce.nonce.should.equal(42);
+
+        ChainService.isPrePublishRawBound(withNonce).should.equal(true);
+      });
+
+      it('rejects prePublishRaw when the destination was tampered', async function() {
+        const created = await helpers.createAndPublishTx(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        }, TestData.copayers[0].privKey_1H_0);
+
+        const txp = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+        should.exist(txp.prePublishRaw);
+        ChainService.isPrePublishRawBound(txp).should.equal(true); // bound before tampering
+        txp.outputs[0].toAddress = ATTACKER_ADDR; // swap payee, keep prePublishRaw + proposalSignature
+        ChainService.isPrePublishRawBound(txp).should.equal(false);
+      });
+
+      it('rejects a prePublishRaw that holds no usable raw tx', async function() {
+        const created = await helpers.createAndPublishTx(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        }, TestData.copayers[0].privKey_1H_0);
+
+        const txp = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+        const warn = sinon.spy(logger, 'warn');
+        try {
+          // an empty list is truthy, so it has to be refused up front rather than handed to the tx
+          // provider, which would fail the same check by throwing
+          for (const prePublishRaw of [[], [''], ['', '']]) {
+            txp.prePublishRaw = prePublishRaw;
+            ChainService.isPrePublishRawBound(txp).should.equal(false);
+          }
+          warn.called.should.equal(false);
+        } finally {
+          warn.restore();
+        }
+      });
+
+      it('rejects the publishTx fallback when the stored proposal was tampered', async function() {
+        blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '7');
+        const created = await util.promisify(server.createTx).call(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        });
+        const publishOpts = helpers.getProposalSignatureOpts(created, TestData.copayers[0].privKey_1H_0);
+        await util.promisify(server.publishTx).call(server, publishOpts);
+
+        // Assign the nonce so a re-publish must fall back to prePublishRaw...
+        await util.promisify(server.prepareTx).call(server, { txProposalId: created.id });
+        // ...then tamper the stored destination and replay the original (still-valid) proposalSignature.
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, created.id);
+        should.exist(stored.prePublishRaw);
+        stored.outputs[0].toAddress = ATTACKER_ADDR;
+        await util.promisify(server.storage.storeTx).call(server.storage, wallet.id, stored);
+
+        let err;
+        try {
+          await util.promisify(server.publishTx).call(server, publishOpts);
+        } catch (e) { err = e; }
+        should.exist(err);
+        err.message.should.contain('Invalid proposal signature');
+      });
+    });
   });
 
   describe('#prepareTx XRP (deferred nonce)', function() {
@@ -8911,6 +9458,20 @@ describe('Wallet service', function() {
         signatures
       });
       signed.status.should.equal('accepted');
+    });
+
+    it('rejects prePublishRaw binding when an XRP destination was tampered', async function() {
+      const ATTACKER_XRP = 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe';
+      const created = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: XRP_ADDR, amount: 8000 }],
+        feePerKb: 123e2, from: fromAddr, deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+
+      const txp = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+      should.exist(txp.prePublishRaw);
+      ChainService.isPrePublishRawBound(txp).should.equal(true); // untampered baseline
+      txp.outputs[0].toAddress = ATTACKER_XRP;
+      ChainService.isPrePublishRawBound(txp).should.equal(false);
     });
   });
 
@@ -11444,10 +12005,6 @@ describe('Wallet service', function() {
             simplex: {
               disabled: false,
               removed: false
-            },
-            wyre: {
-              disabled: false,
-              removed: false
             }
           },
           sellCrypto: {
@@ -11535,10 +12092,6 @@ describe('Wallet service', function() {
               removed: false
             },
             transak: {
-              disabled: false,
-              removed: false
-            },
-            wyre: {
               disabled: false,
               removed: false
             }

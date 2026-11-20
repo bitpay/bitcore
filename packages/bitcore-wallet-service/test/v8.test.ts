@@ -7,6 +7,9 @@ import { V8 } from '../src/lib/blockchainexplorers/v8';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Readable } from 'stream';
 import { Common } from '../src/lib/common';
+// Same import style as v8.ts's own `request` field, so `typeof request` here
+// refers to the identical type.
+import * as request from 'request-promise-native';
 
 const should = chai.should();
 const { Defaults } = Common;
@@ -29,6 +32,38 @@ describe('V8', () => {
   const wallet = {
     beAuthPrivateKey2: new BitcoreLib.PrivateKey()
   };
+
+  describe('#getBalanceAtTime', () => {
+    it('should request the wallet balance at the supplied time', done => {
+      const balance = { confirmed: 100, unconfirmed: 0, balance: 100 };
+      const balanceWallet = {
+        ...wallet,
+        beAuthPublicKey2: wallet.beAuthPrivateKey2.toPublicKey().toString(),
+        tokenAddress: '0xToken'
+      };
+      class BalanceAtTimeClient {
+        getBalanceAtTime(opts) {
+          opts.pubKey.should.equal(balanceWallet.beAuthPublicKey2);
+          opts.time.should.equal('2025-01-15T12:00:00.000Z');
+          opts.tokenAddress.should.equal('0xToken');
+          return Promise.resolve(balance);
+        }
+      }
+      const be = new V8({
+        chain: 'btc',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        client: BalanceAtTimeClient as any
+      });
+
+      be.getBalanceAtTime(balanceWallet as any, '2025-01-15T12:00:00.000Z', (err, result) => {
+        should.not.exist(err);
+        result.should.deep.equal(balance);
+        done();
+      });
+    });
+  });
 
   describe('#listTransactions', () => {
     it('should handle partial json results', (done) => {
@@ -174,7 +209,7 @@ describe('V8', () => {
     it('should estimate fee', (done) => {
       const fakeRequest = {
         get: sinon.stub().resolves('{"feerate":0.00017349,"blocks":5}'),
-      };
+      } as unknown as typeof request;
 
       const be = new V8({
         chain: 'bch',
@@ -197,7 +232,7 @@ describe('V8', () => {
     it('should ignore non-matching results from estimate fee', (done) => {
       const fakeRequest = {
         get: sinon.stub().resolves('{"feerate":0.00017349,"blocks":4}'),
-      };
+      } as unknown as typeof request;
 
       const be = new V8({
         chain: 'bch',
@@ -220,7 +255,7 @@ describe('V8', () => {
     it('should use results from estimate fee is blocks is not present', (done) => {
       const fakeRequest = {
         get: sinon.stub().resolves('{"feerate":0.00017349}'),
-      };
+      } as unknown as typeof request;
 
       const be = new V8({
         chain: 'bch',
@@ -251,7 +286,7 @@ describe('V8', () => {
     it('should get aave user account data', (done) => {
       const fakeRequest = {
         get: sinon.stub().resolves('{"totalCollateralBase":"1000","totalDebtBase":"500","availableBorrowsBase":"200","currentLiquidationThreshold":"8000","ltv":"7500","healthFactor":"2.0"}'),
-      };
+      } as unknown as typeof request;
 
       const be = new V8({
         chain: 'eth',
@@ -280,7 +315,7 @@ describe('V8', () => {
     it('should get aave reserve data', (done) => {
       const fakeRequest = {
         get: sinon.stub().resolves('{"currentVariableBorrowRate":"35000000000000000000000000"}'),
-      };
+      } as unknown as typeof request;
 
       const be = new V8({
         chain: 'eth',
@@ -304,7 +339,7 @@ describe('V8', () => {
     it('should get aave reserve tokens addresses', (done) => {
       const fakeRequest = {
         get: sinon.stub().resolves('{"variableDebtTokenAddress":"0xdef456"}'),
-      };
+      } as unknown as typeof request;
 
       const be = new V8({
         chain: 'eth',
@@ -328,7 +363,7 @@ describe('V8', () => {
     it('should get token allowance', (done) => {
       const fakeRequest = {
         get: sinon.stub().resolves('5000000'),
-      };
+      } as unknown as typeof request;
 
       const be = new V8({
         chain: 'eth',

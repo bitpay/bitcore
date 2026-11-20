@@ -311,8 +311,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     const { chain, network } = this;
     this.syncing = true;
     const state = await StateStorage.collection.findOne({});
-    this.initialSyncComplete =
-      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
+    this.initialSyncComplete = !!state?.initialSyncComplete?.includes(`${chain}:${network}`);
     try {
       if (this.chainConfig.walletOnlySync && !this.initialSyncComplete) {
         await this.syncWallets();

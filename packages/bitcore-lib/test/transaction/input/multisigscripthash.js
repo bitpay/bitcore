@@ -1,12 +1,9 @@
 'use strict';
 /* jshint unused: false */
-
-const should = require('chai').should();
-const expect = require('chai').expect;
-const _ = require('lodash');
-
+require('chai').should();
+const sinon = require('sinon');
 const bitcore = require('../../..');
-
+ 
 const Transaction = bitcore.Transaction;
 const PrivateKey = bitcore.PrivateKey;
 const Address = bitcore.Address;
@@ -41,6 +38,42 @@ describe('MultiSigScriptHashInput', function() {
     satoshis: 1000000
   };
 
+  it('sorts objects, hex strings, buffers, and mixed keys without mutating caller arrays', function() {
+    const expected = [public2, public3, public1].map(key => key.toString());
+    const representations = [
+      [public1, public2, public3],
+      expected,
+      [public1, public2, public3].map(key => key.toBuffer()),
+      [public1.toString(), public2, public3.toBuffer()]
+    ];
+    const permutations = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+    for (const outputData of [output, witnessOutput]) {
+      for (const keys of representations) {
+        for (const permutation of permutations) {
+          const pubkeys = permutation.map(index => keys[index]);
+          const original = [...pubkeys];
+          const input = new MultiSigScriptHashInput({ output: outputData, script: Script.empty() }, pubkeys, 2);
+          input.publicKeys.map(key => key.toString('hex')).should.deep.equal(expected);
+          pubkeys.should.deep.equal(original);
+        }
+      }
+    }
+  });
+
+  it('orders Buffer keys by their bytes rather than decoded text', function() {
+    const first = Buffer.from('02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5', 'hex');
+    const second = Buffer.from('02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e', 'hex');
+    const pubkeys = [first, second];
+    const redeemScript = Script.buildMultisigOut(pubkeys, 2);
+    const scripts = [Script.buildScriptHashOut(redeemScript), Script.buildWitnessMultisigOutFromScript(redeemScript)];
+    for (const script of scripts) {
+      const outputData = { script, satoshis: 1000000 };
+      const input = new MultiSigScriptHashInput({ output: outputData, script: Script.empty() }, pubkeys, 2);
+      input.publicKeys.should.deep.equal([first, second]);
+      pubkeys.should.deep.equal([first, second]);
+    }
+  });
+
   it('can count missing signatures', function() {
     const transaction = new Transaction()
       .from(output, [public1, public2, public3], 2)
@@ -65,18 +98,25 @@ describe('MultiSigScriptHashInput', function() {
       .to(address, 1000000);
     const input = transaction.inputs[0];
 
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-      const serialized = publicKeyMissing.toString();
-      return serialized === public1.toString() ||
-              serialized === public2.toString() ||
-              serialized === public3.toString();
-    }).should.equal(true);
+    const missingPublicKeys = input.publicKeysWithoutSignature().map(function(publicKey) {
+      return publicKey.toString();
+    });
+    missingPublicKeys.should.have.members([
+      public1.toString(),
+      public2.toString(),
+      public3.toString()
+    ]);
+    missingPublicKeys.should.have.length(3);
+
     transaction.sign(privateKey1);
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-      const serialized = publicKeyMissing.toString();
-      return serialized === public2.toString() ||
-              serialized === public3.toString();
-    }).should.equal(true);
+    const missingAfterSign = input.publicKeysWithoutSignature().map(function(publicKey) {
+      return publicKey.toString();
+    });
+    missingAfterSign.should.have.members([
+      public2.toString(),
+      public3.toString()
+    ]);
+    missingAfterSign.should.have.length(2);
   });
   it('can clear all signatures', function() {
     const transaction = new Transaction()
@@ -180,18 +220,25 @@ describe('MultiSigScriptHashInput', function() {
         .to(address, 1000000);
       const input = transaction.inputs[0];
 
-      _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-        const serialized = publicKeyMissing.toString();
-        return serialized === public1.toString() ||
-                serialized === public2.toString() ||
-                serialized === public3.toString();
-      }).should.equal(true);
+      const missingPublicKeys = input.publicKeysWithoutSignature().map(function(publicKey) {
+        return publicKey.toString();
+      });
+      missingPublicKeys.should.have.members([
+        public1.toString(),
+        public2.toString(),
+        public3.toString()
+      ]);
+      missingPublicKeys.should.have.length(3);
+
       transaction.sign(privateKey1);
-      _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-        const serialized = publicKeyMissing.toString();
-        return serialized === public2.toString() ||
-                serialized === public3.toString();
-      }).should.equal(true);
+      const missingAfterSign = input.publicKeysWithoutSignature().map(function(publicKey) {
+        return publicKey.toString();
+      });
+      missingAfterSign.should.have.members([
+        public2.toString(),
+        public3.toString()
+      ]);
+      missingAfterSign.should.have.length(2);
     });
     it('can clear all signatures', function() {
       const transaction = new Transaction()
@@ -252,6 +299,38 @@ describe('MultiSigScriptHashInput', function() {
       const input = transaction.inputs[0];
       const satoshisBuffer = input.getSatoshisBuffer();
       satoshisBuffer.toString('hex').should.equal('40420f0000000000');
+    });
+  });
+
+  // Hermes (React Native) and Node 18 lack Array.prototype.toSorted. The key order defines the
+  // multisig addresses, so it must not change.
+  describe('without Array.prototype.toSorted', function() {
+    const sandbox = sinon.createSandbox();
+
+    beforeEach(() => {
+      sandbox.stub(Array.prototype, 'toSorted').throws(new TypeError('toSorted is not a function'));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('derives P2SH and P2WSH multisig addresses', function() {
+      new Address([public1, public2, public3], 2).toString().should.equal(output.address);
+      new Address([public1, public2, public3], 2, null, Address.PayToWitnessScriptHash).toString().should.equal(witnessOutput.address);
+    });
+
+    it('sorts the public keys and signs P2SH and P2WSH inputs', function() {
+      for (const outputData of [output, witnessOutput]) {
+        const transaction = new Transaction()
+          .from(outputData, [public1, public2, public3], 2)
+          .to(address, 1000000)
+          .sign(privateKey1)
+          .sign(privateKey2);
+        const input = transaction.inputs[0];
+        input.publicKeys.map(key => key.toString()).should.deep.equal([public2, public3, public1].map(key => key.toString()));
+        input.isFullySigned().should.equal(true);
+      }
     });
   });
 

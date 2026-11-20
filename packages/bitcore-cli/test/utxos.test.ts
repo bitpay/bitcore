@@ -108,7 +108,7 @@ describe('UTXOs', function() {
       [KEYSTROKES.ENTER], // UTXOs
       // Checkpoint1: UTXOs view shows expected UTXOs
       ['x'], // Exit UTXOs view (checkpoint1)
-      [KEYSTROKES.ARROW_DOWN], // Main Menu -> Exit
+      [KEYSTROKES.ARROW_UP], // Proposals -> Exit
       [KEYSTROKES.ENTER], // Exit
     ];
     let step = 0;
@@ -135,7 +135,7 @@ describe('UTXOs', function() {
             }
             if (step === Array.from(checkpoints)[0]) {
               // Assert UTXOs output contains expected info for non-zero UTXOs
-              assert.match(checkpointOutput, /◇ {2}UTXOs ─────/);
+              assert.match(checkpointOutput, /◇ {2}UTXOs - Total: 2 {2}\(pg 1\/1\) ─────/);
               assert.match(checkpointOutput, /\[[0-9a-f]+\.{3}[0-9a-f]+:0\] 0.456 BTC/);
               assert.match(checkpointOutput, /\[[0-9a-f]+\.{3}[0-9a-f]+:0\] 4.123 BTC/);
             }

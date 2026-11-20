@@ -1,4 +1,4 @@
-FROM node:lts-bullseye
+FROM node:24.22.3-bullseye
 WORKDIR /crypto-rpc
 RUN  npm install @solana/kit
 

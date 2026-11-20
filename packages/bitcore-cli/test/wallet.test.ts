@@ -1,11 +1,13 @@
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import assert from 'assert';
 import sinon from 'sinon';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { Transform } from 'stream';
-import { Encryption } from '@bitpay-labs/bitcore-wallet-client';
+import { Encryption, Key } from '@bitpay-labs/bitcore-wallet-client';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
+import * as prompt from '@clack/prompts';
 import * as helpers from './helpers';
 import * as walletData from './data/walletsData';
 import * as promptsModule from '../src/prompts';
@@ -157,8 +159,12 @@ describe('Wallet', function() {
 
     it('should handle stale lock file', function(done) {
       const lockFileName = Utils.getWalletLockFileName(WALLETS.BTC.SINGLE_SIG, DIR);
-      fs.writeFileSync(lockFileName, '999999', { mode: 0o444 }); // create a lock file with a PID that doesn't exist
-      assert(fs.readFileSync(lockFileName, 'utf-8') === '999999', 'Failed to create lock file with test PID');
+      // Use a reaped process's PID: arbitrary large values are invalid on macOS.
+      const exitedProcess = spawnSync(process.execPath, ['-e', '']);
+      assert.strictEqual(exitedProcess.status, 0);
+      const stalePid = exitedProcess.pid.toString();
+      fs.writeFileSync(lockFileName, stalePid, { mode: 0o444 });
+      assert.strictEqual(fs.readFileSync(lockFileName, 'utf-8'), stalePid);
 
       const stepInputs = [
         // Checkpoint1: Upon wallet load
@@ -192,7 +198,8 @@ describe('Wallet', function() {
                   const lines = helpers.decolor(checkpointOutput).split(os.EOL);
                   const mainmenuLine = lines.findIndex(l => l.match(`[  Main Menu - ${WALLETS.BTC.SINGLE_SIG}  ]`));
                   assert(mainmenuLine > -1, 'Did not reach main menu. Got: ' + checkpointOutput);
-                  assert(fs.readFileSync(lockFileName, 'utf-8') === child.pid.toString(), 'Lock file does not match child PID');
+                  const [lockedPid] = fs.readFileSync(lockFileName, 'utf-8').split('\n');
+                  assert.equal(lockedPid, child.pid.toString(), 'Lock file does not match child PID');
                   break;
               }
 
@@ -231,6 +238,200 @@ describe('Wallet', function() {
       });
     });
 
+    it('should record the pid and full invocation command in the lock file', function(done) {
+      const lockFileName = Utils.getWalletLockFileName(WALLETS.BTC.SINGLE_SIG, DIR);
+      const stepInputs = [
+        // Checkpoint1: Upon wallet load
+        [KEYSTROKES.ARROW_UP], // Proposals -> Exit
+        [KEYSTROKES.ENTER], // Exit
+      ];
+      let step = 0;
+      const io = new Transform({
+        encoding: 'utf-8',
+        transform: function (chunk, encoding, respond) {
+          try {
+            chunk = chunk.toString();
+
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
+
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case 0: {
+                  const [lockedPid, lockedArgv] = fs.readFileSync(lockFileName, 'utf-8').split('\n');
+                  assert.equal(lockedPid, child.pid.toString(), 'Lock file pid should match the running process');
+                  assert.ok(lockedArgv.split(' ')[1].endsWith(CLI_EXEC), 'Lock file argv should include the CLI entry point');
+                  break;
+                }
+              }
+
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            }
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
+            }
+            respond();
+          } catch (e) {
+            return respond(e);
+          }
+        }
+      });
+      const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
+      child.stderr.pipe(process.stderr);
+      child.stdout.pipe(io).pipe(child.stdin);
+      io.on('error', (e) => {
+        done(e);
+      });
+      child.on('error', (e) => {
+        done(e);
+      });
+      child.on('close', (code) => {
+        try {
+          assert.equal(code, 0);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('should treat a lock file as stale when its pid is reused by an unrelated process', function(done) {
+      // Simulates a crashed bitcore-cli process whose pid has since been reused by some other, unrelated
+      // process that also happens to be invoked via a `cli.js` script (regression: an exact script-path
+      // comparison must be used instead of a loose "looks like bitcore-cli" heuristic).
+      const fakeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-cli-fake-'));
+      const fakeCliPath = path.join(fakeDir, 'cli.js');
+      fs.writeFileSync(fakeCliPath, 'setInterval(() => {}, 100000);\n');
+      const fakeProcess = spawn('node', [fakeCliPath], { detached: true, stdio: 'ignore' });
+
+      const lockFileName = Utils.getWalletLockFileName(WALLETS.BTC.SINGLE_SIG, DIR);
+      // Recorded lock claims a different cli.js path than the one the reused pid is now actually running
+      const originalArgv = 'node /original/path/to/bitcore-cli/build/src/cli.js';
+      fs.writeFileSync(lockFileName, `${fakeProcess.pid}\n${originalArgv}`, { mode: 0o444 });
+
+      const stepInputs = [
+        // Checkpoint1: Upon wallet load
+        [KEYSTROKES.ARROW_UP], // Proposals -> Exit
+        [KEYSTROKES.ENTER], // Exit
+      ];
+      let step = 0;
+      let output = '';
+      const checkpoints = new Set([0]);
+      let checkpointOutput = '';
+      const io = new Transform({
+        encoding: 'utf-8',
+        transform: function (chunk, encoding, respond) {
+          try {
+            chunk = chunk.toString();
+            output += chunk;
+            if (checkpoints.has(step)) {
+              checkpointOutput += chunk;
+            } else {
+              checkpointOutput = '';
+            }
+
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
+
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case Array.from(checkpoints)[0]: {
+                  const lines = helpers.decolor(checkpointOutput).split(os.EOL);
+                  const mainmenuLine = lines.findIndex(l => l.match(`[  Main Menu - ${WALLETS.BTC.SINGLE_SIG}  ]`));
+                  assert(mainmenuLine > -1, 'Did not reach main menu. Got: ' + checkpointOutput);
+                  break;
+                }
+              }
+
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            }
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
+            }
+            respond();
+          } catch (e) {
+            return respond(e);
+          }
+        }
+      });
+      const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
+      child.stderr.pipe(process.stderr);
+      child.stdout.pipe(io).pipe(child.stdin);
+      io.on('error', (e) => {
+        done(e);
+      });
+      child.on('error', (e) => {
+        done(e);
+      });
+      child.on('close', (code) => {
+        try {
+          fakeProcess.kill();
+        } catch { /* already dead */ }
+        fs.rmSync(fakeDir, { recursive: true, force: true });
+        try {
+          assert.equal(code, 0);
+          assert.match(helpers.decolor(output), /Stale wallet lock file detected/);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+  });
+
+  describe('getTokenFromChain', function() {
+    const sandbox = sinon.createSandbox();
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    for (const [network, rpcUrl] of Object.entries({
+      livenet: 'https://arc-rpc.publicnode.com',
+      testnet: 'https://arc-testnet-rpc.publicnode.com'
+    })) {
+      it(`should fetch Arc token metadata on ${network}`, async function() {
+        const wallet = new Wallet({ name: 'arc-token', dir: DIR });
+        sandbox.stub(wallet, 'chain').get(() => 'arc');
+        sandbox.stub(wallet, 'network').get(() => network);
+        const abi = new Web3().eth.abi;
+        const request = sandbox.stub(Web3.providers.HttpProvider.prototype, 'request').callsFake(async (payload: {
+          id: string | number;
+          params: [{ data: string }, ...unknown[]];
+        }) => ({
+          jsonrpc: '2.0',
+          id: payload.id,
+          result: payload.params[0].data === '0x95d89b41'
+            ? abi.encodeParameter('string', 'TEST')
+            : abi.encodeParameter('uint8', 6)
+        }));
+
+        const token = await wallet.getTokenFromChain({ address: '0x1111111111111111111111111111111111111111' });
+
+        assert.strictEqual(request.callCount, 2);
+        assert.ok(request.getCalls().every(call => call.thisValue.clientUrl === rpcUrl));
+        assert.strictEqual(token.code, 'TEST');
+        assert.strictEqual(token.chain, 'ARC');
+        assert.strictEqual(token.toSatoshis, 1e6);
+      });
+    }
   });
 
   describe('save', function() {
@@ -312,6 +513,7 @@ describe('Wallet', function() {
       await wallet.getClient({ mustExist: true, doNotComplete: true });
       getPasswordStub = sandbox.stub(promptsModule, 'getPassword').callsFake(async function(_, opts) {
         opts.validate(PASSWORD);
+        return PASSWORD;
       });
     });
 
@@ -359,6 +561,143 @@ describe('Wallet', function() {
       const exportFile = path.join(TEMP_DIR, 'deep', 'nested', 'dirs', 'wallet.json');
       await wallet.export({ filename: exportFile, readOnly: true });
       assert.ok(fs.existsSync(exportFile), 'export file should be created even with missing parent dirs');
+    });
+  });
+
+  describe('updatePassword', function() {
+    const { BTC, DIR, PASSWORD } = WALLETS;
+    const newPassword = 'replacement-password';
+    const sandbox = sinon.createSandbox();
+    let wallet: Wallet;
+    let tempDir: string;
+    let walletFile: string;
+    let stateDir: string;
+
+    beforeEach(async function() {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-cli-password-'));
+      walletFile = path.join(tempDir, BTC.SINGLE_SIG + '.json');
+      fs.copyFileSync(path.join(DIR, BTC.SINGLE_SIG + '.json'), walletFile);
+      wallet = new Wallet({ name: BTC.SINGLE_SIG, dir: tempDir });
+      sandbox.stub(wallet as any, 'lockLoadedWallet');
+      await wallet.getClient({ mustExist: true, doNotComplete: true });
+      stateDir = await wallet.storage.getStatePath();
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    it('re-encrypts the saved key and state files with the new password', async function() {
+      const stateFile = path.join(stateDir, 'proposal.json');
+      const stateData = Buffer.from('transaction proposal state');
+      fs.writeFileSync(stateFile, JSON.stringify(Encryption.encryptWithPassword(stateData, PASSWORD)));
+      fs.mkdirSync(path.join(stateDir, 'subdirectory'));
+
+      await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
+
+      const saved = JSON.parse(fs.readFileSync(walletFile, 'utf-8'));
+      const savedKey = new Key({ seedType: 'object', seedData: saved.key });
+      assert.strictEqual(saved.key.xPrivKey, null);
+      assert.strictEqual(saved.key.mnemonic, null);
+      assert.strictEqual(savedKey.checkPassword(newPassword), true);
+      assert.strictEqual(savedKey.checkPassword(PASSWORD), false);
+      const updatedState = fs.readFileSync(stateFile, 'utf-8');
+      assert.deepStrictEqual(Encryption.decryptWithPassword(updatedState, newPassword), stateData);
+      assert.throws(() => Encryption.decryptWithPassword(updatedState, PASSWORD));
+    });
+
+    it('re-encrypts both ECDSA and EDDSA keys for a SOL wallet', async function() {
+      const solName = 'sol-password';
+      const solFile = path.join(tempDir, solName + '.json');
+      const key = new Key({
+        seedType: 'mnemonic',
+        seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+        password: PASSWORD,
+        encryptionOpts: { iter: 1000 }
+      });
+      const credentials = key.createCredentials(PASSWORD, {
+        coin: 'sol',
+        chain: 'sol',
+        network: 'testnet',
+        account: 0,
+        n: 1
+      });
+      const originalEddsaKey = key.get(PASSWORD, 'EDDSA').xPrivKey;
+      fs.writeFileSync(solFile, JSON.stringify({ key: key.toObj(), credentials: credentials.toObj() }));
+      wallet = new Wallet({ name: solName, dir: tempDir });
+      sandbox.stub(wallet as any, 'lockLoadedWallet');
+      await wallet.getClient({ mustExist: true, doNotComplete: true });
+
+      assert.strictEqual(wallet.chain, 'sol');
+      await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
+
+      const saved = JSON.parse(fs.readFileSync(solFile, 'utf-8'));
+      const savedKey = new Key({ seedType: 'object', seedData: saved.key });
+      assert.ok(saved.key.xPrivKeyEncrypted);
+      assert.ok(saved.key.xPrivKeyEDDSAEncrypted);
+      assert.ok(saved.key.xPrivKey == null);
+      assert.ok(saved.key.xPrivKeyEDDSA == null);
+      assert.strictEqual(savedKey.checkPassword(newPassword, 'ECDSA'), true);
+      assert.strictEqual(savedKey.checkPassword(newPassword, 'EDDSA'), true);
+      assert.strictEqual(savedKey.checkPassword(PASSWORD, 'ECDSA'), false);
+      assert.strictEqual(savedKey.checkPassword(PASSWORD, 'EDDSA'), false);
+      assert.strictEqual(savedKey.get(newPassword, 'EDDSA').xPrivKey, originalEddsaKey);
+      assert.strictEqual(savedKey.get(newPassword, 'EDDSA').mnemonic,
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+    });
+
+    it('leaves the wallet and state files unchanged when the current password is wrong', async function() {
+      const stateFile = path.join(stateDir, 'proposal.json');
+      fs.writeFileSync(stateFile, JSON.stringify(Encryption.encryptWithPassword('state', PASSWORD)));
+      const originalWallet = fs.readFileSync(walletFile, 'utf-8');
+      const originalState = fs.readFileSync(stateFile, 'utf-8');
+
+      await assert.rejects(() => wallet.updatePassword('wrong-password', newPassword, { silent: true }), /Could not decrypt/);
+
+      assert.strictEqual(fs.readFileSync(walletFile, 'utf-8'), originalWallet);
+      assert.strictEqual(fs.readFileSync(stateFile, 'utf-8'), originalState);
+    });
+
+    it('keeps the original state file when writing its replacement fails', async function() {
+      const stateFile = path.join(stateDir, 'proposal.json');
+      const tempFile = stateFile + '-temp';
+      const stateData = 'transaction proposal state';
+      fs.writeFileSync(stateFile, JSON.stringify(Encryption.encryptWithPassword(stateData, PASSWORD)));
+      const originalState = fs.readFileSync(stateFile, 'utf-8');
+      const writeFile = fs.writeFileSync;
+      const writeStub = sandbox.stub(fs, 'writeFileSync').callsFake((filename) => {
+        writeFile(filename, 'partial encrypted data');
+        throw new Error('ENOSPC: disk full');
+      });
+      const warn = sandbox.stub(prompt.log, 'warn');
+
+      await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
+
+      assert.strictEqual(writeStub.callCount, 1);
+      assert.strictEqual(writeStub.firstCall.args[0], tempFile);
+      assert.strictEqual(fs.readFileSync(stateFile, 'utf-8'), originalState);
+      assert.strictEqual(Encryption.decryptWithPassword(originalState, PASSWORD).toString(), stateData);
+      assert.strictEqual(fs.existsSync(tempFile), false);
+      assert.strictEqual(warn.callCount, 1);
+      assert.ok(warn.firstCall.args[0].includes(stateFile));
+      assert.match(warn.firstCall.args[0], /ENOSPC: disk full/);
+    });
+
+    it('warns about a state file it cannot decrypt and continues with the other files', async function() {
+      const badFile = path.join(stateDir, 'bad.json');
+      const goodFile = path.join(stateDir, 'good.json');
+      fs.writeFileSync(badFile, 'invalid encrypted data');
+      fs.writeFileSync(goodFile, JSON.stringify(Encryption.encryptWithPassword('state', PASSWORD)));
+      const warn = sandbox.stub(prompt.log, 'warn');
+
+      await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
+
+      assert.strictEqual(fs.readFileSync(badFile, 'utf-8'), 'invalid encrypted data');
+      assert.strictEqual(Encryption.decryptWithPassword(fs.readFileSync(goodFile, 'utf-8'), newPassword).toString(), 'state');
+      assert.strictEqual(warn.callCount, 1);
+      assert.match(warn.firstCall.args[0], /Failed to re-encrypt state file/);
+      assert.ok(warn.firstCall.args[0].includes(badFile));
     });
   });
 });

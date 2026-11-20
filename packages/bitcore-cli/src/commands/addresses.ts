@@ -1,29 +1,18 @@
 import os from 'os';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 
-export function command(args: CommonArgs) {
-  const { program } = args;
-  program
+export function command() {
+  return new Command('addresses')
     .description('List wallet addresses')
-    .usage('<walletName> --command addresses [options]')
     .optionsGroup('Addresses Options')
-    .option('--page <page>', 'Page number to display', '1')
-    .parse(process.argv);
-  
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-  return opts;
+    .option('--page <page>', 'Page number to display', '1');
 }
 
 export async function getAddresses(args: CommonArgs<{ pageSize?: number; page?: number }>) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
   const { pageSize } = opts;
 
   await Utils.paginate(async (page, _viewAction) => {

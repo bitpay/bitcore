@@ -1,4 +1,4 @@
-FROM node:22-bookworm
+FROM node:24.22.3-bookworm
 
 # Install Chrome
 
@@ -13,6 +13,10 @@ RUN set -x \
 
 ENV CHROME_BIN /usr/bin/google-chrome
 
+# Pin npm to the exact version recorded in package.json's packageManager
+# field, the same way CI's use_node step does.
+RUN npm install -g npm@11.19.1
+
 # Log versions
 
 RUN set -x \
@@ -23,4 +27,6 @@ RUN set -x \
 WORKDIR /bitcore
 
 ADD . .
-RUN npm ci
+
+# npm checks root devEngines before installing dependencies.
+RUN npm ci --include=optional --foreground-scripts

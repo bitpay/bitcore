@@ -20,10 +20,16 @@ More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
 ## Getting Started
 
+BWS is developed as part of the Bitcore monorepo. Clone the repo and install
+from the root — this installs and links every backend package (including
+this one) and compiles it automatically; see the root
+[SETUP.md](../../SETUP.md) for the exact Node/npm versions and
+other monorepo development commands.
+
 ```sh
 git clone https://github.com/bitpay/bitcore.git
 cd bitcore
-npm install
+npm ci
 npm run bws
 ```
 
@@ -86,9 +92,6 @@ There are plenty examples of creating and sending proposals in the `/test/integr
 - copay running on port: 8100
 - bitcoin-core running on regtest mode (blue icon logo)
 
-> mongo topology crashes sometimes due to notifications being incompatible in a web browser
-> **bitcore-wallet-service/lib/notificationbroadcaster.js**
-> Note: If testing on a PC browser, comment out notificationbroadcaster.js to disable notifications.
 
 ### Steps:
 

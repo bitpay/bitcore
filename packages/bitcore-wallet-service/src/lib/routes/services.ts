@@ -3,6 +3,7 @@ import express from 'express';
 import rp from 'request-promise-native';
 import config from '../../config';
 import { Common } from '../common';
+import { ClientError } from '../errors/clienterror';
 import type * as Types from '../../types/expressapp';
 import type { WalletService } from '../server';
 
@@ -65,7 +66,7 @@ function respondWithAuthServer(req, res, context: RouteContext, handler: RouteHa
 }
 
 export function registerServiceRoutes(router: express.Router, context: RouteContext) {
-  const { getServerWithAuth, setPublicCache, returnError } = context;
+  const { setPublicCache } = context;
 
   const transakCorsOptions = {
     origin: (origin, cb) => {
@@ -125,13 +126,18 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.get('/v1/fiatrates/:code/', (req, res) => {
+    const { coin } = req.query;
+    if (coin !== undefined && typeof coin !== 'string') {
+      return context.returnError(new ClientError('Invalid coin'), res, req);
+    }
+
     setPublicCache(res, 5 * ONE_MINUTE);
     respondWithPublicServer(req, res, context, server =>
       callbackResult(resolve => {
         server.getFiatRate(
           {
             code: req.params['code'],
-            coin: req.query.coin || 'btc',
+            coin: coin || 'btc',
             ts: req.query.ts ? +req.query.ts : null
           },
           resolve
@@ -399,19 +405,6 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
-  router.get('/v1/service/simplex/events', (req, res) => {
-    getServerWithAuth(req, res, server => {
-      Promise.resolve()
-        .then(() => server.externalServices.simplex.simplexGetEvents({ env: req.query.env }))
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          returnError(err ?? 'unknown', res, req);
-        });
-    });
-  });
-
   router.post('/v1/service/thorswap/supportedChains', (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.thorswap.thorswapGetSupportedChains(req);
@@ -468,19 +461,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
 
   router.post('/v1/service/transak/orderDetails', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.transak.transakGetOrderDetails(req);
-    });
-  });
-
-  router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
-    respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.wyre.wyreWalletOrderQuotation(req);
-    });
-  });
-
-  router.post('/v1/service/wyre/walletOrderReservation', (req, res) => {
-    respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.wyre.wyreWalletOrderReservation(req);
+      return server.externalServices.transak.transakGetOrderDetails(req, server.walletId);
     });
   });
 
