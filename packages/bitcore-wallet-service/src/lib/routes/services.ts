@@ -405,6 +405,48 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
+  router.post('/v1/service/moonpaySwap/chainList', (req, res) => {
+    respondWithPublicServer(req, res, context, server => {
+      return server.externalServices.moonpaySwap.moonpaySwapGetChainList(req);
+    });
+  });
+
+  router.post('/v1/service/moonpaySwap/tokenList', (req, res) => {
+    respondWithPublicServer(req, res, context, server => {
+      return server.externalServices.moonpaySwap.moonpaySwapGetTokenList(req);
+    });
+  });
+
+  router.post('/v1/service/moonpaySwap/getPaths', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.moonpaySwap.moonpaySwapGetPaths(req);
+    });
+  });
+
+  router.post('/v1/service/moonpaySwap/getQuote', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.moonpaySwap.moonpaySwapGetQuote(req);
+    });
+  });
+
+  router.post('/v1/service/moonpaySwap/getAction', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.moonpaySwap.moonpaySwapGetAction(req);
+    });
+  });
+
+  router.post('/v1/service/moonpaySwap/getStatus', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.moonpaySwap.moonpaySwapGetStatus(req);
+    });
+  });
+
+  router.post('/v1/service/moonpaySwap/registerTxs', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.moonpaySwap.moonpaySwapRegisterTxs(req);
+    });
+  });
+
   router.post('/v1/service/thorswap/supportedChains', (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.thorswap.thorswapGetSupportedChains(req);
