@@ -1,3 +1,4 @@
+import util from 'util';
 import express from 'express';
 import * as Types from '../../../types/expressapp';
 import { Utils } from '../../common/utils';
@@ -18,7 +19,7 @@ export function returnAuthError(err: any, req: express.Request, res: express.Res
   if (err instanceof ClientError) {
     return error.returnError(err, res, req);
   }
-  logger.error(`Unexpected error in auth middleware ${req.url}: ${err?.stack || err}`);
+  logger.error(`Unexpected error in auth middleware ${req.url}: ${err?.stack || util.inspect(err)}`);
   return error.returnError(Errors.INTERNAL_ERROR, res, req);
 }
 

@@ -103,7 +103,7 @@ describe('Auth middleware error handling', function() {
         for (const f of [storage.fetchTssKeyGenSession, storage.fetchTssSigSession, storage.fetchCopayerLookup]) f.callsFake(async () => { throw 'boom'; });
         await build()(makeReq(round0()), res, next);
         expect(res.body.code).to.equal('INTERNAL_ERROR');
-        expect(logError.firstCall.args[0]).to.include(': boom');
+        expect(logError.firstCall.args[0]).to.include(": 'boom'");
       });
 
       it('logs the contents of a thrown non-Error object', async function() {
