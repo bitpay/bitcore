@@ -63,6 +63,13 @@ describe('BlockChain explorer', function() {
       (() => BlockChainExplorer({ provider: 'dummy', chain: 'btc', network: 'livenet', url: 'http://localhost:3000' }))
         .should.throw('Provider not supported: dummy');
     });
+    it('should not take a url from names inherited from Object.prototype', function() {
+      for (const network of ['__proto__', 'constructor', 'toString', 'hasOwnProperty']) {
+        (() => BlockChainExplorer({ chain: 'eth', network })).should.throw(`No url found for provider: v8:eth:${network}`);
+      }
+      (() => BlockChainExplorer({ chain: '__proto__', network: 'toString' })).should.throw('No url found for provider: v8:__proto__:toString');
+      (() => BlockChainExplorer({ provider: '__proto__', chain: 'constructor', network: 'name' })).should.throw('No url found for provider: __proto__:constructor:name');
+    });
     it('should default the bch address format to cashaddr on the given opts', function() {
       const opts: any = { chain: 'bch', network: 'livenet' };
       BlockChainExplorer(opts);

@@ -81,6 +81,13 @@ describe('Utils', function() {
       Utils.getNetworkName('nochain', 'testnet').should.equal('testnet');
       should.not.exist(Utils.getNetworkName('eth', undefined));
     });
+    it('should not resolve names inherited from Object.prototype', function() {
+      for (const network of ['__proto__', 'constructor', 'prototype', 'toString', 'hasOwnProperty']) {
+        Utils.getNetworkName('eth', network).should.equal(network);
+      }
+      Utils.getNetworkName('constructor', 'prototype').should.equal('prototype');
+      Utils.getNetworkName('__proto__', 'toString').should.equal('toString');
+    });
   });
 
   describe('#hashMessage', function() {
