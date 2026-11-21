@@ -93,9 +93,17 @@ describe('Auth middleware error handling', function() {
         breakStorage();
         await build()(makeReq(round0()), res, next);
         expect(logError.calledOnce).to.equal(true);
-        const args = logError.firstCall.args;
-        expect(args[0]).to.include(url);
-        expect(args.some(a => a instanceof Error && a.message === 'db down')).to.equal(true);
+        const msg = logError.firstCall.args[0];
+        expect(msg).to.include(url);
+        expect(msg).to.include('Error: db down');
+        expect(msg).to.include('authmiddleware.test'); // stack frame
+      });
+
+      it('logs a thrown non-Error value', async function() {
+        for (const f of [storage.fetchTssKeyGenSession, storage.fetchTssSigSession, storage.fetchCopayerLookup]) f.callsFake(async () => { throw 'boom'; });
+        await build()(makeReq(round0()), res, next);
+        expect(res.body.code).to.equal('INTERNAL_ERROR');
+        expect(logError.firstCall.args[0]).to.include(': boom');
       });
 
       it('does not log client errors at error level', async function() {

@@ -43,6 +43,7 @@ interface Errors<T> {
   MAIN_ADDRESS_GAP_REACHED: T;
   MULTI_TX_UNSUPPORTED: T;
   NETWORK_SUSPENDED: T;
+  INTERNAL_ERROR: T;
   NOT_AUTHORIZED: T;
   SCRIPT_OP_RETURN: T;
   SCRIPT_OP_RETURN_AMOUNT: T;
@@ -126,6 +127,7 @@ const errors: Errors<string> = {
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
   MULTI_TX_UNSUPPORTED: 'Desired chain does not support multi transaction proposals',
   NETWORK_SUSPENDED: '$network operations are currently suspended. Please check status.bitpay.com for further updates.',
+  INTERNAL_ERROR: 'Internal error',
   NOT_AUTHORIZED: 'Not authorized',
   SCRIPT_OP_RETURN: 'The only supported script is OP_RETURN',
   SCRIPT_OP_RETURN_AMOUNT: 'The amount of an output with OP_RETURN script must be 0',
