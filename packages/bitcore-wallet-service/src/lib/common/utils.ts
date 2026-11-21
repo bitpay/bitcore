@@ -100,6 +100,14 @@ export const Utils = {
   },
 
   /**
+   * obj[key], but only if obj has key as an own property. Use it to look up a key that comes from outside
+   * (a request, an API response) so that names like "__proto__" or "constructor" can't resolve to inherited members.
+   */
+  getOwn(obj: any, key: PropertyKey): any {
+    return obj != null && Object.hasOwn(obj, key) ? obj[key] : undefined;
+  },
+
+  /**
    * True for a non-null, non-array object. Always returns a boolean, never the falsy input itself.
    */
   isObject(obj: unknown): obj is Record<string, any> {
@@ -417,11 +425,8 @@ export const Utils = {
 
   // Good for going from generic 'testnet' to specific 'testnet3', 'sepolia', etc
   getNetworkName(chain, network) {
-    const aliases = Constants.NETWORK_ALIASES[chain];
-    if (aliases && aliases[network]) {
-      return aliases[network];
-    }
-    return network;
+    const alias = Utils.getOwn(Utils.getOwn(Constants.NETWORK_ALIASES, chain), network);
+    return alias || network;
   },
 
   // Good for going from specific 'testnet3', 'sepolia', etc to generic 'testnet'

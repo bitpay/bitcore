@@ -64,6 +64,50 @@ describe('Utils', function() {
     });
   });
 
+  describe('#getNetworkName', function() {
+    it('should map a generic network to the chain-specific one', function() {
+      Utils.getNetworkName('btc', 'testnet').should.equal('testnet4');
+      Utils.getNetworkName('doge', 'testnet').should.equal('testnet3');
+      Utils.getNetworkName('eth', 'testnet').should.equal('sepolia');
+      Utils.getNetworkName('matic', 'testnet').should.equal('amoy');
+      Utils.getNetworkName('eth', 'mainnet').should.equal('livenet');
+    });
+    it('should return the network unchanged when there is no alias for it', function() {
+      Utils.getNetworkName('eth', 'livenet').should.equal('livenet');
+      Utils.getNetworkName('eth', 'sepolia').should.equal('sepolia');
+      Utils.getNetworkName('xrp', 'testnet').should.equal('testnet');
+    });
+    it('should return the network unchanged for an unknown chain', function() {
+      Utils.getNetworkName('nochain', 'testnet').should.equal('testnet');
+      should.not.exist(Utils.getNetworkName('eth', undefined));
+    });
+    it('should not resolve names inherited from Object.prototype', function() {
+      for (const network of ['__proto__', 'constructor', 'prototype', 'toString', 'hasOwnProperty']) {
+        Utils.getNetworkName('eth', network).should.equal(network);
+      }
+      Utils.getNetworkName('constructor', 'prototype').should.equal('prototype');
+      Utils.getNetworkName('__proto__', 'toString').should.equal('toString');
+    });
+  });
+
+  describe('#getOwn', function() {
+    it('should return an own property', function() {
+      Utils.getOwn({ a: 1 }, 'a').should.equal(1);
+      should.equal(Utils.getOwn({ a: null }, 'a'), null);
+      Utils.getOwn(JSON.parse('{"__proto__":{"b":2}}'), '__proto__').should.deep.equal({ b: 2 });
+    });
+    it('should return undefined for missing and inherited properties', function() {
+      should.not.exist(Utils.getOwn({ a: 1 }, 'b'));
+      for (const key of ['__proto__', 'constructor', 'toString', 'hasOwnProperty']) {
+        should.equal(Utils.getOwn({}, key), undefined, key);
+      }
+    });
+    it('should return undefined when there is no object', function() {
+      should.equal(Utils.getOwn(undefined, 'a'), undefined);
+      should.equal(Utils.getOwn(null, 'a'), undefined);
+    });
+  });
+
   describe('#hashMessage', function() {
     it('should create a hash', function() {
       const res = Utils.hashMessage('hola', false);
