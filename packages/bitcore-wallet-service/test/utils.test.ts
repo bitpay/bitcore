@@ -90,6 +90,24 @@ describe('Utils', function() {
     });
   });
 
+  describe('#getOwn', function() {
+    it('should return an own property', function() {
+      Utils.getOwn({ a: 1 }, 'a').should.equal(1);
+      should.equal(Utils.getOwn({ a: null }, 'a'), null);
+      Utils.getOwn(JSON.parse('{"__proto__":{"b":2}}'), '__proto__').should.deep.equal({ b: 2 });
+    });
+    it('should return undefined for missing and inherited properties', function() {
+      should.not.exist(Utils.getOwn({ a: 1 }, 'b'));
+      for (const key of ['__proto__', 'constructor', 'toString', 'hasOwnProperty']) {
+        should.equal(Utils.getOwn({}, key), undefined, key);
+      }
+    });
+    it('should return undefined when there is no object', function() {
+      should.equal(Utils.getOwn(undefined, 'a'), undefined);
+      should.equal(Utils.getOwn(null, 'a'), undefined);
+    });
+  });
+
   describe('#hashMessage', function() {
     it('should create a hash', function() {
       const res = Utils.hashMessage('hola', false);
