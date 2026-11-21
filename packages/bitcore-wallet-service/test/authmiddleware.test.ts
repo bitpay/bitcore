@@ -2,6 +2,7 @@ import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { Utils } from '../src/lib/common/utils';
+import logger from '../src/lib/logger';
 import { WalletService } from '../src/lib/server';
 import { authRequest } from '../src/lib/routes/middleware/authRequest';
 import { authTssKeyGenRequest, authTssSignRequest } from '../src/lib/routes/middleware/authTssRequest';
@@ -14,6 +15,7 @@ describe('Auth middleware error handling', function() {
   let storage: any;
   let next: sinon.SinonStub;
   let res: any;
+  let logError: sinon.SinonStub;
 
   function makeReq(body: any = {}, identity = 'copayer1') {
     const signature = BitcoreLib.crypto.ECDSA.sign(
@@ -41,6 +43,7 @@ describe('Auth middleware error handling', function() {
     };
     sandbox.stub(WalletService, 'getStorage').returns(storage);
     next = sandbox.stub();
+    logError = sandbox.stub(logger, 'error');
     res = makeRes();
   });
 
@@ -72,12 +75,34 @@ describe('Auth middleware error handling', function() {
         expect(res.body).to.deep.equal({ code: 'NOT_AUTHORIZED', message: 'Not authorized' });
       });
 
-      it('currently returns an unexpected error as a malformed bad request', async function() {
+      it('returns an unexpected error as a generic INTERNAL_ERROR bad request', async function() {
         breakStorage();
         await build()(makeReq(round0()), res, next);
         expect(next.called).to.equal(false);
         expect(res.statusCode).to.equal(400);
-        expect(res.body).to.deep.equal({ code: 'BADREQUEST', message: { code: 'INTERNAL_ERROR' } });
+        expect(res.body).to.deep.equal({ code: 'INTERNAL_ERROR', message: 'Internal error' });
+      });
+
+      it('does not leak the original error to the client', async function() {
+        breakStorage();
+        await build()(makeReq(round0()), res, next);
+        expect(JSON.stringify(res.body)).to.not.include('db down');
+      });
+
+      it('logs the original error and the request url once', async function() {
+        breakStorage();
+        await build()(makeReq(round0()), res, next);
+        expect(logError.calledOnce).to.equal(true);
+        const args = logError.firstCall.args;
+        expect(args[0]).to.include(url);
+        expect(args.some(a => a instanceof Error && a.message === 'db down')).to.equal(true);
+      });
+
+      it('does not log client errors at error level', async function() {
+        const req = makeReq(round0());
+        req.header = () => undefined;
+        await build()(req, res, next);
+        expect(logError.called).to.equal(false);
       });
     });
   }
