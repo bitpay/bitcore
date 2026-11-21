@@ -64,6 +64,25 @@ describe('Utils', function() {
     });
   });
 
+  describe('#getNetworkName', function() {
+    it('should map a generic network to the chain-specific one', function() {
+      Utils.getNetworkName('btc', 'testnet').should.equal('testnet4');
+      Utils.getNetworkName('doge', 'testnet').should.equal('testnet3');
+      Utils.getNetworkName('eth', 'testnet').should.equal('sepolia');
+      Utils.getNetworkName('matic', 'testnet').should.equal('amoy');
+      Utils.getNetworkName('eth', 'mainnet').should.equal('livenet');
+    });
+    it('should return the network unchanged when there is no alias for it', function() {
+      Utils.getNetworkName('eth', 'livenet').should.equal('livenet');
+      Utils.getNetworkName('eth', 'sepolia').should.equal('sepolia');
+      Utils.getNetworkName('xrp', 'testnet').should.equal('testnet');
+    });
+    it('should return the network unchanged for an unknown chain', function() {
+      Utils.getNetworkName('nochain', 'testnet').should.equal('testnet');
+      should.not.exist(Utils.getNetworkName('eth', undefined));
+    });
+  });
+
   describe('#hashMessage', function() {
     it('should create a hash', function() {
       const res = Utils.hashMessage('hola', false);

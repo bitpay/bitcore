@@ -47,6 +47,27 @@ describe('BlockChain explorer', function() {
           .baseUrl.should.equal(`http://localhost:3000/api/ARC/${apiNetwork}`);
       }
     });
+    it('should use the default url for the chain and network', function() {
+      BlockChainExplorer({ chain: 'eth', network: 'sepolia' }).baseUrl.should.equal('https://api-eth.bitcore.io/api/ETH/sepolia');
+      BlockChainExplorer({ chain: 'BTC', network: 'livenet' }).baseUrl.should.equal('https://api.bitcore.io/api/BTC/mainnet');
+    });
+    it('should prefer opts.url over the default url', function() {
+      BlockChainExplorer({ chain: 'eth', network: 'sepolia', url: 'http://localhost:3000' })
+        .baseUrl.should.equal('http://localhost:3000/api/ETH/sepolia');
+    });
+    it('should fail on a network with no default url', function() {
+      (() => BlockChainExplorer({ chain: 'eth', network: 'nonet' })).should.throw('No url found for provider: v8:eth:nonet');
+      (() => BlockChainExplorer({ chain: 'nochain', network: 'livenet' })).should.throw('No url found for provider: v8:nochain:livenet');
+    });
+    it('should fail on a provider it does not support even with a url', function() {
+      (() => BlockChainExplorer({ provider: 'dummy', chain: 'btc', network: 'livenet', url: 'http://localhost:3000' }))
+        .should.throw('Provider not supported: dummy');
+    });
+    it('should default the bch address format to cashaddr on the given opts', function() {
+      const opts: any = { chain: 'bch', network: 'livenet' };
+      BlockChainExplorer(opts);
+      opts.addressFormat.should.equal('cashaddr');
+    });
     it('should fail on unsupported provider', function() {
       try {
         const exp = BlockChainExplorer({
