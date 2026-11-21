@@ -33,6 +33,10 @@ describe('WalletService#_getBlockchainExplorer', function() {
 
   before(async function() {
     ({ storage } = await helpers.before());
+    // undoWritesSince() compares against a snapshot, so make sure the snapshot starts clean
+    const inherited = [];
+    for (const key in {}) inherited.push(key);
+    inherited.should.deep.equal([]);
   });
 
   beforeEach(async function() {
@@ -102,17 +106,21 @@ describe('WalletService#_getBlockchainExplorer', function() {
 
   describe('with names inherited from Object.prototype', function() {
     beforeEach(function() {
+      // a copy, so no test can change the shared config
       server.blockchainExplorerOpts = JSON.parse(JSON.stringify(config.blockchainExplorerOpts));
+      sinon.stub(server, 'logw');
     });
 
     for (const chain of ['eth', 'btc', 'sol', 'nochain', '__proto__', 'constructor']) {
       it(`should not write onto shared objects for chain ${chain}`, function() {
         for (const network of NETWORK_NAMES_ON_OBJECT_PROTOTYPE) {
-          sinon.stub(server, 'logw');
           const before = ownNames();
-          const explorer = server._getBlockchainExplorer(chain, network);
-          const written = undoWritesSince(before);
-          sinon.restore();
+          let explorer, written;
+          try {
+            explorer = server._getBlockchainExplorer(chain, network);
+          } finally {
+            written = undoWritesSince(before);
+          }
           written.should.deep.equal([], `${chain}/${network}`);
           should.not.exist(explorer, `${chain}/${network}`);
         }
@@ -120,13 +128,16 @@ describe('WalletService#_getBlockchainExplorer', function() {
     }
 
     it('should not let a public request break the database for later requests', async function() {
-      sinon.stub(server, 'logw');
       const before = ownNames();
-      const requestErr = await server.getTokenAllowance({
-        chain: 'eth', network: '__proto__', tokenAddress: 'a', ownerAddress: 'b', spenderAddress: 'c'
-      }).then(() => null, err => err);
-      const dbErr = await storage.db.collection('wallets').findOne({ id: 'none' }).then(() => null, err => err);
-      const written = undoWritesSince(before);
+      let requestErr, dbErr, written;
+      try {
+        requestErr = await server.getTokenAllowance({
+          chain: 'eth', network: '__proto__', tokenAddress: 'a', ownerAddress: 'b', spenderAddress: 'c'
+        }).then(() => null, err => err);
+        dbErr = await storage.db.collection('wallets').findOne({ id: 'none' }).then(() => null, err => err);
+      } finally {
+        written = undoWritesSince(before);
+      }
       written.should.deep.equal([]);
       should.not.exist(dbErr);
       requestErr.message.should.equal('Could not get blockchain explorer instance');
