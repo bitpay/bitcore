@@ -2,7 +2,7 @@
   "name": "@bitpay-labs/bitcore-cli",
   "description": "A Bitcore CLI Wallet",
   "author": "BitPay, Inc",
-  "version": "11.11.6",
+  "version": "11.11.7",
   "licence": "MIT",
   "private": true,
   "keywords": [

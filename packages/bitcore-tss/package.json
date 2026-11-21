@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/bitcore-tss",
-  "version": "11.11.6",
+  "version": "11.11.7",
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
   "type": "commonjs",

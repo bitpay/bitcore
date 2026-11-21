@@ -1,6 +1,6 @@
 {
   "name": "bitcore-monorepo",
-  "version": "11.11.6",
+  "version": "11.11.7",
   "private": true,
   "engines": {
     "node": ">=24.22.3 <25"
