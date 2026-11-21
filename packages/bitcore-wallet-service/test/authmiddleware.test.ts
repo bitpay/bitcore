@@ -106,6 +106,16 @@ describe('Auth middleware error handling', function() {
         expect(logError.firstCall.args[0]).to.include(': boom');
       });
 
+      it('logs the contents of a thrown non-Error object', async function() {
+        for (const f of [storage.fetchTssKeyGenSession, storage.fetchTssSigSession, storage.fetchCopayerLookup]) f.callsFake(async () => { throw { code: 'E_OBJ', detail: { reason: 'nested' } }; });
+        await build()(makeReq(round0()), res, next);
+        expect(res.body.code).to.equal('INTERNAL_ERROR');
+        const msg = logError.firstCall.args[0];
+        expect(msg).to.not.include('[object Object]');
+        expect(msg).to.include('E_OBJ');
+        expect(msg).to.include('nested');
+      });
+
       it('does not log client errors at error level', async function() {
         const req = makeReq(round0());
         req.header = () => undefined;
