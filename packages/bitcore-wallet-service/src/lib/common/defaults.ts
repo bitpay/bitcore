@@ -353,6 +353,7 @@ export const Defaults = {
     },
     transakOtp: {
       windowMs: 10 * 60 * 1000,
+      delayMs: 0,
       max: 10,
       message: 'Too many Transak verification requests, please try again later'
     }

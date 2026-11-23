@@ -10,7 +10,9 @@ import { TransakService } from '../../../src/externalservices/transak';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import { Defaults } from '../../../src/lib/common/defaults';
 import logger from '../../../src/lib/logger';
+import { createTransakOtpLimiter } from '../../../src/lib/routes/setup';
 
 const should = chai.should();
 
@@ -1106,6 +1108,65 @@ describe('Transak integration', () => {
         } catch (err) {
           err.message.should.equal('Transak missing credentials');
         }
+      });
+    });
+
+    describe('OTP rate limiter', () => {
+      const otpReq = ({ ip, cfIp, email }: { ip: string; cfIp?: string; email: string }) => {
+        const headers = { 'x-forwarded-for': ip, ...(cfIp && { 'cf-connecting-ip': cfIp }) };
+        return { ip, headers, header: (name: string) => headers[name.toLowerCase()], body: { email } };
+      };
+      const otpRes = () => ({
+        statusCode: 200,
+        setHeader: () => {},
+        status(code) {
+          this.statusCode = code;
+          return this;
+        },
+        json: () => {},
+        end: () => {},
+        format(handlers) {
+          handlers.json();
+        },
+      });
+      const max = Defaults.RateLimit.transakOtp.max;
+
+      beforeEach(() => {
+        sandbox.stub(logger, 'info');
+      });
+
+      it('should not delay requests under the limit', () => {
+        const limiter = createTransakOtpLimiter({});
+        const next = sinon.spy();
+        for (let i = 0; i < max; i++) {
+          limiter(otpReq({ ip: '198.51.100.7', email: 'user@example.com' }), otpRes(), next);
+        }
+        next.callCount.should.equal(max);
+        next.alwaysCalledWithExactly().should.equal(true);
+      });
+
+      it('should count by CF-Connecting-IP instead of X-Forwarded-For', () => {
+        const limiter = createTransakOtpLimiter({});
+        const next = sinon.spy();
+        let res;
+        for (let i = 0; i <= max; i++) {
+          res = otpRes();
+          limiter(otpReq({ ip: `203.0.113.${i}`, cfIp: '198.51.100.7', email: `user${i}@example.com` }), res, next);
+        }
+        next.callCount.should.equal(max);
+        res.statusCode.should.equal(429);
+      });
+
+      it('should count by email across IPs', () => {
+        const limiter = createTransakOtpLimiter({});
+        const next = sinon.spy();
+        let res;
+        for (let i = 0; i <= max; i++) {
+          res = otpRes();
+          limiter(otpReq({ ip: `203.0.113.${i}`, cfIp: `198.51.100.${i}`, email: i % 2 ? 'User@Example.com' : ' user@example.com' }), res, next);
+        }
+        next.callCount.should.equal(max);
+        res.statusCode.should.equal(429);
       });
     });
 
