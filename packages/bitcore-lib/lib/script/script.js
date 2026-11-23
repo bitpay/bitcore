@@ -812,7 +812,7 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
   let sorted = publicKeys;
   if (!opts.noSorting) {
     // base comparator uses string comparison - PublicKey.toString() converts to lowercase hex strings
-    sorted = publicKeys.toSorted();
+    sorted = publicKeys.slice().sort();
   }
   for (let i = 0; i < sorted.length; i++) {
     const publicKey = sorted[i];

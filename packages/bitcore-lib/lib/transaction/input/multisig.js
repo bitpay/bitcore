@@ -22,7 +22,7 @@ function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
   if (opts.noSorting) {
     this.publicKeys = pubkeys;
   } else {
-    this.publicKeys = pubkeys.toSorted((a, b) => {
+    this.publicKeys = pubkeys.slice().sort((a, b) => {
       const aHex = a.toString('hex');
       const bHex = b.toString('hex');
       if (aHex < bHex) {

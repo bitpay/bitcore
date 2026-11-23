@@ -66,7 +66,7 @@ export function BlockChainExplorer(opts): V8 {
   const provider = opts.provider || 'v8';
   const chain = opts.chain?.toLowerCase() || Utils.getChain(opts.coin); // getChain -> backwards compatibility
   const network = opts.network || 'livenet';
-  const url = opts.url || PROVIDERS[provider]?.[chain]?.[network];
+  const url = opts.url || Utils.getOwn(Utils.getOwn(Utils.getOwn(PROVIDERS, provider), chain), network);
 
   $.checkState(url, `No url found for provider: ${provider}:${chain}:${network}`);
 

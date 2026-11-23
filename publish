@@ -1,0 +1,222 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * Bump every workspace (and the root package.json) to one version, then publish to npm.
+ *
+ *   ./publish [--tag <dist-tag>] [--otp <code>] [--git-remote <remote>] [--skip-bump] [--dry-run]
+ *
+ * Steps:
+ *   1. Ask for the new version, starting from the root package.json version
+ *   2. npm version <version> --workspaces --include-workspace-root --no-git-tag-version --no-workspaces-update
+ *   3. npm install --package-lock-only --ignore-scripts
+ *   4. git commit -m v<version> + git tag v<version>
+ *   5. npm ci
+ *   6. npm publish --workspaces --tag <tag> --otp <otp>
+ *   7. git push --follow-tags <remote> <branch>
+ *
+ * --skip-bump skips steps 1-5 and goes straight to publishing (and pushing).
+ */
+
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+const readline = require('node:readline/promises');
+const { parseArgs } = require('node:util');
+
+const ROOT = __dirname;
+const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
+const HELP = `Usage: ./publish [options]
+
+  --tag <tag>     npm dist-tag to publish under (default: latest). --dist-tag also works.
+  --otp <code>    npm one-time password. If you leave it out, you are asked for it
+                  right before publishing, after npm ci finishes.
+  --skip-bump     Don't bump, commit, or tag. Go straight to npm publish (then push).
+  --git-remote <name>
+                  Remote to push to after publishing. Defaults to the current
+                  branch's tracking remote, or origin if it has none.
+  --dry-run       Print the commands without running them.
+  -h, --help      Show this help.`;
+
+let rl = null;
+
+async function ask(question) {
+  if (!rl) {
+    rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    // Ctrl+C / Ctrl+D at a prompt closes the interface. Treat that as an abort instead of hanging.
+    rl.on('close', () => {
+      if (rl) {
+        console.log('\nAborted.');
+        process.exit(1);
+      }
+    });
+  }
+  return (await rl.question(question)).trim();
+}
+
+/** Release stdin (and the TTY's raw mode) so child processes get the terminal to themselves. */
+function closePrompt() {
+  const r = rl;
+  rl = null;
+  r?.close();
+}
+
+function incVersion(version, kind) {
+  const [major, minor, patch] = SEMVER_RE.exec(version).slice(1, 4).map(Number);
+  switch (kind) {
+    case 'patch': return `${major}.${minor}.${patch + 1}`;
+    case 'minor': return `${major}.${minor + 1}.0`;
+    case 'major': return `${major + 1}.0.0`;
+  }
+}
+
+async function promptVersion(current) {
+  const choices = ['patch', 'minor', 'major'].map(kind => ({ kind, version: incVersion(current, kind) }));
+  console.log(`Current version (root package.json): ${current}`);
+  for (const [i, c] of choices.entries()) {
+    console.log(`  ${i + 1}) ${c.kind.padEnd(6)} ${c.version}`);
+  }
+  console.log(`  ${choices.length + 1}) custom`);
+
+  for (;;) {
+    const idx = Number(await ask('Select a version [1]: ') || '1') - 1;
+    if (choices[idx]) {
+      return choices[idx].version;
+    }
+    if (idx === choices.length) {
+      for (;;) {
+        const custom = await ask('Enter a version: ');
+        if (SEMVER_RE.test(custom)) {
+          return custom;
+        }
+        console.log(`"${custom}" is not a valid semver version.`);
+      }
+    }
+  }
+}
+
+function run(cmd, args, dryRun, display = args) {
+  console.log(`\n> ${cmd} ${display.join(' ')}`);
+  if (dryRun) {
+    return;
+  }
+  closePrompt();
+  const { status, error } = spawnSync(cmd, args, { cwd: ROOT, stdio: 'inherit' });
+  if (error || status !== 0) {
+    throw new Error(`\`${cmd} ${display.join(' ')}\` failed${error ? `: ${error.message}` : ` with exit code ${status}`}`);
+  }
+}
+
+function git(...args) {
+  return spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' }).stdout.trimEnd();
+}
+
+async function main() {
+  const { values: opts } = parseArgs({
+    options: {
+      'tag': { type: 'string' },
+      'dist-tag': { type: 'string' },
+      'otp': { type: 'string' },
+      'skip-bump': { type: 'boolean', default: false },
+      'git-remote': { type: 'string' },
+      'dry-run': { type: 'boolean', default: false },
+      'help': { type: 'boolean', short: 'h', default: false }
+    }
+  });
+  if (opts.help) {
+    console.log(HELP);
+    return;
+  }
+
+  const tag = opts.tag || opts['dist-tag'] || 'latest';
+  const dryRun = opts['dry-run'];
+  const { version: current, workspaces } = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  // The files `npm version` + `npm install --package-lock-only` rewrite, i.e. what goes in the release commit.
+  const versionFiles = ['package.json', 'package-lock.json', ...workspaces.map(ws => `${ws}/package.json`)];
+
+  // Check where we'll push up front, since the push happens after publishing.
+  const branch = git('branch', '--show-current');
+  if (!branch) {
+    console.error('Error: HEAD is detached. Check out a branch first.');
+    process.exit(1);
+  }
+  const remote = opts['git-remote'] || git('config', `branch.${branch}.remote`) || 'origin';
+  if (!git('remote', 'get-url', remote)) {
+    console.error(`Error: git remote "${remote}" does not exist.`);
+    process.exit(1);
+  }
+  const pushArgs = ['push', '--follow-tags', remote, branch];
+
+  let version = current;
+  if (!opts['skip-bump']) {
+    const dirty = git('status', '--porcelain', '--', ...versionFiles);
+    if (dirty) {
+      const msg = `These files have uncommitted changes and would be swept into the release commit:\n${dirty}`;
+      if (!dryRun) {
+        console.error(`Error: ${msg}`);
+        process.exit(1);
+      }
+      console.warn(`Warning: ${msg}\n`);
+    }
+
+    version = await promptVersion(current);
+
+    if (git('tag', '--list', `v${version}`)) {
+      console.error(`Error: tag v${version} already exists.`);
+      process.exit(1);
+    }
+  }
+
+  if (!dryRun) {
+    const action = opts['skip-bump'] ? `Publish ${version}` : `Bump ${current} -> ${version} and publish`;
+    if (!/^y(es)?$/i.test(await ask(`${action} under dist-tag "${tag}", then push to ${remote}/${branch}? (y/N) `))) {
+      console.log('Aborted.');
+      return;
+    }
+  }
+
+  try {
+    if (!opts['skip-bump']) {
+      run('npm', ['version', version, '--workspaces', '--include-workspace-root', '--no-git-tag-version', '--no-workspaces-update'], dryRun);
+      run('npm', ['install', '--package-lock-only', '--ignore-scripts'], dryRun);
+
+      const sign = git('config', '--bool', 'commit.gpgsign') === 'true' || git('config', '--bool', 'tag.gpgSign') === 'true';
+      run('git', ['add', '--', ...versionFiles], dryRun, ['add', '--', 'package.json', 'package-lock.json', 'packages/*/package.json']);
+      run('git', ['commit', '-m', `v${version}`], dryRun);
+      run('git', ['tag', sign ? '-s' : '-a', `v${version}`, '-m', `v${version}`], dryRun);
+
+      run('npm', ['ci'], dryRun);
+    }
+
+    // Ask for the OTP as late as possible, so it hasn't expired by the time npm publish runs.
+    const otp = opts.otp || (dryRun ? '<otp>' : await ask('\nnpm one-time password: '));
+    const publishArgs = ['publish', '--workspaces', '--tag', tag, ...(otp ? ['--otp', otp] : [])];
+    run('npm', publishArgs, dryRun, publishArgs.map(a => (a === otp && !dryRun ? '******' : a)));
+  } catch (err) {
+    console.error(`\nError: ${err.message}`);
+    if (!opts['skip-bump'] && !dryRun) {
+      console.error('Nothing has been pushed. If the version bump already went through, fix the problem and rerun ' +
+        'with --skip-bump. That publishes and then pushes the release commit and tag.');
+    }
+    process.exit(1);
+  }
+
+  try {
+    run('git', pushArgs, dryRun);
+  } catch (err) {
+    console.error(`\nError: ${err.message}`);
+    console.error(`The packages were published, but the push failed. Push manually: git ${pushArgs.join(' ')}`);
+    process.exit(1);
+  }
+
+  closePrompt();
+  if (!dryRun) {
+    console.log(`\nPublished ${version} under "${tag}" and pushed to ${remote}/${branch}.`);
+  }
+}
+
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

@@ -1,12 +1,27 @@
+import util from 'util';
 import express from 'express';
 import * as Types from '../../../types/expressapp';
 import { Utils } from '../../common/utils';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
+import logger from '../../logger';
 import { Copayer } from '../../model';
 import { WalletService, checkRequired } from '../../server';
 import { Storage } from '../../storage';
 import { error } from '../helpers';
+
+/**
+ * Respond to an error caught by an auth middleware.
+ * ClientErrors are returned as-is. Anything else is logged with its stack and
+ * returned as a generic INTERNAL_ERROR so internal details are not exposed to the client.
+ */
+export function returnAuthError(err: any, req: express.Request, res: express.Response): void {
+  if (err instanceof ClientError) {
+    return error.returnError(err, res, req);
+  }
+  logger.error(`Unexpected error in auth middleware ${req.url}: ${err?.stack || util.inspect(err)}`);
+  return error.returnError(Errors.INTERNAL_ERROR, res, req);
+}
 
 export function getCredentials(req: express.Request): Types.ApiCredentials {
   const identity = req.header('x-identity');
@@ -96,10 +111,7 @@ export function authRequest(opts?: Types.AuthRequestOpts): express.RequestHandle
       const copayer = await (auth.session ? withSession(storage, auth) : withSignature(storage, auth));
       req.copayer = copayer;
     } catch (err) {
-      if (err instanceof ClientError) {
-        return error.returnError(err, res, req);
-      }
-      return error.returnError(new ClientError({ code: 'INTERNAL_ERROR' }), res, req);
+      return returnAuthError(err, req, res);
     }
 
     return next();

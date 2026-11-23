@@ -40,6 +40,22 @@ BWS needs mongoDB. You can configure the connection inside the "bitcoreWalletSer
 
 BWS uses by default a Request Rate Limitation to CreateWallet endpoint. If you need to modify it, check defaults.js' `Defaults.RateLimit`
 
+### Crash Recovery
+
+The BWS executable logs uncaught exceptions and unhandled promise rejections,
+then exits with status 1. It does not continue serving after a fatal error.
+In cluster mode, the primary process continues to replace failed workers.
+
+The Docker launcher runs BWS as the main process and sends its logs directly
+to stdout/stderr. Configure the container's restart policy in your deployment,
+for example `--restart on-failure` with `docker run`, or `restart: on-failure`
+in Compose. Without a restart policy, the container exits but does not restart.
+Supporting services still run in the background; their exits alone do not
+restart the container.
+
+The non-Docker `start.sh` launcher does not supervise its background processes.
+Use an external process manager if automatic recovery is required outside Docker.
+
 
 ## Security Considerations
 
