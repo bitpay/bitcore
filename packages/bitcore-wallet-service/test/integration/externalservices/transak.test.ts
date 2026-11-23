@@ -1109,6 +1109,7 @@ describe('Transak integration', () => {
           err.message.should.equal('Transak missing credentials');
         }
       });
+
     });
 
     describe('OTP rate limiter', () => {
@@ -1409,14 +1410,17 @@ describe('Transak integration', () => {
     });
 
     describe('#transakHeadlessCreateCardSession', () => {
-      beforeEach(() => {
+      let ownedAddress: string;
+
+      beforeEach(async () => {
+        ownedAddress = (await util.promisify(server.createAddress).call(server, {})).address;
         req = {
           headers: {},
           body: {
             env: 'sandbox',
             userAccessToken: 'userAccessToken1',
             quoteId: 'quoteId1',
-            walletAddress: 'walletAddress1',
+            walletAddress: ownedAddress,
             successUrl: 'https://example.com/success',
             failureUrl: 'https://example.com/failure',
             config: { colorMode: 'DARK' },
@@ -1426,11 +1430,11 @@ describe('Transak integration', () => {
       });
 
       it('should only send the documented fields', async () => {
-        await server.externalServices.transak.transakHeadlessCreateCardSession(req);
+        await server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
         captured.url.should.equal('widgetApi1/api/v2/transaction-session');
         captured.opts.body.should.deep.equal({
           quoteId: 'quoteId1',
-          walletAddress: 'walletAddress1',
+          walletAddress: ownedAddress,
           successUrl: 'https://example.com/success',
           failureUrl: 'https://example.com/failure',
           config: { colorMode: 'DARK' },
@@ -1438,10 +1442,22 @@ describe('Transak integration', () => {
         captured.opts.headers.authorization.should.equal('userAccessToken1');
       });
 
+      it('should not create a session for an address of another wallet', async () => {
+        const { server: otherServer } = await helpers.createAndJoinWallet(1, 1, { offset: 1 });
+        req.body.walletAddress = (await util.promisify(otherServer.createAddress).call(otherServer, {})).address;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak walletAddress');
+        }
+        should.not.exist(captured);
+      });
+
       it('should return error if there is some missing arguments', async () => {
         delete req.body.failureUrl;
         try {
-          await server.externalServices.transak.transakHeadlessCreateCardSession(req);
+          await server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
           should.fail('should have thrown');
         } catch (err) {
           err.message.should.equal('Transak\'s request missing arguments');
@@ -1450,6 +1466,12 @@ describe('Transak integration', () => {
     });
 
     describe('#transakHeadlessCreateOrder', () => {
+      let ownedAddress: string;
+
+      beforeEach(async () => {
+        ownedAddress = (await util.promisify(server.createAddress).call(server, {})).address;
+      });
+
       it('should place a new card order with the requestId only', async () => {
         req = {
           headers: {},
@@ -1460,7 +1482,7 @@ describe('Transak integration', () => {
             quoteId: 'quoteId1',
           }
         };
-        await server.externalServices.transak.transakHeadlessCreateOrder(req);
+        await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
         captured.url.should.equal('widgetApi1/api/v2/orders');
         captured.opts.body.should.deep.equal({ requestId: 'requestId1' });
       });
@@ -1472,16 +1494,16 @@ describe('Transak integration', () => {
             env: 'sandbox',
             userAccessToken: 'userAccessToken1',
             quoteId: 'quoteId1',
-            walletAddress: 'walletAddress1',
+            walletAddress: ownedAddress,
             paymentIdentifierId: 'card1',
             successUrl: 'https://example.com/success',
             failureUrl: 'https://example.com/failure',
           }
         };
-        await server.externalServices.transak.transakHeadlessCreateOrder(req);
+        await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
         captured.opts.body.should.deep.equal({
           quoteId: 'quoteId1',
-          walletAddress: 'walletAddress1',
+          walletAddress: ownedAddress,
           paymentInstrumentId: 'credit_debit_card',
           paymentIdentifierId: 'card1',
           additionalData: {
@@ -1501,11 +1523,34 @@ describe('Transak integration', () => {
           }
         };
         try {
-          await server.externalServices.transak.transakHeadlessCreateOrder(req);
+          await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
           should.fail('should have thrown');
         } catch (err) {
           err.message.should.equal('Transak\'s request missing arguments');
         }
+      });
+
+      it('should not place a saved card order for an address of another wallet', async () => {
+        const { server: otherServer } = await helpers.createAndJoinWallet(1, 1, { offset: 1 });
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: (await util.promisify(otherServer.createAddress).call(otherServer, {})).address,
+            paymentIdentifierId: 'card1',
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+          }
+        };
+        try {
+          await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak walletAddress');
+        }
+        should.not.exist(captured);
       });
     });
 

@@ -769,6 +769,13 @@ export class TransakService {
     }
   }
 
+  private async checkHeadlessWalletAddress(req, walletId: string): Promise<void> {
+    const walletAddress = req.body?.walletAddress;
+    if (walletAddress != null && !(await this.isWalletAddress(walletId, walletAddress))) {
+      throw new ClientError('Invalid Transak walletAddress');
+    }
+  }
+
   transakHeadlessSendOtp(req): Promise<any> {
     return this.transakHeadlessRequest(req, {
       method: 'post',
@@ -873,7 +880,8 @@ export class TransakService {
     });
   }
 
-  transakHeadlessCreateCardSession(req): Promise<any> {
+  async transakHeadlessCreateCardSession(req, walletId: string): Promise<any> {
+    await this.checkHeadlessWalletAddress(req, walletId);
     return this.transakHeadlessRequest(req, {
       method: 'post',
       path: '/api/v2/transaction-session',
@@ -893,7 +901,7 @@ export class TransakService {
 
   // New card: only the requestId returned by the card component.
   // Saved card: the quote, wallet and card are sent instead.
-  transakHeadlessCreateOrder(req): Promise<any> {
+  async transakHeadlessCreateOrder(req, walletId: string): Promise<any> {
     if (req.body?.requestId) {
       return this.transakHeadlessRequest(req, {
         method: 'post',
@@ -903,6 +911,7 @@ export class TransakService {
         body: () => ({ requestId: req.body.requestId })
       });
     }
+    await this.checkHeadlessWalletAddress(req, walletId);
     return this.transakHeadlessRequest(req, {
       method: 'post',
       path: '/api/v2/orders',

@@ -516,13 +516,13 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
 
   router.post('/v1/service/transak/headless/cardSession', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.transak.transakHeadlessCreateCardSession(req);
+      return server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
     });
   });
 
   router.post('/v1/service/transak/headless/order', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.transak.transakHeadlessCreateOrder(req);
+      return server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
     });
   });
 
