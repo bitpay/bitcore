@@ -707,7 +707,8 @@ export class WalletStatsService {
       if (this.stopping) {
         // Abort before writing anything for this chain; a later tick redoes it. Facts
         // and snapshot are both idempotent upserts, so even a crash between those two
-        // write steps leaves only orphan facts that the next complete run overwrites.
+        // write steps leaves only orphan facts, which the next complete run overwrites
+        // or removes.
         return null;
       }
       const id = wallet._id.toHexString();
@@ -746,18 +747,27 @@ export class WalletStatsService {
 
   async persist(params: { chain: string; network: string; snapshot: IWalletStats; walletFacts: IWalletStatsWallet[] }) {
     const { chain, network, snapshot, walletFacts } = params;
+    const { runId } = snapshot.meta;
     if (walletFacts.length) {
       await this.walletStatsWalletModel.collection.bulkWrite(
         walletFacts.map(fact => ({
           updateOne: {
             filter: { chain, network, snapshotDate: fact.snapshotDate, wallet: fact.wallet },
-            update: { $set: fact },
+            update: { $set: { ...fact, runId } },
             upsert: true
           }
         })),
         { ordered: false }
       );
     }
+    // A failed earlier attempt at this date may have left facts for wallets this run
+    // did not collect. The snapshot does not count them, so the API must not either.
+    await this.walletStatsWalletModel.collection.deleteMany({
+      chain,
+      network,
+      snapshotDate: snapshot.date,
+      runId: { $ne: runId }
+    });
     // Snapshot upserted last and keyed on its unique {chain,network,date}, so a
     // re-run overwrites cleanly rather than duplicating.
     await this.walletStatsModel.collection.updateOne(

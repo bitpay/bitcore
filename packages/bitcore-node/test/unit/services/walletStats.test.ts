@@ -459,6 +459,7 @@ describe('WalletStats Service', function() {
     const makeDeps = (over: any = {}) => {
       const updateOne = over.updateOne ?? sandbox.stub().resolves();
       const bulkWrite = over.bulkWrite ?? sandbox.stub().resolves();
+      const deleteMany = over.deleteMany ?? sandbox.stub().resolves();
       const deps: any = {
         walletStatsModel: {
           collection: { find: () => cursor(over.watermarkRows ?? []), updateOne },
@@ -468,7 +469,8 @@ describe('WalletStats Service', function() {
           collection: {
             find: over.priorFind ?? (() => cursor([])),
             aggregate: () => cursor([]),
-            bulkWrite
+            bulkWrite,
+            deleteMany
           },
           activityWindow: (d: any, asOf: any) => WalletStatsWalletStorage.activityWindow(d, asOf) // pure; no DB
         },
@@ -486,7 +488,7 @@ describe('WalletStats Service', function() {
         waitFn: async () => {},
         checkTokenActivity: sandbox.stub().resolves(null)
       };
-      return { deps, updateOne, bulkWrite };
+      return { deps, updateOne, bulkWrite, deleteMany };
     };
 
     it('does nothing when this week is already snapshotted', async () => {
@@ -513,6 +515,26 @@ describe('WalletStats Service', function() {
       expect(update.$set.meta.completedAt).to.be.an.instanceof(Date);
       expect(bulkWrite.calledOnce).to.equal(true);
       expect(bulkWrite.firstCall.args[1]).to.deep.equal({ ordered: false });
+    });
+
+    it('drops facts an earlier failed attempt left at the same date before saving the snapshot', async () => {
+      // Attempt 1 wrote facts for wallets A and B, then the snapshot write failed. On the
+      // retry B errors, so the snapshot counts A only; B's old fact must not outlive it.
+      const oid = new ObjectID();
+      const { deps, updateOne, bulkWrite, deleteMany } = makeDeps({ chain: 'BTC', wallets: [{ _id: oid }] });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'collectUtxoBalances').resolves(new Map([[oid.toHexString(), 5000n]]));
+      sandbox.stub(svc, 'collectUtxoActivity').resolves(new Map());
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      await svc.tick();
+      const runId = updateOne.firstCall.args[1].$set.meta.runId;
+      expect(runId).to.be.a('string');
+      expect(bulkWrite.firstCall.args[0][0].updateOne.update.$set.runId).to.equal(runId);
+      expect(deleteMany.calledOnceWith({
+        chain: 'BTC', network: 'mainnet', snapshotDate: '2026-08-03', runId: { $ne: runId }
+      })).to.equal(true);
+      expect(deleteMany.calledAfter(bulkWrite)).to.equal(true);
+      expect(deleteMany.calledBefore(updateOne)).to.equal(true);
     });
 
     it('runs an EVM chain, reads prior facts by snapshotDate equality, and stamps nonces', async () => {

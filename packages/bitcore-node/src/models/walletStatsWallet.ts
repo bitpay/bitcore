@@ -15,6 +15,7 @@ export interface IWalletStatsWallet {
   nonce?: string; // EVM only
   lastActivityDate?: Date; // best-known most recent activity
   isDup: boolean;
+  runId?: string; // walletstats.meta.runId of the run that wrote it
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
