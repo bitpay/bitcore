@@ -262,10 +262,11 @@ export function bucketBoundaries(thresholds: number[], rate: number, unitsPerWho
   const scaledRate = BigInt(Math.round(rate * RATE_SCALE));
   return [...thresholds]
     .sort((a, b) => b - a)
-    .map(threshold => ({
-      threshold,
-      minBaseUnits: (BigInt(Math.round(threshold * RATE_SCALE)) * BigInt(unitsPerWhole)) / scaledRate
-    }));
+    .map(threshold => {
+      // Round up: a floored boundary admits a balance worth slightly less than the threshold.
+      const scaledValue = BigInt(Math.round(threshold * RATE_SCALE)) * BigInt(unitsPerWhole);
+      return { threshold, minBaseUnits: (scaledValue + scaledRate - 1n) / scaledRate };
+    });
 }
 
 /**

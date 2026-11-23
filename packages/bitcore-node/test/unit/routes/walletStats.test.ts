@@ -501,12 +501,16 @@ describe('WalletStats routes', function() {
       expect(bucket.minBaseUnits).to.equal(BigInt('1000000000000000000'));
     });
 
-    it('floors the boundary when the rate does not divide evenly', () => {
-      // 10000 usd at 115000.33 usd/BTC is 8695627.2212... sats. Flooring is what makes
-      // a >= comparison include the wallet sitting exactly on the true boundary; pinning
-      // it here so a switch to ceiling division cannot pass unnoticed.
+    it('rounds the boundary up when the rate does not divide evenly', () => {
+      // 10000 usd at 115000.33 usd/BTC is 8695627.2212... sats. 8695627 sats is worth
+      // just under 10000 usd, so the first balance that qualifies is 8695628.
       const [bucket] = bucketBoundaries([10000], 115000.33, BTC);
-      expect(bucket.minBaseUnits).to.equal(BigInt(8695627));
+      expect(bucket.minBaseUnits).to.equal(BigInt(8695628));
+    });
+
+    it('never puts a zero balance in a bucket, however small the threshold', () => {
+      const [bucket] = bucketBoundaries([0.000001], 100000, BTC);
+      expect(bucket.minBaseUnits).to.equal(BigInt(1));
     });
 
     it('handles a fractional rate without floating point drift', () => {
