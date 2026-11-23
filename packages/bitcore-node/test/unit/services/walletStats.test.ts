@@ -316,6 +316,97 @@ describe('WalletStats Service', function() {
       expect(checkTokenActivity.calledOnce).to.equal(true);
     });
 
+    it('dates a first-seen wallet by its last outgoing ETH transaction', async () => {
+      const sentDate = new Date('2026-07-25T00:00:00Z');
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(4)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(null);
+      const checkNativeActivity = sandbox.stub().resolves(sentDate);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'], asOf, checkTokenActivity, checkNativeActivity // no prior
+      } as any);
+      expect(fact.lastActivityDate).to.deep.equal(sentDate);
+      expect(checkNativeActivity.firstCall.args[0]).to.deep.equal(['0xabc']);
+      expect(checkNativeActivity.firstCall.args[1].getTime()).to.equal(twelveMonthsBefore(asOf).getTime());
+    });
+
+    it('keeps the newer of the token and native dates', async () => {
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(4)
+      };
+      const tokenDate = new Date('2026-07-30T00:00:00Z');
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'], asOf,
+        checkTokenActivity: sandbox.stub().resolves(tokenDate),
+        checkNativeActivity: sandbox.stub().resolves(new Date('2026-07-01T00:00:00Z'))
+      } as any);
+      expect(fact.lastActivityDate).to.deep.equal(tokenDate);
+    });
+
+    it('only looks up native history for addresses that have sent something', async () => {
+      const getAccountNonce = sandbox.stub();
+      getAccountNonce.withArgs('mainnet', '0xsent').resolves(2);
+      getAccountNonce.withArgs('mainnet', '0xrecv').resolves(0);
+      const csp = { getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }), getAccountNonce };
+      const checkNativeActivity = sandbox.stub().resolves(null);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xrecv', '0xsent'], asOf,
+        checkTokenActivity: sandbox.stub().resolves(null), checkNativeActivity
+      } as any);
+      expect(checkNativeActivity.firstCall.args[0]).to.deep.equal(['0xsent']);
+    });
+
+    it('skips the native lookup when no address has ever sent a transaction', async () => {
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(0)
+      };
+      const checkNativeActivity = sandbox.stub().resolves(null);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'], asOf,
+        checkTokenActivity: sandbox.stub().resolves(null), checkNativeActivity
+      } as any);
+      expect(checkNativeActivity.called).to.equal(false);
+    });
+
+    it('skips the native lookup once the wallet has a date, since the nonce check covers sends', async () => {
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(5)
+      };
+      const checkNativeActivity = sandbox.stub().resolves(null);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5', lastActivityDate: priorDate },
+        asOf, checkTokenActivity: sandbox.stub().resolves(null), checkNativeActivity
+      } as any);
+      expect(checkNativeActivity.called).to.equal(false);
+    });
+
+    it('retries an undated wallet\'s native lookup on later weeks', async () => {
+      // Facts saved before the native lookup existed have no date and an unchanged nonce.
+      const sentDate = new Date('2026-06-01T00:00:00Z');
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(5)
+      };
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5' },
+        asOf, checkTokenActivity: sandbox.stub().resolves(null), checkNativeActivity: sandbox.stub().resolves(sentDate)
+      } as any);
+      expect(fact.lastActivityDate).to.deep.equal(sentDate);
+    });
+
     it('retries a rate-limited provider call with backoff', async () => {
       const getBalanceForAddress = sandbox.stub();
       getBalanceForAddress.onFirstCall().rejects(new Error('Too Many Requests'));
@@ -486,7 +577,8 @@ describe('WalletStats Service', function() {
         },
         nowFn: () => NOW.getTime(),
         waitFn: async () => {},
-        checkTokenActivity: sandbox.stub().resolves(null)
+        checkTokenActivity: sandbox.stub().resolves(null),
+        checkNativeActivity: sandbox.stub().resolves(null)
       };
       return { deps, updateOne, bulkWrite, deleteMany };
     };
@@ -843,6 +935,57 @@ describe('WalletStats Service', function() {
       sandbox.stub(logger, 'warn');
       const result = await call(makeSvc('key'), ['0xa', '0xb']);
       expect(result).to.deep.equal(new Date('2026-07-30T00:00:00Z'));
+    });
+
+    it('throws when every address fails, so the wallet counts as errored instead of inactive', async () => {
+      sandbox.stub(axios, 'get').rejects(new Error('network down'));
+      sandbox.stub(logger, 'warn');
+      let caught: any;
+      try {
+        await call(makeSvc('key'), ['0xa', '0xb']);
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught).to.be.an.instanceof(Error);
+    });
+
+    it('returns null without a request when no apiKey is configured', async () => {
+      const get = sandbox.stub(axios, 'get');
+      expect(await call(makeSvc(undefined))).to.equal(null);
+      expect(get.called).to.equal(false);
+    });
+  });
+
+  describe('defaultCheckNativeActivity', () => {
+    const makeSvc = (apiKey?: string) => new WalletStatsService({
+      configService: {
+        get: () => ({ externalProviders: apiKey ? { moralis: { apiKey } } : {} }),
+        for: () => ({}),
+        isDisabled: () => false
+      },
+      cspProvider: { get: () => ({ getChainId: async () => 1 }) }
+    } as any);
+    const call = (svc: any, addresses = ['0xAbC']) =>
+      svc.defaultCheckNativeActivity({ chain: 'ETH', network: 'mainnet', addresses, since: new Date('2025-08-03T00:00:00Z') });
+
+    it('dates by the newest transaction the address sent, skipping incoming dust', async () => {
+      const get = sandbox.stub(axios, 'get').resolves({
+        data: {
+          result: [
+            { block_timestamp: '2026-07-31T00:00:00Z', from_address: '0xspammer' },
+            { block_timestamp: '2026-07-20T00:00:00Z', from_address: '0xabc' }
+          ]
+        }
+      });
+      expect(await call(makeSvc('key'))).to.deep.equal(new Date('2026-07-20T00:00:00Z'));
+      expect(get.firstCall.args[0]).to.equal('https://deep-index.moralis.io/api/v2.2/0xAbC');
+      expect(get.firstCall.args[1].params).to.include({ order: 'DESC', from_date: '2025-08-03T00:00:00.000Z' });
+      expect(get.firstCall.args[1].params.limit).to.be.greaterThan(25);
+    });
+
+    it('returns null when the address only received', async () => {
+      sandbox.stub(axios, 'get').resolves({ data: { result: [{ block_timestamp: '2026-07-31T00:00:00Z', from_address: '0xother' }] } });
+      expect(await call(makeSvc('key'))).to.equal(null);
     });
 
     it('throws when every address fails, so the wallet counts as errored instead of inactive', async () => {

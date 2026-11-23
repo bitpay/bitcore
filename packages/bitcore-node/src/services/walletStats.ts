@@ -16,7 +16,7 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
 
-type TokenActivityFn = (params: { chain: string; network: string; addresses: string[]; since: Date }) => Promise<Date | null>;
+type ActivityProbeFn = (params: { chain: string; network: string; addresses: string[]; since: Date }) => Promise<Date | null>;
 
 const args = parseArgv([], [
   { arg: 'CHAIN', type: 'string' },
@@ -29,6 +29,7 @@ const ONE_MIN = 1000 * 60;
 export interface MoralisTransfer {
   block_timestamp?: string;
   possible_spam?: boolean;
+  from_address?: string;
 }
 
 // Spam airdrops make a dormant wallet look active. exclude_spam asks the provider to
@@ -36,6 +37,9 @@ export interface MoralisTransfer {
 // provider honours the flag on this endpoint. That second filter is why the probe
 // can no longer ask for a single row: one spam transfer would fill the only slot.
 export const SPAM_SAFE_PROBE_LIMIT = 25;
+// Incoming dust fills the newest rows of a busy address, so the native lookup reads a
+// full page to find the last transaction the wallet itself sent.
+export const NATIVE_PROBE_LIMIT = 100;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class WalletStatsService {
@@ -52,7 +56,8 @@ export class WalletStatsService {
   configService;
   waitFn: (ms: number) => Promise<unknown>;
   nowFn: () => number;
-  checkTokenActivity: TokenActivityFn;
+  checkTokenActivity: ActivityProbeFn;
+  checkNativeActivity: ActivityProbeFn;
   private scheduleWarned = false;
   private unsupportedWarned = new Set<string>();
   private retryAfter = new Map<string, number>();
@@ -68,7 +73,8 @@ export class WalletStatsService {
     configService = Config,
     waitFn = wait,
     nowFn = Date.now,
-    checkTokenActivity
+    checkTokenActivity,
+    checkNativeActivity
   }: {
     walletStatsModel?: WalletStatsModel;
     walletStatsWalletModel?: WalletStatsWalletModel;
@@ -80,7 +86,8 @@ export class WalletStatsService {
     configService?: typeof Config;
     waitFn?: (ms: number) => Promise<unknown>;
     nowFn?: () => number;
-    checkTokenActivity?: TokenActivityFn;
+    checkTokenActivity?: ActivityProbeFn;
+    checkNativeActivity?: ActivityProbeFn;
   } = {}) {
     this.walletStatsModel = walletStatsModel;
     this.walletStatsWalletModel = walletStatsWalletModel;
@@ -93,6 +100,7 @@ export class WalletStatsService {
     this.waitFn = waitFn;
     this.nowFn = nowFn;
     this.checkTokenActivity = checkTokenActivity || (params => this.defaultCheckTokenActivity(params));
+    this.checkNativeActivity = checkNativeActivity || (params => this.defaultCheckNativeActivity(params));
   }
 
   // Validated weekly schedule. Out-of-range day/hour fall back to the defaults
@@ -372,12 +380,14 @@ export class WalletStatsService {
     prior?: { balance: string; nonce?: string; lastActivityDate?: Date };
     asOf: Date;
     checkTokenActivity: (addresses: string[], since: Date) => Promise<Date | null>;
+    checkNativeActivity?: (addresses: string[], since: Date) => Promise<Date | null>;
   }): Promise<{ balance: string; nonce: string; lastActivityDate?: Date }> {
-    const { csp, wallet, addresses, prior, asOf, checkTokenActivity } = params;
+    const { csp, wallet, addresses, prior, asOf, checkTokenActivity, checkNativeActivity } = params;
     const { chain, network } = wallet;
 
     let balance = 0n;
     let nonce = 0n;
+    const sentFrom: string[] = [];
     for (const address of addresses) {
       const result = await this.withRateLimitRetry(() =>
         csp.getBalanceForAddress({ chain, network, address, args: { hex: 'true' } })
@@ -386,6 +396,9 @@ export class WalletStatsService {
       const addressNonce = BigInt(await this.withRateLimitRetry(() => csp.getAccountNonce(network, address)));
       if (addressNonce > nonce) {
         nonce = addressNonce;
+      }
+      if (addressNonce > 0n) {
+        sentFrom.push(address);
       }
     }
     const balanceStr = balance.toString();
@@ -400,7 +413,17 @@ export class WalletStatsService {
     const yearAgo = new Date(asOf.getTime());
     yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
     const since = known && known > yearAgo ? known : yearAgo;
-    const probed = await checkTokenActivity(addresses, since);
+    let probed = await checkTokenActivity(addresses, since);
+    // With no date on record there is no earlier nonce to compare against, so a wallet
+    // that only sends ETH would stay undated. Look up its last outgoing transaction.
+    // Incoming ones are left out: anyone can send dust to an address. Addresses with a
+    // nonce of 0 have never sent anything, so they are skipped without a request.
+    if (!known && sentFrom.length && checkNativeActivity) {
+      const sent = await checkNativeActivity(sentFrom, since);
+      if (sent && (!probed || sent > probed)) {
+        probed = sent;
+      }
+    }
     const lastActivityDate = probed && (!known || probed > known) ? probed : known;
 
     return { balance: balanceStr, nonce: nonceStr, lastActivityDate };
@@ -722,7 +745,8 @@ export class WalletStatsService {
           addresses,
           prior: priorByWallet.get(id),
           asOf,
-          checkTokenActivity: (addrs, since) => this.checkTokenActivity({ chain, network, addresses: addrs, since })
+          checkTokenActivity: (addrs, since) => this.checkTokenActivity({ chain, network, addresses: addrs, since }),
+          checkNativeActivity: (addrs, since) => this.checkNativeActivity({ chain, network, addresses: addrs, since })
         });
         balances.set(id, BigInt(fact.balance));
         nonces.set(id, fact.nonce);
@@ -778,13 +802,45 @@ export class WalletStatsService {
   }
 
   // Default token-activity probe: the newest non-spam ERC-20 transfer since `since` across
-  // the wallet's addresses, one Moralis request per address (formatMoralisChainId
-  // from the adapters util; apiKey from config). No apiKey configured => null without a
-  // request. A failed address is skipped, but if every address fails this throws so the
-  // wallet counts as errored rather than inactive. Swappable via the constructor.
-  // TODO: migrate onto MoralisClient once the external client extraction lands.
+  // the wallet's addresses. Swappable via the constructor.
   async defaultCheckTokenActivity(params: { chain: string; network: string; addresses: string[]; since: Date }): Promise<Date | null> {
-    const { chain, network, addresses, since } = params;
+    return this.probeMoralis({
+      ...params,
+      kind: 'token',
+      path: address => `${address}/erc20/transfers`,
+      query: { limit: SPAM_SAFE_PROBE_LIMIT, exclude_spam: true },
+      pick: rows => rows.find(row => !row.possible_spam && row.block_timestamp)
+    });
+  }
+
+  // Default native-activity probe: the newest transaction since `since` that one of the
+  // given addresses sent. Swappable via the constructor.
+  async defaultCheckNativeActivity(params: { chain: string; network: string; addresses: string[]; since: Date }): Promise<Date | null> {
+    return this.probeMoralis({
+      ...params,
+      kind: 'native',
+      path: address => address,
+      query: { limit: NATIVE_PROBE_LIMIT },
+      pick: (rows, address) => rows.find(row => row.from_address?.toLowerCase() === address.toLowerCase() && row.block_timestamp)
+    });
+  }
+
+  // One Moralis request per address (formatMoralisChainId from the adapters util; apiKey
+  // from config), newest matching row wins. No apiKey configured => null without a
+  // request. A failed address is skipped, but if every address fails this throws so the
+  // wallet counts as errored rather than inactive.
+  // TODO: migrate onto MoralisClient once the external client extraction lands.
+  private async probeMoralis(params: {
+    chain: string;
+    network: string;
+    addresses: string[];
+    since: Date;
+    kind: string;
+    path: (address: string) => string;
+    query: Record<string, unknown>;
+    pick: (rows: MoralisTransfer[], address: string) => MoralisTransfer | undefined;
+  }): Promise<Date | null> {
+    const { chain, network, addresses, since, kind, path, query, pick } = params;
     const apiKey = this.configService.get()?.externalProviders?.moralis?.apiKey;
     if (!apiKey) {
       return null;
@@ -799,27 +855,21 @@ export class WalletStatsService {
     for (const address of addresses) {
       try {
         const { data } = await axios.get<{ result?: MoralisTransfer[] }>(
-          `https://deep-index.moralis.io/api/v2.2/${address}/erc20/transfers`,
+          `https://deep-index.moralis.io/api/v2.2/${path(address)}`,
           {
-            params: {
-              chain: moralisChain,
-              from_date: since.toISOString(),
-              order: 'DESC',
-              limit: SPAM_SAFE_PROBE_LIMIT,
-              exclude_spam: true
-            },
+            params: { chain: moralisChain, from_date: since.toISOString(), order: 'DESC', ...query },
             headers: { 'X-API-Key': apiKey },
             timeout: 30000
           }
         );
-        const timestamp = (data?.result || []).find(row => !row.possible_spam && row.block_timestamp)?.block_timestamp;
+        const timestamp = pick(data?.result || [], address)?.block_timestamp;
         if (timestamp && (!latest || new Date(timestamp) > latest)) {
           latest = new Date(timestamp);
         }
       } catch (err: any) {
         failed++;
         lastError = err;
-        logger.warn(`Wallet Stats: token activity probe failed for ${chain}:${network} ${address}: ${err.message || err}`);
+        logger.warn(`Wallet Stats: ${kind} activity probe failed for ${chain}:${network} ${address}: ${err.message || err}`);
       }
     }
     if (addresses.length && failed === addresses.length) {
