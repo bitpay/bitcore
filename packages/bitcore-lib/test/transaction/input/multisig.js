@@ -2,6 +2,7 @@
 /* jshint unused: false */
 
 const should = require('chai').should();
+const sinon = require('sinon');
 const bitcore = require('../../..');
 
 const Transaction = bitcore.Transaction;
@@ -202,5 +203,29 @@ describe('MultiSigInput', function() {
     transaction.inputs[0].signatures[2].publicKey.should.deep.equal(public3);
     transaction.inputs[0].isValidSignature(transaction, transaction.inputs[0].signatures[0]).should.be.true;
     transaction.inputs[0].isValidSignature(transaction, transaction.inputs[0].signatures[2]).should.be.true;
+  });
+
+  // Hermes (React Native) and Node 18 lack Array.prototype.toSorted.
+  describe('without Array.prototype.toSorted', function() {
+    const sandbox = sinon.createSandbox();
+
+    beforeEach(() => {
+      sandbox.stub(Array.prototype, 'toSorted').throws(new TypeError('toSorted is not a function'));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('sorts the public keys and signs', function() {
+      const transaction = new Transaction()
+        .from(output, [public1, public2, public3], 2)
+        .to(address, 1000000)
+        .sign(privateKey1)
+        .sign(privateKey2);
+      const input = transaction.inputs[0];
+      input.publicKeys.map(key => key.toString()).should.deep.equal([public2, public3, public1].map(key => key.toString()));
+      input.isFullySigned().should.equal(true);
+    });
   });
 });

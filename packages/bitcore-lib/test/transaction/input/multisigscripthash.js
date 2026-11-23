@@ -1,6 +1,7 @@
 'use strict';
 /* jshint unused: false */
 require('chai').should();
+const sinon = require('sinon');
 const bitcore = require('../../..');
  
 const Transaction = bitcore.Transaction;
@@ -298,6 +299,38 @@ describe('MultiSigScriptHashInput', function() {
       const input = transaction.inputs[0];
       const satoshisBuffer = input.getSatoshisBuffer();
       satoshisBuffer.toString('hex').should.equal('40420f0000000000');
+    });
+  });
+
+  // Hermes (React Native) and Node 18 lack Array.prototype.toSorted. The key order defines the
+  // multisig addresses, so it must not change.
+  describe('without Array.prototype.toSorted', function() {
+    const sandbox = sinon.createSandbox();
+
+    beforeEach(() => {
+      sandbox.stub(Array.prototype, 'toSorted').throws(new TypeError('toSorted is not a function'));
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('derives P2SH and P2WSH multisig addresses', function() {
+      new Address([public1, public2, public3], 2).toString().should.equal(output.address);
+      new Address([public1, public2, public3], 2, null, Address.PayToWitnessScriptHash).toString().should.equal(witnessOutput.address);
+    });
+
+    it('sorts the public keys and signs P2SH and P2WSH inputs', function() {
+      for (const outputData of [output, witnessOutput]) {
+        const transaction = new Transaction()
+          .from(outputData, [public1, public2, public3], 2)
+          .to(address, 1000000)
+          .sign(privateKey1)
+          .sign(privateKey2);
+        const input = transaction.inputs[0];
+        input.publicKeys.map(key => key.toString()).should.deep.equal([public2, public3, public1].map(key => key.toString()));
+        input.isFullySigned().should.equal(true);
+      }
     });
   });
 

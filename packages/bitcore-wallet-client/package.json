@@ -2,7 +2,7 @@
   "name": "@bitpay-labs/bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "11.11.5",
+  "version": "11.11.7",
   "license": "MIT",
   "main": "ts_build/src/index.js",
   "types": "ts_build/src/index.d.ts",
@@ -36,7 +36,7 @@
     "kbpgp": "^2.1.4",
     "preconditions": "2.2.3",
     "request-promise": "^4.2.4",
-    "sjcl": "1.0.8",
+    "sjcl": "1.0.9",
     "superagent": "5.2.2",
     "typescript": "5.7.3",
     "uuid": "^11.1.0"

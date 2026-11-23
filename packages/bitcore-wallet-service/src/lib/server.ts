@@ -1786,11 +1786,15 @@ export class WalletService implements IWalletService {
 
     if (this.blockchainExplorer) return this.blockchainExplorer;
     if (this.blockchainExplorerOpts) {
-      if (this.blockchainExplorerOpts[chain] && this.blockchainExplorerOpts[chain][network]) {
-        opts = this.blockchainExplorerOpts[chain][network];
+      // chain and network can come from a request: look up own keys only, and copy what's found
+      //  so the configured options (or an inherited object such as Object.prototype) are never written to
+      const chainNetworkOpts = Utils.getOwn(Utils.getOwn(this.blockchainExplorerOpts, chain), network);
+      const networkOpts = Utils.getOwn(this.blockchainExplorerOpts, network);
+      if (chainNetworkOpts) {
+        opts = { ...chainNetworkOpts };
         provider = opts.provider;
-      } else if (this.blockchainExplorerOpts[network]) {
-        opts = this.blockchainExplorerOpts[network];
+      } else if (networkOpts) {
+        opts = { ...networkOpts };
       }
     }
     opts.provider = provider;

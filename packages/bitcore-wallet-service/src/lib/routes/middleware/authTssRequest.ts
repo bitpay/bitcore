@@ -1,10 +1,8 @@
 import express from 'express';
 import { Utils } from '../../common/utils';
-import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import { WalletService, checkRequired } from '../../server';
-import { error } from '../helpers';
-import { getCredentials, getMessage } from './authRequest';
+import { getCredentials, getMessage, returnAuthError } from './authRequest';
 import type { ITssKeyMessageObject, TssKeyGenModel } from '../../model/tsskeygen';
 import type { ITssSigMessageObject, TssSigGenModel } from '../../model/tsssign';
 
@@ -122,10 +120,7 @@ export function authTssKeyGenRequest(params: { bypassExpired?: boolean } = {}): 
       req.session = session;
       return next();
     } catch (err) {
-      if (err instanceof ClientError) {
-        return error.returnError(err, res, req);
-      }
-      return error.returnError(new ClientError({ code: 'INTERNAL_ERROR' }), res, req);
+      return returnAuthError(err, req, res);
     }
   };
 };
@@ -189,10 +184,7 @@ export function authTssSignRequest(params: { joinable?: boolean } = {}): express
       
       return next();
     } catch (err) {
-      if (err instanceof ClientError) {
-        return error.returnError(err, res, req);
-      }
-      return error.returnError(new ClientError({ code: 'INTERNAL_ERROR' }), res, req);
+      return returnAuthError(err, req, res);
     }
   };
 };
