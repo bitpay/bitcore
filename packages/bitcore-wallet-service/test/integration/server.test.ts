@@ -403,6 +403,147 @@ describe('Wallet service', function() {
       server = new WalletService();
     });
 
+    describe('scalar validation', function() {
+      for (const field of ['chain', 'coin', 'network']) {
+        for (const value of [1, true, ['testnet'], {}, 0, false]) {
+          it(`should reject ${field}=${JSON.stringify(value)} before accessing storage`, async function() {
+            const opts = {
+              id: 'invalid-scalar-wallet',
+              name: 'my wallet',
+              m: 1,
+              n: 1,
+              pubKey: TestData.keyPair.pub,
+              chain: 'btc',
+              [field]: value
+            };
+            const callback = sinon.spy();
+            const fetchWallet = sinon.spy(server.storage, 'fetchWallet');
+            const storeWallet = sinon.spy(server.storage, 'storeWallet');
+
+            await new Promise<void>((resolve, reject) => {
+              server.createWallet(opts, (...args) => {
+                callback(...args);
+                resolve();
+              }).catch(reject);
+            });
+
+            sinon.assert.calledOnce(callback);
+            should.exist(callback.firstCall.args[0]);
+            callback.firstCall.args[0].should.be.instanceof(ClientError);
+            should.not.exist(callback.firstCall.args[1]);
+            sinon.assert.notCalled(fetchWallet);
+            sinon.assert.notCalled(storeWallet);
+            (await server.storage.db.collection('wallets').countDocuments({})).should.equal(0);
+          });
+        }
+      }
+
+      for (const value of [undefined, null, '']) {
+        it(`should preserve defaults for ${JSON.stringify(value)} scalar options`, async function() {
+          const opts = {
+            name: 'my wallet', m: 1, n: 1, pubKey: TestData.keyPair.pub,
+            coin: value, chain: value, network: value
+          };
+          const walletId = await util.promisify(server.createWallet).call(server, opts);
+          const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+          wallet.coin.should.equal('btc');
+          wallet.chain.should.equal('btc');
+          wallet.network.should.equal('livenet');
+        });
+      }
+
+      it('should preserve explicit chains, token coins and network aliases', async function() {
+        const opts = {
+          name: 'my wallet', m: 1, n: 1, pubKey: TestData.keyPair.pub,
+          coin: 'usdc', chain: 'eth', network: 'testnet'
+        };
+        const walletId = await util.promisify(server.createWallet).call(server, opts);
+        const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+        wallet.coin.should.equal('usdc');
+        wallet.chain.should.equal('eth');
+        wallet.network.should.equal('sepolia');
+      });
+    });
+
+    describe('public HTTP requests', function() {
+      let httpServer: http.Server;
+      let walletUrl: string;
+
+      beforeEach(async function() {
+        const app = new ExpressApp();
+        await util.promisify(app.start).call(app, {
+          storage: helpers.getStorage(),
+          blockchainExplorer: helpers.getBlockchainExplorer(),
+          request: sinon.stub(),
+          disableLogs: true,
+          ignoreRateLimiter: true,
+          basePath: config.basePath
+        });
+        httpServer = http.createServer(app.app);
+        await new Promise<void>((resolve, reject) => {
+          httpServer.once('error', reject);
+          httpServer.listen(0, '127.0.0.1', resolve);
+        });
+        const address = httpServer.address();
+        assert(address && typeof address !== 'string');
+        walletUrl = `http://127.0.0.1:${address.port}${config.basePath}/v2/wallets/`;
+      });
+
+      afterEach(function(done) {
+        if (!httpServer?.listening) return done();
+        httpServer.close(done);
+      });
+
+      async function postWallet(overrides = {}) {
+        return util.promisify(request.post)({
+          url: walletUrl,
+          timeout: 1000,
+          json: {
+            id: 'http-create-wallet',
+            name: 'my wallet', m: 1, n: 1, pubKey: TestData.keyPair.pub,
+            ...overrides
+          }
+        });
+      }
+
+      it('should reject malformed chain and coin defaults, then create the same wallet successfully', async function() {
+        for (const invalid of [{ chain: 1 }, { coin: {} }]) {
+          const response = await postWallet(invalid);
+          response.statusCode.should.equal(400);
+          response.body.code.should.equal('BADREQUEST');
+          (await helpers.getStorage().db.collection('wallets').countDocuments({})).should.equal(0);
+        }
+
+        const response = await postWallet();
+        response.statusCode.should.equal(200);
+        response.body.walletId.should.equal('http-create-wallet');
+        const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, response.body.walletId);
+        wallet.chain.should.equal('btc');
+        wallet.network.should.equal('livenet');
+      });
+
+      for (const code of [undefined, 11600]) {
+        it(`should handle a rejected TSS lookup with code ${code} and recover on the next request`, async function() {
+          const failure = Object.assign(new Error('TSS lookup unavailable'), { code });
+          const lookup = sinon.stub(helpers.getStorage(), 'fetchTssKeyGenSession').rejects(failure);
+          const response = await postWallet({ tssKeyId: 'missing-session' });
+          response.statusCode.should.equal(500);
+          (await helpers.getStorage().db.collection('wallets').countDocuments({})).should.equal(0);
+          (await helpers.getStorage().db.collection('locks').countDocuments({})).should.equal(0);
+
+          lookup.restore();
+          const missingSession = await postWallet({ tssKeyId: 'missing-session' });
+          missingSession.statusCode.should.equal(400);
+          missingSession.body.code.should.equal('BADREQUEST');
+          (await helpers.getStorage().db.collection('wallets').countDocuments({})).should.equal(0);
+
+          const recovered = await postWallet();
+          recovered.statusCode.should.equal(200);
+          recovered.body.walletId.should.equal('http-create-wallet');
+        });
+      }
+    });
+
     it('should create and store wallet', function(done) {
       const opts = {
         name: 'my wallet',

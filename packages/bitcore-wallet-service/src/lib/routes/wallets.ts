@@ -42,6 +42,9 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
     server.createWallet(req.body, (err, walletId) => {
       if (err) return returnError(err, res, req);
       res.json({ walletId });
+    }).catch(err => {
+      // Database error codes must not be interpreted as HTTP status codes.
+      returnError(err instanceof ClientError ? err : new Error(err?.message || String(err)), res, req);
     });
   });
 

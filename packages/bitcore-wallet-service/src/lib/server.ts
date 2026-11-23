@@ -610,6 +610,13 @@ export class WalletService implements IWalletService {
   async createWallet(opts, cb) {
     let pubKey;
 
+    // Validate before applying defaults or calling helpers that assume strings.
+    for (const field of ['chain', 'coin', 'network']) {
+      if (opts[field] != null && typeof opts[field] !== 'string') {
+        return cb(new ClientError(`Invalid ${field}`));
+      }
+    }
+
     opts.coin = opts.coin || Defaults.COIN;
     if (!opts.chain) {
       opts.chain = opts.coin; // chain === coin for stored clients
