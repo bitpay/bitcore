@@ -1110,6 +1110,16 @@ describe('Transak integration', () => {
         }
       });
 
+      it('should return error without calling Transak if the headless API key is not set', async () => {
+        delete config.transak.sandbox.apiKeyHeadless;
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak headless missing credentials');
+        }
+        should.not.exist(captured);
+      });
     });
 
     describe('OTP rate limiter', () => {

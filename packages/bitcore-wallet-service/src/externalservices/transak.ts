@@ -723,6 +723,7 @@ export class TransakService {
     const keys = this.transakGetKeys(req, false);
     const API_KEY = keys.API_KEY_HEADLESS;
     const WIDGET_API = keys.WIDGET_API;
+    if (!API_KEY || !WIDGET_API) throw new Error('Transak headless missing credentials');
 
     const requiredParams = [...(opts.userAuth ? ['userAccessToken'] : []), ...(opts.requiredParams ?? [])];
     if (!checkRequired(req.body, requiredParams)) {
