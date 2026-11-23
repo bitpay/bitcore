@@ -170,6 +170,11 @@ jobs:
     steps:
       - run_test:
           package: bitcore-tss
+  bitcore-contracts:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-contracts
   crypto-rpc:
     executor: main
     steps:
@@ -227,6 +232,9 @@ workflows:
           requires:
             - build
       - bitcore-cli:
+          requires:
+            - build
+      - bitcore-contracts:
           requires:
             - build
       - crypto-rpc:
