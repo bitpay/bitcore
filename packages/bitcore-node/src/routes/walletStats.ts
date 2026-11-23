@@ -166,17 +166,26 @@ function startOfUtcDay(date: string, addDays = 0) {
 }
 
 /**
- * Newest completed snapshot for a chain and network, or null if it has none. Facts are
- * written before their snapshot, so a date that only exists in the facts may be partial.
+ * The requested snapshot date if that snapshot has completed, otherwise null. With no
+ * date, the newest completed one. Facts are written before their snapshot, so a date
+ * that only exists in the facts may be partial.
  */
-export async function latestSnapshotDate(chain: string, network: string): Promise<string | null> {
-  const [latest] = await WalletStatsStorage.collection
-    .find({ chain, network })
+export async function completedSnapshotDate(chain: string, network: string, date?: string): Promise<string | null> {
+  const [found] = await WalletStatsStorage.collection
+    .find(date ? { chain, network, date } : { chain, network })
     .project({ date: 1 })
     .sort({ date: -1 })
     .limit(1)
     .toArray();
-  return latest?.date || null;
+  return found?.date || null;
+}
+
+export function latestSnapshotDate(chain: string, network: string): Promise<string | null> {
+  return completedSnapshotDate(chain, network);
+}
+
+function noSnapshotError(chain: string, network: string, date?: string) {
+  return { error: date ? `No completed wallet stats for ${chain} ${network} on ${date}` : `No wallet stats for ${chain} ${network}` };
 }
 
 export async function getCohorts(req: Request, res: Response) {
@@ -187,9 +196,9 @@ export async function getCohorts(req: Request, res: Response) {
   }
   const { chain, network, date, createdFrom, createdTo, activeSince } = parsed.values;
 
-  const snapshotDate = date || (await latestSnapshotDate(chain, network));
+  const snapshotDate = await completedSnapshotDate(chain, network, date);
   if (!snapshotDate) {
-    return res.status(404).json({ error: `No wallet stats for ${chain} ${network}` });
+    return res.status(404).json(noSnapshotError(chain, network, date));
   }
 
   const cacheKey = cacheKeyFor('cohorts', { ...parsed.values, date: snapshotDate });
@@ -321,9 +330,9 @@ export async function getBuckets(req: Request, res: Response) {
     return res.status(400).json({ error: `Unknown units for chain ${chain}` });
   }
 
-  const snapshotDate = date || (await latestSnapshotDate(chain, network));
+  const snapshotDate = await completedSnapshotDate(chain, network, date);
   if (!snapshotDate) {
-    return res.status(404).json({ error: `No wallet stats for ${chain} ${network}` });
+    return res.status(404).json(noSnapshotError(chain, network, date));
   }
 
   // Sorted, because bucketBoundaries sorts internally: two orderings of the same

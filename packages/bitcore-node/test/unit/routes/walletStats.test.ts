@@ -448,7 +448,7 @@ describe('WalletStats routes', function() {
     });
 
     it('uses the requested date instead of the latest, and echoes the filters', async () => {
-      const { collection } = stubFactsCollection([], [{ balance: '1' }]);
+      const { collection, snapshots } = stubFactsCollection([{ snapshotDate: '2026-07-27' }], [{ balance: '1' }]);
       const res = makeRes();
       await getCohorts(
         {
@@ -464,7 +464,20 @@ describe('WalletStats routes', function() {
       );
       expect(res.body.snapshotDate).to.equal('2026-07-27');
       expect(res.body.filters).to.deep.equal({ createdFrom: '2026-01-01', activeSince: '2026-07-01' });
-      expect(collection.find.calledOnce).to.equal(true); // no lookup for the latest date
+      expect(collection.find.calledOnce).to.equal(true);
+      expect(snapshots.find.calledOnceWith({ chain: 'BTC', network: 'mainnet', date: '2026-07-27' })).to.equal(true);
+    });
+
+    it('404s on a requested date whose snapshot has not completed, without reading facts', async () => {
+      // Facts land before the snapshot doc, so a date mid-collection has partial facts.
+      const { collection } = stubFactsCollection([], [{ balance: '1' }]);
+      const cache = CacheStorage.getGlobalOrRefresh as sinon.SinonStub;
+      const res = makeRes();
+      await getCohorts({ query: { chain: 'BTC', network: 'mainnet', date: '2026-07-27' } } as any, res);
+      expect(res.statusCode).to.equal(404);
+      expect(res.body.error).to.include('2026-07-27');
+      expect(collection.find.called).to.equal(false);
+      expect(cache.called).to.equal(false);
     });
   });
 
@@ -618,6 +631,17 @@ describe('WalletStats routes', function() {
       await getBuckets({ query: { ...base, thresholds: '50000,10000' } } as any, res);
       const cache = CacheStorage.getGlobalOrRefresh as sinon.SinonStub;
       expect(cache.firstCall.args[0]).to.equal(cache.secondCall.args[0]);
+    });
+
+    it('404s on a requested date whose snapshot has not completed', async () => {
+      const { collection } = stubFactsCollection([], [{ balance: '200000000' }]);
+      const res = makeRes();
+      await getBuckets(
+        { query: { chain: 'BTC', network: 'mainnet', date: '2026-07-27', thresholds: '1', rate: '1' } } as any,
+        res
+      );
+      expect(res.statusCode).to.equal(404);
+      expect(collection.find.called).to.equal(false);
     });
 
     it('keys the cache on the rate, so a new rate is not served a stale count', async () => {
