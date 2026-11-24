@@ -497,8 +497,9 @@ export class SolRpc {
     const parsedTx = (needsInnerInstructions || needsLookupTableAccounts)
       ? await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send()
       : null;
-    if (needsInnerInstructions && !parsedTx?.meta) {
-      // Returning {} here would read as "no inner instructions" and hide transfers made through another program
+    if (needsInnerInstructions && parsedTx?.meta?.innerInstructions?.length !== meta.innerInstructions.length) {
+      // The jsonParsed response is missing or disagrees with the base64 one on inner instructions. Returning what it
+      // has would read as fewer or no inner instructions and hide transfers made through another program
       throw new Error(SOL_ERROR_MESSAGES.INNER_INSTRUCTIONS_UNAVAILABLE);
     }
     if (includeInnerInstructions) {
