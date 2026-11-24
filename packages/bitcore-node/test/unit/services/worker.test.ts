@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
+import { execFile } from 'child_process';
+import path from 'path';
 import * as sinon from 'sinon';
 import cluster from 'cluster';
 import config from '../../../src/config';
@@ -353,4 +355,28 @@ describe('Worker Service', function() {
       expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 0'))).to.be.true;
     });
   });
+});
+
+describe('API worker shutdown', function() {
+  this.timeout(15000);
+  for (const worker of ['api', 'all']) {
+    for (const reason of ['error', 'null', 'signal']) {
+      it(`${worker} stops services and exits ${reason === 'signal' ? 'cleanly on SIGTERM' : 'non-zero on a ' + reason + ' rejection'}`, async () => {
+        const { code, stdout } = await new Promise<{ code: number; stdout: string }>((resolve, reject) => {
+          execFile(process.execPath, [path.join(__dirname, '../../fixtures/api-worker.js'), worker, reason, '--DEBUG', 'true'],
+            { env: process.env, timeout: 10000 }, (error, stdout, stderr) => {
+              if (error && (typeof error.code !== 'number' || error.killed)) {
+                return reject(new Error(`${error.message}\n${stderr}`));
+              }
+              resolve({ code: error ? Number(error.code) : 0, stdout });
+            });
+        });
+        expect(code).to.equal(reason === 'signal' ? 0 : 1);
+        expect(stdout).to.include('stopped:Api');
+        expect(stdout).to.include('stopped:Event');
+        expect(stdout).to.include('stopped:Storage');
+        if (worker === 'all') expect(stdout).to.include('stopped:P2P');
+      });
+    }
+  }
 });
