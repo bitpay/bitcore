@@ -15,6 +15,24 @@ function selectAgent(url) {
 }
 
 /**
+ * wrap the shared agent so the transport can see each node request it handles
+ * node-fetch 2 never exposes the IncomingMessage, so it is taken from the request here
+ * @param {Function} onRequest - called with each http.ClientRequest, including redirects
+ * @returns {Function} node-fetch agent option
+ */
+function trackRequests(onRequest) {
+  return (url) => {
+    const agent = selectAgent(url);
+    const tracked = Object.create(agent);
+    tracked.addRequest = (req, options) => {
+      onRequest(req);
+      return agent.addRequest(req, options);
+    };
+    return tracked;
+  };
+}
+
+/**
  * cut every URL in an error's message and stack down to its origin
  * node-fetch puts the full request URL in its errors, and provider URLs often carry an API key in the path or query
  * @param {Error} err - error thrown while sending the request or reading the response
@@ -65,12 +83,12 @@ export function createSolanaHttpTransport(url, options = {}) {
   /**
    * send a JSON-RPC payload without losing integer precision
    * @param {Object} payload - JSON-RPC request
-   * @param {AbortSignal} signal - cancellation signal for the shared request
+   * @param {AbortController} controller - cancels the shared request
    * @returns {Promise<Object>} JSON-RPC response
    */
-  async function sendRequest(payload, signal) {
+  async function sendRequest(payload, controller) {
     try {
-      return await fetchAndParse(payload, signal);
+      return await fetchAndParse(payload, controller);
     } catch (err) {
       throw redactUrls(err);
     }
@@ -79,13 +97,35 @@ export function createSolanaHttpTransport(url, options = {}) {
   /**
    * POST the payload and parse the JSON-RPC response
    * @param {Object} payload - JSON-RPC request
-   * @param {AbortSignal} signal - cancellation signal for the shared request
+   * @param {AbortController} controller - cancels the shared request
    * @returns {Promise<Object>} JSON-RPC response
    */
-  async function fetchAndParse(payload, signal) {
+  async function fetchAndParse(payload, controller) {
+    let incoming;
+    let body;
+
+    // node-fetch 2 leaves the body pending forever when the connection drops before Content-Length bytes arrive
+    const failTruncatedBody = () => {
+      if (body && !incoming.complete && !body.destroyed) {
+        const err = new Error('Premature close');
+        err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+        body.destroy(err);
+      }
+    };
+    const agent = trackRequests((req) => {
+      req.once('response', (res) => {
+        incoming = res;
+        res.once('close', () => {
+          if (res === incoming) {
+            failTruncatedBody();
+          }
+        });
+      });
+    });
+
     const response = await fetch(url, {
       method: 'POST',
-      agent: selectAgent,
+      agent,
       headers: {
         accept: 'application/json',
         'accept-encoding': 'br,gzip,deflate',
@@ -93,13 +133,19 @@ export function createSolanaHttpTransport(url, options = {}) {
         'solana-client': 'bitcore-crypto-rpc'
       },
       body: stringifyJsonWithBigints(payload),
-      signal
+      signal: controller.signal
     });
-    if (!response.ok) {
-      // release the response stream when the HTTP status prevents RPC parsing
-      if (response.body && typeof response.body.destroy === 'function') {
-        response.body.destroy();
+    if (incoming && response.body && typeof response.body.destroy === 'function') {
+      body = response.body;
+      // the connection may have dropped before this resumed
+      if (incoming.destroyed) {
+        failTruncatedBody();
       }
+    }
+    if (!response.ok) {
+      // the body goes unread, so abort to close the connection instead of leaving it paused
+      // a body that already arrived in full has released its socket and the abort is a no-op
+      controller.abort();
       throw new SolKit.SolanaError(SolKit.SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR, {
         headers: response.headers,
         message: response.statusText,
@@ -133,7 +179,7 @@ export function createSolanaHttpTransport(url, options = {}) {
       pendingRequest = {
         controller,
         consumers: 0,
-        promise: sendRequest(payload, controller.signal)
+        promise: sendRequest(payload, controller)
       };
       pendingRequests.set(key, pendingRequest);
     }

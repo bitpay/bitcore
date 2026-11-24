@@ -237,6 +237,48 @@ describe('SOL HTTP transport', function() {
     expect(error.context.statusCode).to.equal(503);
   });
 
+  it('closes the connection after an HTTP error whose body is still streaming', async function() {
+    let responseClosed;
+    const closed = new Promise(resolve => { responseClosed = resolve; });
+    respond = (body, res) => {
+      res.writeHead(500, 'Internal Server Error');
+      const interval = setInterval(() => res.write('x'.repeat(65536)), 10);
+      res.on('close', () => {
+        clearInterval(interval);
+        responseClosed(res.writableEnded);
+      });
+    };
+    let error;
+    try {
+      await rpcFor().getSlot().send();
+    } catch (err) {
+      error = err;
+    }
+    expect(SolKit.isSolanaError(error, SolKit.SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR)).to.equal(true);
+    expect(error.context.statusCode).to.equal(500);
+    const writableEnded = await Promise.race([
+      closed,
+      new Promise((resolve, reject) => setTimeout(() => reject(new Error('connection still open')), 1000))
+    ]);
+    expect(writableEnded).to.equal(false);
+  });
+
+  it('rejects when the connection drops partway through the response body', async function() {
+    respond = (body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json', 'content-length': '1000' });
+      res.write('{"jsonrpc":"2.0",');
+      // let the headers and partial body reach the client before the drop
+      setTimeout(() => res.socket.destroy(), 100);
+    };
+    const call = rpcFor().getSlot().send();
+    const outcome = await Promise.race([
+      call.then(() => 'resolved', err => err),
+      new Promise(resolve => setTimeout(() => resolve('still pending'), 1500))
+    ]);
+    expect(outcome).to.be.instanceOf(Error);
+    expect(outcome.message).to.include('Premature close');
+  });
+
   describe('provider credentials in the URL', function() {
     // Provider keys often sit in the URL: a path token, an api-key query param, or user:pass
     const secretsIn = (host) => `http://user:FAKEPASS@${host}/FAKEPATHTOKEN?api-key=FAKEQUERYKEY`;
