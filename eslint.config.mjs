@@ -26,6 +26,7 @@ export default defineConfig([
       '**/build/**',
       '**/ts_build/**',
       'packages/insight/**',
+      'packages/bitcore-contracts/evm/{artifacts,cache,types,coverage}/**',
     ]
   },
   {

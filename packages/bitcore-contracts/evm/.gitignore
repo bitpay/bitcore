@@ -1,0 +1,27 @@
+# Hardhat build artifacts
+/artifacts
+/cache
+
+# Typechain output
+/types
+
+# Coverage reports
+/coverage
+
+# Gas snapshot files
+/.gas-snapshot
+
+# Snapshot cheatcodes output
+/snapshots
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local dev-node (chainId 31337) Ignition deployments
+/ignition/deployments/chain-31337
+
+# Ignition parameter files hold real addresses; only the examples are committed
+/ignition/parameters/*
+!/ignition/parameters/*.example.json
