@@ -5,5 +5,8 @@
   "type": "module",
   "engines": {
     "npm": "0.0.0-run-npm-install-in-packages-bitcore-contracts"
+  },
+  "scripts": {
+    "test": "hardhat test --coverage && node scripts/checkCoverage.js"
   }
 }

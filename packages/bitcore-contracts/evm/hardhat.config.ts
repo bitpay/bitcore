@@ -1,7 +1,7 @@
 import hardhatToolboxMochaEthersPlugin from '@nomicfoundation/hardhat-toolbox-mocha-ethers';
 import { configVariable, defineConfig } from 'hardhat/config';
 
-// src/evm/package.json makes this folder the Hardhat project root, so the default
+// evm/package.json makes this folder the Hardhat project root, so the default
 // paths (contracts/, test/, ignition/, artifacts/, cache/, types/) are relative to it.
 export default defineConfig({
   plugins: [hardhatToolboxMochaEthersPlugin],

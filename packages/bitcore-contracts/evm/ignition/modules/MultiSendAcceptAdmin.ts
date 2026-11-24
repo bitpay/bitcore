@@ -9,7 +9,7 @@ import { buildModule } from '@nomicfoundation/hardhat-ignition/modules';
  * smart-contract wallet (e.g. a Safe), Ignition can't send from it. Submit `acceptAdmin()` through the
  * wallet itself instead.
  *
- * Copy ignition/parameters/MultiSendAcceptAdmin.example.json, fill it in, then (path is relative to src/evm):
+ * Copy ignition/parameters/MultiSendAcceptAdmin.example.json, fill it in, then (path is relative to evm):
  *
  *   npm run multisend:accept-admin -- --network <network> --parameters ignition/parameters/<file>.json --default-sender <pendingAdmin>
  *

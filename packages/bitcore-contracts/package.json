@@ -11,16 +11,16 @@
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-contracts"
   },
   "scripts": {
-    "compile": "cd src/evm && hardhat compile",
-    "compile:prod": "cd src/evm && hardhat compile --build-profile production --no-tests",
-    "clean": "cd src/evm && hardhat clean",
-    "test": "cd src/evm && hardhat test",
-    "test:evm": "cd src/evm && hardhat test",
-    "node:evm": "cd src/evm && hardhat node",
-    "deploy:multisend": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSend.ts",
-    "multisend:set-admin": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSendSetNewAdmin.ts",
-    "multisend:accept-admin": "cd src/evm && hardhat ignition deploy ignition/modules/MultiSendAcceptAdmin.ts",
-    "hardhat": "cd src/evm && hardhat"
+    "compile": "cd evm && hardhat compile",
+    "compile:prod": "cd evm && hardhat compile --build-profile production --no-tests",
+    "clean": "cd evm && hardhat clean",
+    "test": "cd evm && npm test",
+    "test:evm": "cd evm && hardhat test",
+    "node:evm": "cd evm && hardhat node",
+    "deploy:multisend": "cd evm && hardhat ignition deploy ignition/modules/MultiSend.ts",
+    "multisend:set-admin": "cd evm && hardhat ignition deploy ignition/modules/MultiSendSetNewAdmin.ts",
+    "multisend:accept-admin": "cd evm && hardhat ignition deploy ignition/modules/MultiSendAcceptAdmin.ts",
+    "hardhat": "cd evm && hardhat"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.2.2",

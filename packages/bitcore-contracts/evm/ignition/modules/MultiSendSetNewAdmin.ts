@@ -10,7 +10,7 @@ import { buildModule } from '@nomicfoundation/hardhat-ignition/modules';
  * The transaction must come from the current admin. Ignition sends from the network's first account
  * by default; use `--default-sender <address>` to pick a different one.
  *
- * Copy ignition/parameters/MultiSendSetNewAdmin.example.json, fill it in, then (path is relative to src/evm):
+ * Copy ignition/parameters/MultiSendSetNewAdmin.example.json, fill it in, then (path is relative to evm):
  *
  *   npm run multisend:set-admin -- --network <network> --parameters ignition/parameters/<file>.json
  *
