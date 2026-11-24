@@ -291,7 +291,8 @@ const parseJsonParsedTokenProgramInstruction = (instruction) => {
     return {
       key: instructionKeys.TRANSFER_TOKEN,
       value: {
-        authority: info.authority,
+        // jsonParsed gives a multisig-owned source's authority as multisigAuthority
+        authority: info.authority ?? info.multisigAuthority,
         destination: info.destination,
         source: info.source,
         amount: Number(info.amount)
@@ -301,7 +302,7 @@ const parseJsonParsedTokenProgramInstruction = (instruction) => {
     return {
       key: instructionKeys.TRANSFER_CHECKED_TOKEN,
       value: {
-        authority: info.authority,
+        authority: info.authority ?? info.multisigAuthority,
         destination: info.destination,
         mint: info.mint,
         source: info.source,

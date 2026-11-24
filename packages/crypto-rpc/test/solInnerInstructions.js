@@ -53,6 +53,27 @@ describe('parseJsonParsedInstructions', function() {
     expect(parsed[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.deep.equal([{ authority: 'A', destination: 'D', mint: 'M', source: 'S', amount: 42, decimals: 6 }]);
   });
 
+  it('reads the authority of a token transfer from a multisig-owned source', function() {
+    const parsed = parseJsonParsedInstructions([
+      { programId: TOKEN, program: 'spl-token', parsed: { type: 'transfer', info: { multisigAuthority: 'MA', signers: ['S1', 'S2'], source: 'S', destination: 'D', amount: '42' } } }
+    ]);
+    expect(parsed[instructionKeys.TRANSFER_TOKEN]).to.deep.equal([{ authority: 'MA', destination: 'D', source: 'S', amount: 42 }]);
+  });
+
+  it('reads the authority of a token transferChecked from a multisig-owned source', function() {
+    const parsed = parseJsonParsedInstructions([
+      {
+        programId: TOKEN,
+        program: 'spl-token',
+        parsed: {
+          type: 'transferChecked',
+          info: { multisigAuthority: 'MA', signers: ['S1', 'S2'], source: 'S', destination: 'D', mint: 'M', tokenAmount: { amount: '42', decimals: 6 } }
+        }
+      }
+    ]);
+    expect(parsed[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.deep.equal([{ authority: 'MA', destination: 'D', mint: 'M', source: 'S', amount: 42, decimals: 6 }]);
+  });
+
   it('keeps instructions it does not parse under unknown, with their program address', function() {
     const createAccount = { programId: SYSTEM, program: 'system', parsed: { type: 'createAccount', info: {} } };
     const parsed = parseJsonParsedInstructions([createAccount]);
