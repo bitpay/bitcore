@@ -522,12 +522,34 @@ describe('Wallet service', function() {
         wallet.network.should.equal('livenet');
       });
 
+      for (const code of ['BADREQUEST', 'NOT_AUTHORIZED']) {
+        it(`should preserve a rejected ClientError with code ${code}`, async function() {
+          const failure = new ClientError(code, 'Invalid TSS session');
+          failure.messageData = { session: 'missing-session' };
+          sinon.stub(helpers.getStorage(), 'fetchTssKeyGenSession').rejects(failure);
+          const logError = sinon.stub(logger, 'error');
+
+          const response = await postWallet({ tssKeyId: 'missing-session' });
+
+          response.statusCode.should.equal(code === 'NOT_AUTHORIZED' ? 401 : 400);
+          response.body.should.deep.equal({
+            code, message: failure.message, messageData: failure.messageData
+          });
+          sinon.assert.notCalled(logError);
+          (await helpers.getStorage().db.collection('wallets').countDocuments({})).should.equal(0);
+        });
+      }
+
       for (const code of [undefined, 11600]) {
         it(`should handle a rejected TSS lookup with code ${code} and recover on the next request`, async function() {
-          const failure = Object.assign(new Error('TSS lookup unavailable'), { code });
+          const failure = Object.assign(new Error('connect ECONNREFUSED mongo.internal:27017'), { code });
+          const logError = sinon.stub(logger, 'error');
           const lookup = sinon.stub(helpers.getStorage(), 'fetchTssKeyGenSession').rejects(failure);
           const response = await postWallet({ tssKeyId: 'missing-session' });
           response.statusCode.should.equal(500);
+          response.body.should.deep.equal({ error: 'Error: Internal server error' });
+          sinon.assert.calledOnce(logError);
+          sinon.assert.match(logError.firstCall.args, [sinon.match.string, sinon.match.same(failure)]);
           (await helpers.getStorage().db.collection('wallets').countDocuments({})).should.equal(0);
           (await helpers.getStorage().db.collection('locks').countDocuments({})).should.equal(0);
 
