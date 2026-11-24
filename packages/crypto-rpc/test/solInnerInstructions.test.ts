@@ -53,6 +53,27 @@ describe('parseJsonParsedInstructions', function() {
     expect(parsed[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.deep.equal([{ authority: 'A', destination: 'D', mint: 'M', source: 'S', amount: 42, decimals: 6 }]);
   });
 
+  it('reads the authority of a token transfer from a multisig-owned source', function() {
+    const parsed = parseJsonParsedInstructions([
+      { programId: TOKEN, program: 'spl-token', parsed: { type: 'transfer', info: { multisigAuthority: 'MA', signers: ['S1', 'S2'], source: 'S', destination: 'D', amount: '42' } } }
+    ]);
+    expect(parsed[instructionKeys.TRANSFER_TOKEN]).to.deep.equal([{ authority: 'MA', destination: 'D', source: 'S', amount: 42 }]);
+  });
+
+  it('reads the authority of a token transferChecked from a multisig-owned source', function() {
+    const parsed = parseJsonParsedInstructions([
+      {
+        programId: TOKEN,
+        program: 'spl-token',
+        parsed: {
+          type: 'transferChecked',
+          info: { multisigAuthority: 'MA', signers: ['S1', 'S2'], source: 'S', destination: 'D', mint: 'M', tokenAmount: { amount: '42', decimals: 6 } }
+        }
+      }
+    ]);
+    expect(parsed[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.deep.equal([{ authority: 'MA', destination: 'D', mint: 'M', source: 'S', amount: 42, decimals: 6 }]);
+  });
+
   it('keeps instructions it does not parse under unknown, with their program address', function() {
     const createAccount = { programId: SYSTEM, program: 'system', parsed: { type: 'createAccount', info: {} } };
     const parsed = parseJsonParsedInstructions([createAccount]);
@@ -209,29 +230,43 @@ describe('SolRpc includeInnerInstructions config (recorded mainnet tx)', functio
   });
 });
 
-describe('SolRpc.getTransaction when the jsonParsed fetch comes back empty', function() {
-  let replay;
-
-  before(async function() {
-    // A node that has the tx in base64 but returns null for it as jsonParsed, e.g. one behind a load balancer that's lagging
-    const exchanges = JSON.parse(fs.readFileSync(fixturePath, 'utf8')).map(exchange =>
-      exchange.request.params?.[1]?.encoding === 'jsonParsed' ? { ...exchange, response: { ...exchange.response, result: null } } : exchange
-    );
-    replay = await startReplayServer(exchanges);
-  });
-
-  after(function() {
-    replay.server.close();
-  });
-
-  it('throws rather than returning {}, which would read as no inner instructions', async function() {
+// Replays the fixture with the jsonParsed result swapped for changeResult(result), and returns what getTransaction throws
+const getTransactionErrorWithJsonParsed = async (changeResult: (result: any) => any): Promise<Error | undefined> => {
+  const exchanges = JSON.parse(fs.readFileSync(fixturePath, 'utf8')).map(exchange =>
+    exchange.request.params?.[1]?.encoding === 'jsonParsed'
+      ? { ...exchange, response: { ...exchange.response, result: changeResult(exchange.response.result) } }
+      : exchange
+  );
+  const replay = await startReplayServer(exchanges);
+  try {
     const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port: replay.port, wsPort: 1 });
-    let error;
-    try {
-      await solRpc.getTransaction({ txid: MAINNET_TXID, includeInnerInstructions: true });
-    } catch (err) {
-      error = err;
-    }
+    await solRpc.getTransaction({ txid: MAINNET_TXID, includeInnerInstructions: true });
+  } catch (err) {
+    return err as Error;
+  } finally {
+    replay.server.close();
+  }
+};
+
+describe('SolRpc.getTransaction when the jsonParsed fetch comes back empty', function() {
+  it('throws rather than returning {}, which would read as no inner instructions', async function() {
+    // A node that has the tx in base64 but returns null for it as jsonParsed, e.g. one behind a load balancer that's lagging
+    const error = await getTransactionErrorWithJsonParsed(() => null);
+    expect(error?.message).to.equal(SOL_ERROR_MESSAGES.INNER_INSTRUCTIONS_UNAVAILABLE);
+  });
+
+  it('throws when the jsonParsed meta has no innerInstructions', async function() {
+    const error = await getTransactionErrorWithJsonParsed(result => {
+      const { innerInstructions, ...meta } = result.meta;
+      return { ...result, meta };
+    });
+    expect(error?.message).to.equal(SOL_ERROR_MESSAGES.INNER_INSTRUCTIONS_UNAVAILABLE);
+  });
+
+  it('throws when the jsonParsed meta has fewer inner instruction groups than the base64 one', async function() {
+    const error = await getTransactionErrorWithJsonParsed(result =>
+      ({ ...result, meta: { ...result.meta, innerInstructions: result.meta.innerInstructions.slice(1) } })
+    );
     expect(error?.message).to.equal(SOL_ERROR_MESSAGES.INNER_INSTRUCTIONS_UNAVAILABLE);
   });
 });
