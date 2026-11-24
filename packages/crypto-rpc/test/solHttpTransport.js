@@ -172,6 +172,43 @@ describe('SOL HTTP transport', function() {
       expect(error.message).to.equal('caller gave up');
     });
 
+    it('rejects with an Error for a Symbol reason when the signal is already aborted', async function() {
+      const reason = Symbol('caller gave up');
+      const controller = new AbortController();
+      controller.abort(reason);
+      const error = await rejectionOf(createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal }));
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('Symbol(caller gave up)');
+      expect(error.cause).to.equal(reason);
+      expect(requests).to.have.lengthOf(0);
+    });
+
+    it('rejects with an Error for a Symbol reason when the signal aborts mid-request', async function() {
+      respond = () => {};
+      const reason = Symbol('caller gave up');
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort(reason);
+      const error = await rejectionOf(call);
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('Symbol(caller gave up)');
+      expect(error.cause).to.equal(reason);
+    });
+
+    it('rejects with a generic Error for a reason that cannot be stringified', async function() {
+      respond = () => {};
+      const reason = Object.create(null);
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort(reason);
+      const error = await rejectionOf(call);
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('Request aborted');
+      expect(error.cause).to.equal(reason);
+    });
+
     it('passes a plain abort() reason through unchanged', async function() {
       respond = () => {};
       const controller = new AbortController();

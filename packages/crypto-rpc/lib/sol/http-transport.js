@@ -34,10 +34,21 @@ function redactUrls(err) {
 /**
  * get a signal's abort reason as an Error so the rejection has a stack trace
  * @param {AbortSignal} signal - aborted signal
- * @returns {Error} the reason itself if it is an Error, otherwise an Error wrapping it
+ * @returns {Error} the reason itself if it is an Error, otherwise an Error wrapping it as its cause
  */
 function abortError(signal) {
-  return signal.reason instanceof Error ? signal.reason : new Error(signal.reason);
+  const { reason } = signal;
+  if (reason instanceof Error) {
+    return reason;
+  }
+  let message;
+  try {
+    // String() handles Symbols but throws for objects without a usable toString
+    message = String(reason);
+  } catch {
+    message = 'Request aborted';
+  }
+  return new Error(message, { cause: reason });
 }
 
 /**
