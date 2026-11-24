@@ -19,6 +19,7 @@ const coverageBuilder = (thresholds) => {
   return {
     reports: ['console-summary', 'v8', 'v8-json'],
     outputDir: 'coverage',
+    all: dirs.filter(dir => !dir.startsWith('build') && !dir.startsWith('ts_build')),
     entryFilter: (entry) => {
       const fileName = entry.url.slice('file://'.length);
       for (const dir of dirs) {
