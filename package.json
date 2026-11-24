@@ -40,7 +40,7 @@
   ],
   "scripts": {
     "postinstall": "npm run compile",
-    "compile": "npm run compile --workspace=@bitpay-labs/bitcore-logging && npm run compile --workspace=@bitpay-labs/crypto-wallet-core && npm run compile --workspace=@bitpay-labs/bitcore-wallet-service && npm run compile --workspace=@bitpay-labs/bitcore-wallet-client && npm run compile --workspace=@bitpay-labs/bitcore-client && npm run compile --workspace=@bitpay-labs/bitcore-cli && npm run compile --workspace=@bitpay-labs/bitcore-node",
+    "compile": "npm run compile --workspace=@bitpay-labs/bitcore-logging && npm run compile --workspace=@bitpay-labs/crypto-wallet-core && npm run compile --workspace=@bitpay-labs/crypto-rpc && npm run compile --workspace=@bitpay-labs/bitcore-wallet-service && npm run compile --workspace=@bitpay-labs/bitcore-wallet-client && npm run compile --workspace=@bitpay-labs/bitcore-client && npm run compile --workspace=@bitpay-labs/bitcore-cli && npm run compile --workspace=@bitpay-labs/bitcore-node",
     "build": "docker build -t bitcore-node . ",
     "build:docker": "npm run build:docker --workspace=@bitpay-labs/bitcore-node && npm run build:docker --workspace=@bitpay-labs/bitcore-wallet-service",
     "watch": "npm run watch --workspace=@bitpay-labs/bitcore-client --",

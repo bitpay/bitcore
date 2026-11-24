@@ -1,0 +1,394 @@
+import http from 'http';
+import { AddressInfo } from 'net';
+import { SolKit } from '@bitpay-labs/crypto-wallet-core';
+import { expect } from 'chai';
+import nodeFetch from 'node-fetch';
+import sinon from 'sinon';
+import { DEFAULT_TIMEOUT_MS, SolanaHttpTransportOptions, createSolanaHttpTransport } from '../lib/sol/http-transport';
+import { SolRpc } from '../lib/sol/SolRpc';
+
+describe('SOL HTTP transport', function() {
+  this.timeout(5000);
+  let server;
+  let port;
+  let endpoint;
+  let requests;
+  // Answers each JSON-RPC request; replaced per test. Gets the parsed request and the raw response.
+  let respond;
+
+  const slotResponse = id => `{"jsonrpc":"2.0","result":18446744073709551615,"id":${JSON.stringify(id)}}`;
+
+  beforeEach(async function() {
+    requests = [];
+    respond = (body, res) => res.end(slotResponse(body.id));
+    server = http.createServer((req, res) => {
+      const chunks: Buffer[] = [];
+      req.on('data', chunk => chunks.push(chunk));
+      req.on('end', () => {
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        requests.push({ headers: req.headers, body });
+        respond(body, res);
+      });
+    });
+    await new Promise((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    port = server.address().port;
+    endpoint = `http://127.0.0.1:${port}`;
+  });
+
+  afterEach(async function() {
+    sinon.restore();
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+  });
+
+  const rpcFor = (options?: SolanaHttpTransportOptions) => SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(endpoint, options));
+
+  it('works as a Kit transport and keeps u64 precision', async function() {
+    const slot = await rpcFor().getSlot().send();
+    expect(slot).to.equal(18446744073709551615n);
+    expect(requests).to.have.lengthOf(1);
+    expect(requests[0].body.method).to.equal('getSlot');
+    expect(requests[0].headers['solana-client']).to.equal('bitcore-crypto-rpc');
+  });
+
+  it('sends identical requests made in the same tick once', async function() {
+    const rpc = rpcFor();
+    const results = await Promise.all([rpc.getSlot().send(), rpc.getSlot().send()]);
+    expect(results).to.deep.equal([18446744073709551615n, 18446744073709551615n]);
+    expect(requests).to.have.lengthOf(1);
+  });
+
+  it('sends different requests made in the same tick separately', async function() {
+    const rpc = rpcFor();
+    await Promise.all([rpc.getSlot().send(), rpc.getSlot({ commitment: 'finalized' }).send()]);
+    expect(requests).to.have.lengthOf(2);
+  });
+
+  it('keeps a shared request going when one of its callers aborts', async function() {
+    let release;
+    respond = (body, res) => { release = () => res.end(slotResponse(body.id)); };
+    const rpc = rpcFor();
+    const controller = new AbortController();
+    const aborted = rpc.getSlot().send({ abortSignal: controller.signal });
+    const kept = rpc.getSlot().send();
+    await waitFor(() => release);
+    controller.abort();
+    let abortError;
+    try {
+      await aborted;
+    } catch (err) {
+      abortError = err;
+    }
+    expect(abortError).to.have.property('name', 'AbortError');
+    release();
+    expect(await kept).to.equal(18446744073709551615n);
+    expect(requests).to.have.lengthOf(1);
+  });
+
+  it('keeps a shared request going when one of two signalled callers aborts', async function() {
+    let release;
+    respond = (body, res) => { release = () => res.end(slotResponse(body.id)); };
+    const rpc = rpcFor();
+    const first = new AbortController();
+    const second = new AbortController();
+    const aborted = rpc.getSlot().send({ abortSignal: first.signal });
+    const kept = rpc.getSlot().send({ abortSignal: second.signal });
+    await waitFor(() => release);
+    first.abort();
+    let abortError;
+    try {
+      await aborted;
+    } catch (err) {
+      abortError = err;
+    }
+    expect(abortError).to.have.property('name', 'AbortError');
+    release();
+    expect(await kept).to.equal(18446744073709551615n);
+    expect(requests).to.have.lengthOf(1);
+  });
+
+  it('aborts the HTTP request when every caller aborts', async function() {
+    let responseClosed;
+    const closed = new Promise(resolve => { responseClosed = resolve; });
+    respond = (body, res) => res.on('close', () => responseClosed(res.writableEnded));
+    const controller = new AbortController();
+    const call = rpcFor().getSlot().send({ abortSignal: controller.signal });
+    await waitFor(() => requests.length);
+    controller.abort();
+    let abortError;
+    try {
+      await call;
+    } catch (err) {
+      abortError = err;
+    }
+    expect(abortError).to.have.property('name', 'AbortError');
+    // the connection closed before the server ever answered
+    expect(await closed).to.equal(false);
+  });
+
+  it('rejects a caller whose signal is already aborted without sending anything', async function() {
+    const controller = new AbortController();
+    controller.abort();
+    let abortError;
+    try {
+      await rpcFor().getSlot().send({ abortSignal: controller.signal });
+    } catch (err) {
+      abortError = err;
+    }
+    expect(abortError).to.have.property('name', 'AbortError');
+    expect(requests).to.have.lengthOf(0);
+  });
+
+  describe('abort reasons', function() {
+    const payload = { jsonrpc: '2.0', id: 1, method: 'getSlot', params: [] };
+    const rejectionOf = async (promise: Promise<unknown>): Promise<any> => {
+      try {
+        await promise;
+      } catch (err) {
+        return err;
+      }
+      throw new Error('expected the request to be rejected');
+    };
+
+    it('wraps a non-Error reason when the signal is already aborted', async function() {
+      const controller = new AbortController();
+      controller.abort('caller gave up');
+      const error = await rejectionOf(createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal }));
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('caller gave up');
+      expect(requests).to.have.lengthOf(0);
+    });
+
+    it('wraps a non-Error reason when the signal aborts mid-request', async function() {
+      respond = () => {};
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort('caller gave up');
+      const error = await rejectionOf(call);
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('caller gave up');
+    });
+
+    it('rejects with an Error for a Symbol reason when the signal is already aborted', async function() {
+      const reason = Symbol('caller gave up');
+      const controller = new AbortController();
+      controller.abort(reason);
+      const error = await rejectionOf(createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal }));
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('Symbol(caller gave up)');
+      expect(error.cause).to.equal(reason);
+      expect(requests).to.have.lengthOf(0);
+    });
+
+    it('rejects with an Error for a Symbol reason when the signal aborts mid-request', async function() {
+      respond = () => {};
+      const reason = Symbol('caller gave up');
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort(reason);
+      const error = await rejectionOf(call);
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('Symbol(caller gave up)');
+      expect(error.cause).to.equal(reason);
+    });
+
+    it('rejects with a generic Error for a reason that cannot be stringified', async function() {
+      respond = () => {};
+      const reason = Object.create(null);
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort(reason);
+      const error = await rejectionOf(call);
+      expect(error).to.be.instanceOf(Error);
+      expect(error.message).to.equal('Request aborted');
+      expect(error.cause).to.equal(reason);
+    });
+
+    it('passes a plain abort() reason through unchanged', async function() {
+      respond = () => {};
+      const controller = new AbortController();
+      const call = createSolanaHttpTransport(endpoint)({ payload, signal: controller.signal });
+      await waitFor(() => requests.length);
+      controller.abort();
+      const error = await rejectionOf(call);
+      expect(error).to.equal(controller.signal.reason);
+      expect(error).to.have.property('name', 'AbortError');
+    });
+  });
+
+  it('rejects with a SolanaError carrying the status code on an HTTP error', async function() {
+    respond = (body, res) => {
+      res.writeHead(503, 'Service Unavailable');
+      res.end('down');
+    };
+    let error;
+    try {
+      await rpcFor().getSlot().send();
+    } catch (err) {
+      error = err;
+    }
+    expect(error).to.be.instanceOf(SolKit.SolanaError);
+    expect(SolKit.isSolanaError(error, SolKit.SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR)).to.equal(true);
+    expect(error.context.statusCode).to.equal(503);
+  });
+
+  it('closes the connection after an HTTP error whose body is still streaming', async function() {
+    let responseClosed;
+    const closed = new Promise(resolve => { responseClosed = resolve; });
+    respond = (body, res) => {
+      res.writeHead(500, 'Internal Server Error');
+      const interval = setInterval(() => res.write('x'.repeat(65536)), 10);
+      res.on('close', () => {
+        clearInterval(interval);
+        responseClosed(res.writableEnded);
+      });
+    };
+    let error;
+    try {
+      await rpcFor().getSlot().send();
+    } catch (err) {
+      error = err;
+    }
+    expect(SolKit.isSolanaError(error, SolKit.SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR)).to.equal(true);
+    expect(error.context.statusCode).to.equal(500);
+    const writableEnded = await Promise.race([
+      closed,
+      new Promise((resolve, reject) => setTimeout(() => reject(new Error('connection still open')), 1000))
+    ]);
+    expect(writableEnded).to.equal(false);
+  });
+
+  it('rejects when the connection drops partway through the response body', async function() {
+    respond = (body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json', 'content-length': '1000' });
+      res.write('{"jsonrpc":"2.0",');
+      // let the headers and partial body reach the client before the drop
+      setTimeout(() => res.socket.destroy(), 100);
+    };
+    const call = rpcFor().getSlot().send();
+    const outcome = await Promise.race([
+      call.then(() => 'resolved', err => err),
+      new Promise(resolve => setTimeout(() => resolve('still pending'), 1500))
+    ]);
+    expect(outcome).to.be.instanceOf(Error);
+    expect(outcome.message).to.include('Premature close');
+  });
+
+  describe('timeout', function() {
+    it('aborts a stalled request and rejects every caller sharing it', async function() {
+      let responseClosed;
+      const closed = new Promise(resolve => { responseClosed = resolve; });
+      respond = (body, res) => res.on('close', () => responseClosed(res.writableEnded));
+      const rpc = rpcFor({ timeout: 100 });
+      const results = await Promise.race([
+        Promise.allSettled([rpc.getSlot().send(), rpc.getSlot().send({ abortSignal: new AbortController().signal })]),
+        new Promise<never>((resolve, reject) => setTimeout(() => reject(new Error('timeout did not fire')), 1500))
+      ]);
+      expect(requests).to.have.lengthOf(1);
+      for (const result of results) {
+        expect(result.status).to.equal('rejected');
+        expect((result as PromiseRejectedResult).reason.message).to.equal('Solana RPC request timed out after 100ms');
+      }
+      expect(await closed).to.equal(false);
+    });
+
+    it('aborts a request whose body stalls', async function() {
+      respond = (body, res) => {
+        res.writeHead(200, { 'content-type': 'application/json', 'content-length': '1000' });
+        res.write('{"jsonrpc":"2.0",');
+      };
+      const outcome = await Promise.race([
+        rpcFor({ timeout: 200 }).getSlot().send().then(() => 'resolved', err => err),
+        new Promise(resolve => setTimeout(() => resolve('still pending'), 1500))
+      ]);
+      expect(outcome).to.be.instanceOf(Error);
+      expect(outcome.message).to.equal('Solana RPC request timed out after 200ms');
+    });
+
+    it('defaults to 300 seconds', async function() {
+      expect(DEFAULT_TIMEOUT_MS).to.equal(300000);
+      const setTimeoutSpy = sinon.spy(globalThis, 'setTimeout');
+      await rpcFor().getSlot().send();
+      expect(setTimeoutSpy.calledWith(sinon.match.func, 300000)).to.equal(true);
+    });
+
+    it('takes the timeout from the SolRpc config', async function() {
+      respond = () => {};
+      const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port, wsPort: 1, timeout: 100 });
+      const outcome = await Promise.race([
+        solRpc.rpc.getSlot().send().then(() => 'resolved', err => err),
+        new Promise(resolve => setTimeout(() => resolve('still pending'), 1500))
+      ]);
+      expect(outcome).to.be.instanceOf(Error);
+      expect(outcome.message).to.equal('Solana RPC request timed out after 100ms');
+    });
+  });
+
+  describe('provider credentials in the URL', function() {
+    // Provider keys often sit in the URL: a path token, an api-key query param, or user:pass
+    const secretsIn = (host) => `http://user:FAKEPASS@${host}/FAKEPATHTOKEN?api-key=FAKEQUERYKEY`;
+    const sendFrom = async (url) => {
+      try {
+        await SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(url)).getSlot().send();
+      } catch (err: any) {
+        return err;
+      }
+      throw new Error('expected the request to fail');
+    };
+
+    it('keeps them out of the error when the connection fails', async function() {
+      const closed = http.createServer();
+      await new Promise<void>(resolve => closed.listen(0, '127.0.0.1', resolve));
+      const closedPort = (closed.address() as AddressInfo).port;
+      await new Promise(resolve => closed.close(resolve));
+
+      const error = await sendFrom(secretsIn(`127.0.0.1:${closedPort}`));
+      expect(error.message).to.include(`http://127.0.0.1:${closedPort}`);
+      expect(error.message).to.include('ECONNREFUSED');
+      expect(`${error.message}\n${error.stack}`).not.to.match(/FAKE/);
+      expect(error.code).to.equal('ECONNREFUSED');
+    });
+
+    it('keeps them out of the error when the response body is cut off', async function() {
+      respond = (body, res) => {
+        res.writeHead(200, { 'content-type': 'application/json', 'content-length': '1000' });
+        res.write('{"jsonrpc":"2.0",');
+        res.destroy();
+      };
+      const error = await sendFrom(secretsIn(`127.0.0.1:${port}`));
+      expect(error.message).to.include(`http://127.0.0.1:${port}`);
+      expect(`${error.message}\n${error.stack}`).not.to.match(/FAKE/);
+    });
+  });
+
+  it('sends requests through the fetch passed in options', async function() {
+    const fetch = sinon.spy(nodeFetch);
+    expect(await rpcFor({ fetch }).getSlot().send()).to.equal(18446744073709551615n);
+    expect(fetch.calledOnce).to.equal(true);
+    expect(fetch.firstCall.args[0]).to.equal(endpoint);
+  });
+
+  it('is the transport SolRpc uses', async function() {
+    const fetch = sinon.spy(nodeFetch);
+    const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port, wsPort: 1, fetch });
+    expect(await solRpc.rpc.getSlot().send()).to.equal(18446744073709551615n);
+    expect(fetch.calledOnce).to.equal(true);
+    expect(requests[0].headers['solana-client']).to.equal('bitcore-crypto-rpc');
+  });
+});
+
+async function waitFor(condition, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  while (!condition()) {
+    if (Date.now() > deadline) {
+      throw new Error(`waitFor: condition not met within ${timeoutMs}ms: ${condition}`);
+    }
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
+}
