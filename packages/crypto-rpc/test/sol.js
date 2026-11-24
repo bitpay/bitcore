@@ -555,6 +555,8 @@ describe('SOL Tests', () => {
       const META_FIELDS = ['fee', 'err', 'preBalances', 'postBalances', 'preTokenBalances', 'postTokenBalances', 'logMessages', 'computeUnitsConsumed'];
       const txids = {};
       const loadedAccounts = {};
+      // The lookup table created by the tx with inner instructions, which the tx's inner SOL transfer funds
+      let innerTransferDestination;
 
       before(async function() {
         // Two lookup tables, each holding a writable and a readonly account, so a tx can load both kinds from both tables
@@ -571,6 +573,9 @@ describe('SOL Tests', () => {
         txids.versioned = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000, 0);
         txids.oneLookupTable = await sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair: senderKeypair, tables: tables.slice(0, 1), amountInLamports: 1e6 });
         txids.twoLookupTables = await sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair: senderKeypair, tables, amountInLamports: 1e6 });
+        const innerInstructionsTx = await sendCreateLookupTable({ solRpc, authority: senderKeypair });
+        txids.innerInstructions = innerInstructionsTx.txid;
+        innerTransferDestination = innerInstructionsTx.lookupTableAddress;
         await Promise.all(Object.values(txids).map(txid => waitForFinalized(solRpc, txid)));
       });
 
@@ -594,7 +599,7 @@ describe('SOL Tests', () => {
         const recorder = recordRpcCalls(solRpc, { respond });
         let tx;
         try {
-          tx = await solRpc.getTransaction({ txid });
+          tx = await solRpc.getTransaction({ txid, includeInnerInstructions: true });
         } finally {
           recorder.restore();
         }
@@ -621,6 +626,9 @@ describe('SOL Tests', () => {
         expect(tx.accountKeys).to.deep.equal(jsonParsed.transaction.message.accountKeys.map(({ pubkey }) => pubkey));
         for (const field of META_FIELDS) {
           expect(tx.meta[field], `meta.${field}`).to.deep.equal(jsonParsed.meta[field]);
+        }
+        if (!jsonParsed.meta.innerInstructions?.length) {
+          expect(tx.innerInstructions).to.deep.equal({});
         }
         expect(tx).not.to.have.property('lookupTablesUsed');
 
@@ -689,6 +697,21 @@ describe('SOL Tests', () => {
           expect(refetchedAsJsonParsed(calls)).to.be.true;
         });
       }
+
+      it('matches the validator for a tx with inner instructions, fetching it as jsonParsed once more', async () => {
+        const { tx, calls } = await expectMatchesValidator(txids.innerInstructions);
+        const { jsonParsed } = await fetchFromValidator(txids.innerInstructions);
+        const innerGroups = jsonParsed.meta.innerInstructions;
+        expect(innerGroups).to.not.be.empty;
+        const returned = Object.values(tx.innerInstructions).flat();
+        expect(returned).to.have.lengthOf(innerGroups.reduce((count, group) => count + group.instructions.length, 0));
+        expect(new Set(returned.map(({ topLevelInstructionIndex }) => topLevelInstructionIndex))).to.deep.equal(new Set(innerGroups.map(({ index }) => index)));
+        expect(calls.filter(({ method, args }) => method === 'getTransaction' && args[1]?.encoding === 'jsonParsed')).to.have.lengthOf(1);
+        const [innerTransfer] = innerGroups[0].instructions.filter(({ program, parsed }) => program === 'system' && parsed.type === 'transfer');
+        expect(tx.innerInstructions[instructionKeys.TRANSFER_SOL]).to.deep.equal([
+          { topLevelInstructionIndex: 0, ...transfer(innerTransferDestination, Number(innerTransfer.parsed.info.lamports)) }
+        ]);
+      });
 
       it('returns the validator\'s status for a tx that was just sent', async () => {
         const txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000, 0);
@@ -870,6 +893,23 @@ describe('SOL Tests', () => {
             expect(historySearches(recorder)).to.deep.equal([true]);
           });
         }
+
+        it('fetches a finalized tx with inner instructions a second time as jsonParsed, and its status and the tip once each', async () => {
+          const recorder = await record(() => solRpc.getTransaction({ txid: txids.innerInstructions, includeInnerInstructions: true }));
+          expect(recorder.methods().filter(m => m === 'getTransaction')).to.have.lengthOf(2);
+          expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses', 'getSlot', 'getTransaction']);
+          expect(recorder.calls.filter(({ method }) => method === 'getTransaction').map(({ args }) => args[1].encoding)).to.deep.equal(['base64', 'jsonParsed']);
+          expect(historySearches(recorder)).to.deep.equal([true]);
+        });
+
+        it('fetches a tx with inner instructions once when they are not requested', async () => {
+          let tx;
+          const recorder = await record(async () => {
+            tx = await solRpc.getTransaction({ txid: txids.innerInstructions });
+          });
+          expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses', 'getSlot']);
+          expect(tx).not.to.have.property('innerInstructions');
+        });
 
         it('fetches a tx that is no longer in the recent status cache, its status and the tip once each', async () => {
           const recorder = await record(() => solRpc.getTransaction({ txid: txids.versioned }), agedOut);
@@ -2422,6 +2462,30 @@ async function sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair, tab
   const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
   await SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions })(signedTransactionMessage, { commitment: 'confirmed' });
   return SolKit.getSignatureFromTransaction(signedTransactionMessage);
+}
+
+/**
+ * Creates an empty lookup table. The lookup table program funds and sets up the table's account by calling the
+ * system program, so the tx has an inner SOL transfer along with other inner instructions, and no token balances.
+ * @param {Object} params
+ * @param {SolRpc} params.solRpc
+ * @param {SolKit.KeyPairSigner<string>} params.authority - also the fee payer
+ * @returns {Promise<{ txid: string, lookupTableAddress: string }>}
+ */
+async function sendCreateLookupTable({ solRpc, authority }) {
+  const recentSlot = await solRpc.rpc.getSlot({ commitment: 'finalized' }).send();
+  const createLookupTableInstruction = await SolLookUpTable.getCreateLookupTableInstructionAsync({ authority, recentSlot });
+  const lookupTableAddress = createLookupTableInstruction.accounts.find(account => account.role === SolKit.AccountRole.WRITABLE).address;
+  const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
+  const transactionMessage = pipe(
+    SolKit.createTransactionMessage({ version: 0 }),
+    (tx) => SolKit.setTransactionMessageFeePayerSigner(authority, tx),
+    (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+    (tx) => SolKit.appendTransactionMessageInstructions([createLookupTableInstruction], tx)
+  );
+  const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
+  await SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions })(signedTransactionMessage, { commitment: 'confirmed' });
+  return { txid: SolKit.getSignatureFromTransaction(signedTransactionMessage), lookupTableAddress };
 }
 
 /**
