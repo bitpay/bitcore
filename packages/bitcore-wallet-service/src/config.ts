@@ -256,6 +256,11 @@ const Config = (): any => {
           disabled: false,
           removed: false
         },
+        moonpay: {
+          // Enable once moonpaySwap credentials are configured
+          disabled: true,
+          removed: false
+        },
         thorswap: {
           disabled: false,
           removed: false,
@@ -403,6 +408,17 @@ const Config = (): any => {
     //     appSellRefId: 'simplex_web_sell_ref_id_here',
     //     publicKey: 'simplex_web_public_key_here',
     //   }
+    // },
+    // swaps.xyz has no test network: a sandbox key still executes mainnet swaps
+    // moonpaySwap: {
+    //   sandbox: {
+    //     api: 'https://api-v2.swaps.xyz/api',
+    //     apiKey: 'moonpay_swap_sandbox_api_key_here'
+    //   },
+    //   production: {
+    //     api: 'https://api-v2.swaps.xyz/api',
+    //     apiKey: 'moonpay_swap_production_api_key_here'
+    //   },
     // },
     // thorswap: {
     //   sandbox: {
