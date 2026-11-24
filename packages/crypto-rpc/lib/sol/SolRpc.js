@@ -25,6 +25,7 @@ export class SolRpc {
    * @param {string} config.host - The host URL or IP address.
    * @param {number} [config.port] - The port number
    * @param {Function} [config.fetch] - fetch implementation for HTTP RPC requests (defaults to node-fetch)
+   * @param {number} [config.timeout] - HTTP RPC request timeout in ms (defaults to 300000, 0 disables)
    * @param {number} [config.wsPort] - The WS port number
    */
   constructor(config) {
@@ -46,7 +47,10 @@ export class SolRpc {
 
   initRpcConnection() {
     // node-fetch instead of native fetch: Node 24's fetch leaks sockets under sustained RPC load
-    return SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(this.rpcUrl, { fetch: this.config.fetch }));
+    return SolKit.createSolanaRpcFromTransport(createSolanaHttpTransport(this.rpcUrl, {
+      fetch: this.config.fetch,
+      timeout: this.config.timeout
+    }));
   }
 
   initRpcSubscriptions() {

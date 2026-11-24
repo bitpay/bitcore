@@ -3,7 +3,7 @@ import { SolKit } from '@bitpay-labs/crypto-wallet-core';
 import { expect } from 'chai';
 import nodeFetch from 'node-fetch';
 import sinon from 'sinon';
-import { createSolanaHttpTransport } from '../lib/sol/http-transport.js';
+import { createSolanaHttpTransport, DEFAULT_TIMEOUT_MS } from '../lib/sol/http-transport.js';
 import { SolRpc } from '../lib/sol/SolRpc.js';
 
 describe('SOL HTTP transport', function() {
@@ -277,6 +277,56 @@ describe('SOL HTTP transport', function() {
     ]);
     expect(outcome).to.be.instanceOf(Error);
     expect(outcome.message).to.include('Premature close');
+  });
+
+  describe('timeout', function() {
+    it('aborts a stalled request and rejects every caller sharing it', async function() {
+      let responseClosed;
+      const closed = new Promise(resolve => { responseClosed = resolve; });
+      respond = (body, res) => res.on('close', () => responseClosed(res.writableEnded));
+      const rpc = rpcFor({ timeout: 100 });
+      const results = await Promise.race([
+        Promise.allSettled([rpc.getSlot().send(), rpc.getSlot().send({ abortSignal: new AbortController().signal })]),
+        new Promise((resolve, reject) => setTimeout(() => reject(new Error('timeout did not fire')), 1500))
+      ]);
+      expect(requests).to.have.lengthOf(1);
+      for (const result of results) {
+        expect(result.status).to.equal('rejected');
+        expect(result.reason.message).to.equal('Solana RPC request timed out after 100ms');
+      }
+      expect(await closed).to.equal(false);
+    });
+
+    it('aborts a request whose body stalls', async function() {
+      respond = (body, res) => {
+        res.writeHead(200, { 'content-type': 'application/json', 'content-length': '1000' });
+        res.write('{"jsonrpc":"2.0",');
+      };
+      const outcome = await Promise.race([
+        rpcFor({ timeout: 200 }).getSlot().send().then(() => 'resolved', err => err),
+        new Promise(resolve => setTimeout(() => resolve('still pending'), 1500))
+      ]);
+      expect(outcome).to.be.instanceOf(Error);
+      expect(outcome.message).to.equal('Solana RPC request timed out after 200ms');
+    });
+
+    it('defaults to 300 seconds', async function() {
+      expect(DEFAULT_TIMEOUT_MS).to.equal(300000);
+      const setTimeoutSpy = sinon.spy(globalThis, 'setTimeout');
+      await rpcFor().getSlot().send();
+      expect(setTimeoutSpy.calledWith(sinon.match.func, 300000)).to.equal(true);
+    });
+
+    it('takes the timeout from the SolRpc config', async function() {
+      respond = () => {};
+      const solRpc = new SolRpc({ chain: 'SOL', protocol: 'http', host: '127.0.0.1', port, wsPort: 1, timeout: 100 });
+      const outcome = await Promise.race([
+        solRpc.rpc.getSlot().send().then(() => 'resolved', err => err),
+        new Promise(resolve => setTimeout(() => resolve('still pending'), 1500))
+      ]);
+      expect(outcome).to.be.instanceOf(Error);
+      expect(outcome.message).to.equal('Solana RPC request timed out after 100ms');
+    });
   });
 
   describe('provider credentials in the URL', function() {

@@ -5,6 +5,9 @@ import stableStringify from '@solana/fast-stable-stringify';
 import { parseJsonWithBigInts, stringifyJsonWithBigints } from '@solana/rpc-spec-types';
 import nodeFetch from 'node-fetch';
 
+/** request timeout used when none is given, matching the native fetch header and body timeouts */
+export const DEFAULT_TIMEOUT_MS = 300000;
+
 /**
  * select the shared Node agent for each request and redirect
  * @param {URL} url - request destination
@@ -74,10 +77,12 @@ function abortError(signal) {
  * @param {string} url - Solana RPC endpoint
  * @param {Object} [options] - transport configuration
  * @param {Function} [options.fetch] - optional fetch implementation
+ * @param {number} [options.timeout] - ms before a request is aborted and rejected (default 300000, 0 disables)
  * @returns {Function} Solana Kit RPC transport
  */
 export function createSolanaHttpTransport(url, options = {}) {
   const fetch = options.fetch || nodeFetch;
+  const timeout = options.timeout ?? DEFAULT_TIMEOUT_MS;
   let pendingRequests;
 
   /**
@@ -92,6 +97,26 @@ export function createSolanaHttpTransport(url, options = {}) {
     } catch (err) {
       throw redactUrls(err);
     }
+  }
+
+  /**
+   * send the request, aborting it and rejecting once the timeout passes
+   * @param {Object} payload - JSON-RPC request
+   * @param {AbortController} controller - cancels the shared request
+   * @returns {Promise<Object>} JSON-RPC response
+   */
+  function sendWithTimeout(payload, controller) {
+    if (!(timeout > 0 && Number.isFinite(timeout))) {
+      return sendRequest(payload, controller);
+    }
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error(`Solana RPC request timed out after ${timeout}ms`));
+        controller.abort();
+      }, timeout);
+      timer.unref();
+      sendRequest(payload, controller).then(resolve, reject).finally(() => clearTimeout(timer));
+    });
   }
 
   /**
@@ -179,7 +204,7 @@ export function createSolanaHttpTransport(url, options = {}) {
       pendingRequest = {
         controller,
         consumers: 0,
-        promise: sendRequest(payload, controller)
+        promise: sendWithTimeout(payload, controller)
       };
       pendingRequests.set(key, pendingRequest);
     }
