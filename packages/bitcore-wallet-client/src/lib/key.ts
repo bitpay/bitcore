@@ -32,7 +32,7 @@ const ALGOS_BY_CHAIN = {
   default: Constants.ALGOS.ECDSA,
   sol: Constants.ALGOS.EDDSA,
 };
-const SUPPORTED_ALGOS = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
+const SUPPORTED_ALGOS = Constants.SUPPORTED_SIG_ALGOS;
 const ALGO_TO_KEY_TYPE = {
   [Constants.ALGOS.ECDSA]: 'Bitcoin',
   [Constants.ALGOS.EDDSA]: 'ed25519'
@@ -397,12 +397,15 @@ export class Key {
 
   checkPassword(password: string, algo?: KeyAlgorithm) {
     if (this.isPrivKeyEncrypted(algo)) {
+      let privKey: Buffer | string;
       try {
-        Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
+        privKey = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
+        return true;
       } catch {
         return false;
+      } finally {
+        if (Buffer.isBuffer(privKey)) privKey.fill(0);
       }
-      return true;
     }
     return null;
   };
@@ -441,40 +444,86 @@ export class Key {
     return key;
   };
 
-  encrypt(password: string, opts?: { iter?: number; ks?: number }, algo?: KeyAlgorithm) {
-    if (this.#getPrivKeyEncrypted({ algo }))
-      throw new Error('Private key already encrypted');
-
-    if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
-
-    const encryptedPrivKey = JSON.stringify(Encryption.encryptWithPassword(this.#getPrivKey({ algo }), password, opts));
-    this.#setPrivKeyEncrypted({ algo, value: encryptedPrivKey });
-    if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
-
-    if (this.#mnemonic)
-      this.#mnemonicEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.#mnemonic, password, opts));
-
-    this.#setPrivKey({ algo, value: null });
-    this.#mnemonic = null;
+  hasPlaintextPrivKey(algo?: KeyAlgorithm): boolean {
+    if (algo) {
+      return !!this.#getPrivKey({ algo });
+    }
+    return SUPPORTED_ALGOS.some(algo => !!this.#getPrivKey({ algo }));
   };
+
+  encrypt(password: string, opts?: { iter?: number; ks?: number }, algo?: KeyAlgorithm) {
+    this.encryptPrivateKeys(password, opts, [algo || Constants.ALGOS.ECDSA]);
+  };
+
+  protected encryptPrivateKeys(password: string, opts: { iter?: number; ks?: number }, algos: readonly KeyAlgorithm[]) {
+    if (!algos.length) return;
+    for (const algo of algos) {
+      if (this.#getPrivKeyEncrypted({ algo })) throw new Error('Private key already encrypted');
+      if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
+    }
+
+    // Compute every ciphertext before changing any root or the shared mnemonic.
+    const encryptedPrivKeys = algos.map(algo => {
+      const value = JSON.stringify(Encryption.encryptWithPassword(this.#getPrivKey({ algo }), password, opts));
+      if (!value) throw new Error('Could not encrypt');
+      return { algo, value };
+    });
+    const mnemonicEncrypted = this.#mnemonic
+      ? JSON.stringify(Encryption.encryptWithPassword(this.#mnemonic, password, opts))
+      : null;
+    if (this.#mnemonic && !mnemonicEncrypted) throw new Error('Could not encrypt');
+
+    for (const { algo, value } of encryptedPrivKeys) {
+      this.#setPrivKeyEncrypted({ algo, value });
+      this.#setPrivKey({ algo, value: null });
+    }
+    if (mnemonicEncrypted) {
+      this.#mnemonicEncrypted = mnemonicEncrypted;
+      this.#mnemonic = null;
+    }
+  }
 
   decrypt(password: string, algo?: KeyAlgorithm) {
-    if (!this.#getPrivKeyEncrypted({ algo }))
-      throw new Error('Private key is not encrypted');
-
-    try {
-      const decryptedPrivKey = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password).toString();
-      this.#setPrivKey({ algo, value: decryptedPrivKey });
-      if (this.#mnemonicEncrypted) {
-        this.#mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
-      }
-      this.#setPrivKeyEncrypted({ algo, value: null });
-      this.#mnemonicEncrypted = null;
-    } catch (ex) {
-      log.error('error decrypting:', ex);
-      throw new Error('Could not decrypt');
-    }
+    if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Private key is not encrypted');
+    this.decryptPrivateKeys(password, [algo || Constants.ALGOS.ECDSA]);
   };
+
+  protected decryptPrivateKeys(password: string, algos: readonly KeyAlgorithm[], opts?: { allowEddsaPasswordDrift?: boolean }) {
+    const decryptedPrivKeys: Array<{ algo: KeyAlgorithm; value: Buffer | string }> = [];
+    let decryptedMnemonic: Buffer | string;
+    try {
+      for (const algo of algos) {
+        try {
+          decryptedPrivKeys.push({ algo, value: Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password) });
+        } catch (err) {
+          if (algo !== Constants.ALGOS.EDDSA || !opts?.allowEddsaPasswordDrift) throw err;
+          log.warn(`${algo} private key could not be decrypted with this password and remains encrypted`);
+        }
+      }
+      if (!decryptedPrivKeys.length) return;
+      if (this.#mnemonicEncrypted) {
+        decryptedMnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password);
+      }
+
+      // Convert only after all required decryption succeeds, then commit the staged values.
+      for (const { algo, value } of decryptedPrivKeys) {
+        this.#setPrivKey({ algo, value: value.toString() });
+        this.#setPrivKeyEncrypted({ algo, value: null });
+      }
+      if (decryptedMnemonic != null) {
+        this.#mnemonic = decryptedMnemonic.toString();
+        this.#mnemonicEncrypted = null;
+      }
+    } catch (err) {
+      log.error('error decrypting:', err);
+      throw new Error('Could not decrypt');
+    } finally {
+      for (const { value } of decryptedPrivKeys) {
+        if (Buffer.isBuffer(value)) value.fill(0);
+      }
+      if (Buffer.isBuffer(decryptedMnemonic)) decryptedMnemonic.fill(0);
+    }
+  }
 
   /**
    * Derive a child key
