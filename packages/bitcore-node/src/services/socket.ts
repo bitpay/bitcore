@@ -64,18 +64,22 @@ export class SocketService {
       this.io = new SocketIO.Server(server);
       this.io.sockets.on('connection', socket => {
         socket.on('room', (room: string, payload: VerificationPayload) => {
+          if (typeof room !== 'string') {
+            socket.emit('failure', { message: 'Invalid room' });
+            return;
+          }
           const chainNetwork = room.slice(0, room.lastIndexOf('/') + 1);
           const roomName = room.slice(room.lastIndexOf('/') + 1);
           switch (roomName) {
             case 'wallets':
-              if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
+              if (payload && bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
                 socket.join(room);
               } else {
                 socket.emit('failure', { message: 'Authentication failed' });
               }
               break;
             case 'wallet':
-              if (this.validateRequest(payload)) {
+              if (typeof payload?.pubKey === 'string' && this.validateRequest(payload)) {
                 socket.join(chainNetwork + payload.pubKey);
               } else {
                 socket.emit('failure', { message: 'Authentication failed' });

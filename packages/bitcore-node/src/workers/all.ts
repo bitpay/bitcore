@@ -15,7 +15,9 @@ const services: Array<any> = [];
 
 export const FullClusteredWorker = async () => {
   process.on('unhandledRejection', (error: any) => {
-    console.error('Unhandled Rejection at:', error.stack || error);
+    console.error('Unhandled Rejection at:', error?.stack || error);
+    // Exit non-zero after shutdown so the parent process restarts the worker.
+    process.exitCode = 1;
     stop();
   });
   process.on('SIGTERM', stop);
