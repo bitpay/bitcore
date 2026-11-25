@@ -1050,6 +1050,13 @@ describe('Transak integration', () => {
         captured.opts.headers['x-user-ip'].should.equal('198.51.100.7');
       });
 
+      it('should send the Cloudflare client IP as x-user-ip instead of X-Forwarded-For', async () => {
+        req.headers['x-forwarded-for'] = '203.0.113.9, 198.51.100.7';
+        req.headers['cf-connecting-ip'] = '198.51.100.7';
+        await server.externalServices.transak.transakHeadlessSendOtp(req);
+        captured.opts.headers['x-user-ip'].should.equal('198.51.100.7');
+      });
+
       it('should reject the web context without calling Transak', async () => {
         req.body.context = 'web';
         req.body.deviceIp = '203.0.113.42';

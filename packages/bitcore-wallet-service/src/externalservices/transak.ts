@@ -140,7 +140,7 @@ export class TransakService {
   // Must be called before transakGetKeys, which strips context from the body.
   private transakGetUserIp(req): string {
     const isWebContext = req.body?.context === 'web';
-    let userIp = (isWebContext && req.body.deviceIp) || Utils.getIpFromReq(req);
+    let userIp = (isWebContext && req.body.deviceIp) || req.headers?.['cf-connecting-ip'] || Utils.getIpFromReq(req);
     if (userIp) {
       // Canonicalize IPv4-mapped IPv6 (dual-stack sockets report IPv4 clients as
       // ::ffff:1.2.3.4) so Transak sees a plain IPv4 address.
