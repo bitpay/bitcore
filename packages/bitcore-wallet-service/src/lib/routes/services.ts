@@ -514,9 +514,9 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
-  router.post('/v1/service/transak/headless/cardSession', cors(transakCorsOptions), (req, res) => {
+  router.post('/v1/service/transak/headless/transactionSession', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
+      return server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
     });
   });
 

@@ -4145,8 +4145,8 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/transak/headless/savedCards', data);
   }
 
-  async transakHeadlessCreateCardSession(data) {
-    return this.request.post('/v1/service/transak/headless/cardSession', data);
+  async transakHeadlessCreateTransactionSession(data) {
+    return this.request.post('/v1/service/transak/headless/transactionSession', data);
   }
 
   async transakHeadlessCreateOrder(data) {

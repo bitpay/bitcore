@@ -84,6 +84,8 @@ const WIDGET_PARAMS = [
 
 const ORDER_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
 
+const HEADLESS_PAYMENT_CATEGORIES = ['credit_debit_card', 'apple_pay', 'google_pay'];
+
 // Transak's error message, if any, for logs. Never the whole body.
 function transakErrorDetail(data): string {
   const message = data?.body?.error?.message ?? data?.body?.message;
@@ -834,7 +836,11 @@ export class TransakService {
     });
   }
 
-  transakHeadlessGetUserLimits(req): Promise<any> {
+  async transakHeadlessGetUserLimits(req): Promise<any> {
+    const paymentCategory = req.body?.paymentCategory ?? 'credit_debit_card';
+    if (!HEADLESS_PAYMENT_CATEGORIES.includes(paymentCategory)) {
+      throw new ClientError('Invalid Transak paymentCategory');
+    }
     return this.transakHeadlessRequest(req, {
       method: 'get',
       path: '/api/v2/orders/user-limit',
@@ -843,7 +849,7 @@ export class TransakService {
       requiredParams: ['kycType', 'fiatCurrency'],
       query: () => ({
         isBuyOrSell: 'BUY',
-        paymentCategory: 'credit_debit_card',
+        paymentCategory,
         kycType: req.body.kycType,
         fiatCurrency: req.body.fiatCurrency
       })
@@ -881,19 +887,19 @@ export class TransakService {
     });
   }
 
-  async transakHeadlessCreateCardSession(req, walletId: string): Promise<any> {
+  async transakHeadlessCreateTransactionSession(req, walletId: string): Promise<any> {
     await this.checkHeadlessWalletAddress(req, walletId);
     return this.transakHeadlessRequest(req, {
       method: 'post',
       path: '/api/v2/transaction-session',
-      errorMessage: 'Failed to create Transak card session',
+      errorMessage: 'Failed to create Transak transaction session',
       userAuth: true,
-      requiredParams: ['quoteId', 'walletAddress', 'successUrl', 'failureUrl'],
+      requiredParams: ['quoteId', 'walletAddress'],
       body: () => ({
         quoteId: req.body.quoteId,
         walletAddress: req.body.walletAddress,
-        successUrl: req.body.successUrl,
-        failureUrl: req.body.failureUrl,
+        ...(req.body.successUrl && { successUrl: req.body.successUrl }),
+        ...(req.body.failureUrl && { failureUrl: req.body.failureUrl }),
         ...(req.body.config && { config: req.body.config }),
         ...(req.body.billingAddress && { billingAddress: req.body.billingAddress })
       })

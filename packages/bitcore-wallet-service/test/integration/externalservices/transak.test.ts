@@ -1322,6 +1322,24 @@ describe('Transak integration', () => {
         captured.opts.headers.authorization.should.equal('userAccessToken1');
       });
 
+      it('should request the limits of the payment category', async () => {
+        req.body.paymentCategory = 'apple_pay';
+        await server.externalServices.transak.transakHeadlessGetUserLimits(req);
+        const url = new URL(captured.url, 'https://example.com');
+        url.searchParams.get('paymentCategory').should.equal('apple_pay');
+      });
+
+      it('should reject an unknown payment category without calling Transak', async () => {
+        req.body.paymentCategory = 'sepa_bank_transfer';
+        try {
+          await server.externalServices.transak.transakHeadlessGetUserLimits(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak paymentCategory');
+        }
+        should.not.exist(captured);
+      });
+
       it('should return error if there is some missing arguments', async () => {
         delete req.body.kycType;
         try {
@@ -1419,7 +1437,7 @@ describe('Transak integration', () => {
       });
     });
 
-    describe('#transakHeadlessCreateCardSession', () => {
+    describe('#transakHeadlessCreateTransactionSession', () => {
       let ownedAddress: string;
 
       beforeEach(async () => {
@@ -1440,7 +1458,7 @@ describe('Transak integration', () => {
       });
 
       it('should only send the documented fields', async () => {
-        await server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
+        await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
         captured.url.should.equal('widgetApi1/api/v2/transaction-session');
         captured.opts.body.should.deep.equal({
           quoteId: 'quoteId1',
@@ -1452,11 +1470,23 @@ describe('Transak integration', () => {
         captured.opts.headers.authorization.should.equal('userAccessToken1');
       });
 
+      it('should create an Apple Pay session without redirect URLs', async () => {
+        delete req.body.successUrl;
+        delete req.body.failureUrl;
+        req.body.config = { colorMode: 'DARK', height: '50px', borderRadius: '25px' };
+        await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          walletAddress: ownedAddress,
+          config: { colorMode: 'DARK', height: '50px', borderRadius: '25px' },
+        });
+      });
+
       it('should not create a session for an address of another wallet', async () => {
         const { server: otherServer } = await helpers.createAndJoinWallet(1, 1, { offset: 1 });
         req.body.walletAddress = (await util.promisify(otherServer.createAddress).call(otherServer, {})).address;
         try {
-          await server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
+          await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
           should.fail('should have thrown');
         } catch (err) {
           err.message.should.equal('Invalid Transak walletAddress');
@@ -1465,9 +1495,9 @@ describe('Transak integration', () => {
       });
 
       it('should return error if there is some missing arguments', async () => {
-        delete req.body.failureUrl;
+        delete req.body.quoteId;
         try {
-          await server.externalServices.transak.transakHeadlessCreateCardSession(req, server.walletId);
+          await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
           should.fail('should have thrown');
         } catch (err) {
           err.message.should.equal('Transak\'s request missing arguments');
