@@ -4149,6 +4149,10 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/transak/headless/transactionSession', data);
   }
 
+  async transakHeadlessCreateKycSession(data) {
+    return this.request.post('/v1/service/transak/headless/kycSession', data);
+  }
+
   async transakHeadlessCreateOrder(data) {
     return this.request.post('/v1/service/transak/headless/order', data);
   }

@@ -520,6 +520,12 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
+  router.post('/v1/service/transak/headless/kycSession', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessCreateKycSession(req);
+    });
+  });
+
   router.post('/v1/service/transak/headless/order', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);

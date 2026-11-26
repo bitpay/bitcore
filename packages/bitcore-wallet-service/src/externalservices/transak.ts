@@ -8,6 +8,7 @@ import { Lock } from '../lib/lock';
 import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 import { Storage } from '../lib/storage';
+import type { ExternalServicesConfig } from '../types/externalservices';
 
 interface TransakKeys {
   ENV: string;
@@ -902,6 +903,25 @@ export class TransakService {
         ...(req.body.failureUrl && { failureUrl: req.body.failureUrl }),
         ...(req.body.config && { config: req.body.config }),
         ...(req.body.billingAddress && { billingAddress: req.body.billingAddress })
+      })
+    });
+  }
+
+  async transakHeadlessCreateKycSession(req): Promise<any> {
+    const servicesConfig: ExternalServicesConfig | undefined = config.services;
+    if (servicesConfig?.buyCrypto?.transak?.config?.headlessKycDisabled === true) {
+      throw new ClientError('Transak headless KYC is disabled');
+    }
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v2/transaction-session',
+      errorMessage: 'Failed to create Transak KYC session',
+      userAuth: true,
+      requiredParams: ['quoteId'],
+      body: () => ({
+        quoteId: req.body.quoteId,
+        module: 'kyc',
+        ...(req.body.config && { config: req.body.config })
       })
     });
   }

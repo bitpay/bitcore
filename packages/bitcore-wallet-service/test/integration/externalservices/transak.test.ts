@@ -1512,6 +1512,99 @@ describe('Transak integration', () => {
       });
     });
 
+    describe('#transakHeadlessCreateKycSession', () => {
+      let originalServices;
+
+      beforeEach(() => {
+        originalServices = config.services;
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: 'walletAddress1',
+            module: 'other',
+            config: { colorMode: 'DARK' },
+            unexpected: 'value',
+          }
+        };
+      });
+
+      afterEach(() => {
+        config.services = originalServices;
+      });
+
+      it('should create a KYC session with only the documented fields', async () => {
+        await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+        captured.method.should.equal('post');
+        captured.url.should.equal('widgetApi1/api/v2/transaction-session');
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          module: 'kyc',
+          config: { colorMode: 'DARK' },
+        });
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
+      });
+
+      it('should create a KYC session without a config', async () => {
+        delete req.body.config;
+        await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+        captured.opts.body.should.deep.equal({ quoteId: 'quoteId1', module: 'kyc' });
+      });
+
+      it('should create a KYC session when headless KYC is explicitly enabled', async () => {
+        config.services = { buyCrypto: { transak: { config: { headlessKycDisabled: false } } } };
+        await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+        should.exist(captured);
+      });
+
+      it('should not create a KYC session when headless KYC is disabled', async () => {
+        config.services = { buyCrypto: { transak: { config: { headlessKycDisabled: true } } } };
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak headless KYC is disabled');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.quoteId;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should reject the web context without calling Transak', async () => {
+        req.body.context = 'web';
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak headless is only available in the app');
+        }
+        should.not.exist(captured);
+      });
+    });
+
     describe('#transakHeadlessCreateOrder', () => {
       let ownedAddress: string;
 
