@@ -137,7 +137,10 @@ module.exports = {
       },
       moonpay: {
         disabled: false,
-        removed: false
+        removed: false,
+        // config: {
+        //   embeddedBuyDisabled: false // true: no in-app MoonPay checkout, the app goes to the MoonPay widget
+        // }
       },
       ramp: {
         disabled: false,
@@ -153,7 +156,11 @@ module.exports = {
       },
       transak: {
         disabled: false,
-        removed: false
+        removed: false,
+        // config: {
+        //   headlessBuyDisabled: false, // true: no in-app Transak checkout, the app goes to the Transak widget
+        //   headlessKycDisabled: false // true: no in-app KYC, the app goes to the Transak widget
+        // }
       },
       wyre: {
         disabled: false,
