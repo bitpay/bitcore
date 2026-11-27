@@ -71,6 +71,30 @@ export function setupAppMiddleware(app: express.Express, opts) {
   }
 }
 
+export function createTransakOtpLimiter(opts) {
+  if (Defaults.RateLimit.transakOtp && !opts.ignoreRateLimiter) {
+    logger.info(
+      'Limiting Transak verification codes per IP and per email: %o req/h',
+      ((Defaults.RateLimit.transakOtp.max / Defaults.RateLimit.transakOtp.windowMs) * 60 * 60 * 1000).toFixed(2)
+    );
+    const ipLimiter = new RateLimit({
+      ...Defaults.RateLimit.transakOtp,
+      keyGenerator: req => req.header('CF-Connecting-IP') || req.ip
+    });
+    const emailLimiter = new RateLimit({
+      ...Defaults.RateLimit.transakOtp,
+      keyGenerator: req => String(req.body?.email ?? '').trim().toLowerCase()
+    });
+    return (req, res, next) => {
+      ipLimiter(req, res, err => (err ? next(err) : emailLimiter(req, res, next)));
+    };
+  }
+
+  return (req, res, next) => {
+    next();
+  };
+}
+
 export function createEstimateFeeLimiter(opts) {
   if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {
     logger.info(

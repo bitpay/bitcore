@@ -10,7 +10,9 @@ import { TransakService } from '../../../src/externalservices/transak';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import { Defaults } from '../../../src/lib/common/defaults';
 import logger from '../../../src/lib/logger';
+import { createTransakOtpLimiter } from '../../../src/lib/routes/setup';
 
 const should = chai.should();
 
@@ -73,12 +75,14 @@ describe('Transak integration', () => {
       sandbox: {
         api: 'api1',
         apiKey: 'apiKey1',
+        apiKeyHeadless: 'apiKeyHeadless1',
         secretKey: 'secretKey1',
         widgetApi: 'widgetApi1',
       },
       production: {
         api: 'api2',
         apiKey: 'apiKey2',
+        apiKeyHeadless: 'apiKeyHeadless2',
         secretKey: 'secretKey2',
         widgetApi: 'widgetApi2',
       },
@@ -991,6 +995,869 @@ describe('Transak integration', () => {
       } catch (err) {
         err.message.should.equal('Transak\'s request missing arguments');
       }
+    });
+  });
+
+  describe('Headless', () => {
+    let captured;
+    let response;
+
+    const fakeHeadlessRequest = () => {
+      const handler = method => (url, opts, cb) => {
+        captured = { method, url, opts };
+        return cb(null, response);
+      };
+      return { get: handler('get'), post: handler('post'), delete: handler('delete') };
+    };
+
+    beforeEach(() => {
+      captured = undefined;
+      response = { statusCode: 200, body: { data: 'data' } };
+      server.externalServices.transak.request = fakeHeadlessRequest();
+    });
+
+    describe('#transakHeadlessSendOtp', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            email: 'user@example.com',
+          }
+        };
+      });
+
+      it('should post the email to the Whitelabel auth API', async () => {
+        const data = await server.externalServices.transak.transakHeadlessSendOtp(req);
+        data.should.deep.equal({ data: 'data' });
+        captured.url.should.equal('widgetApi1/api/v2/auth/login');
+        captured.opts.body.should.deep.equal({ apiKey: 'apiKeyHeadless1', email: 'user@example.com' });
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
+        should.not.exist(captured.opts.headers.authorization);
+      });
+
+      it('should use production keys', async () => {
+        req.body.env = 'production';
+        await server.externalServices.transak.transakHeadlessSendOtp(req);
+        captured.url.should.equal('widgetApi2/api/v2/auth/login');
+        captured.opts.body.apiKey.should.equal('apiKeyHeadless2');
+      });
+
+      it('should send the request IP as x-user-ip and ignore deviceIp', async () => {
+        req.headers['x-forwarded-for'] = '198.51.100.7';
+        req.body.deviceIp = '203.0.113.42';
+        await server.externalServices.transak.transakHeadlessSendOtp(req);
+        captured.opts.headers['x-user-ip'].should.equal('198.51.100.7');
+      });
+
+      it('should send the Cloudflare client IP as x-user-ip instead of X-Forwarded-For', async () => {
+        req.headers['x-forwarded-for'] = '203.0.113.9, 198.51.100.7';
+        req.headers['cf-connecting-ip'] = '198.51.100.7';
+        await server.externalServices.transak.transakHeadlessSendOtp(req);
+        captured.opts.headers['x-user-ip'].should.equal('198.51.100.7');
+      });
+
+      it('should reject the web context without calling Transak', async () => {
+        req.body.context = 'web';
+        req.body.deviceIp = '203.0.113.42';
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak headless is only available in the app');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.email;
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+
+      it('should return a generic error if post returns error', async () => {
+        server.externalServices.transak.request = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('connect ECONNREFUSED 10.0.0.1:443'), null); },
+        };
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Failed to send the Transak verification code');
+        }
+      });
+
+      it('should pass through the Transak error body', async () => {
+        response = { statusCode: 400, body: { error: { statusCode: 400, message: 'Missing Field' } } };
+        const data = await server.externalServices.transak.transakHeadlessSendOtp(req);
+        data.should.deep.equal({ error: { statusCode: 400, message: 'Missing Field' } });
+      });
+
+      it('should return a generic error if Transak does not answer with JSON', async () => {
+        response = { statusCode: 502, body: '<html>Bad gateway</html>' };
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Failed to send the Transak verification code');
+        }
+      });
+
+      it('should return error if transak is commented in config', async () => {
+        config.transak = undefined;
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak missing credentials');
+        }
+      });
+
+      it('should return error without calling Transak if the headless API key is not set', async () => {
+        delete config.transak.sandbox.apiKeyHeadless;
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak headless missing credentials');
+        }
+        should.not.exist(captured);
+      });
+    });
+
+    describe('OTP rate limiter', () => {
+      const otpReq = ({ ip, cfIp, email }: { ip: string; cfIp?: string; email: string }) => {
+        const headers = { 'x-forwarded-for': ip, ...(cfIp && { 'cf-connecting-ip': cfIp }) };
+        return { ip, headers, header: (name: string) => headers[name.toLowerCase()], body: { email } };
+      };
+      const otpRes = () => ({
+        statusCode: 200,
+        setHeader: () => {},
+        status(code) {
+          this.statusCode = code;
+          return this;
+        },
+        json: () => {},
+        end: () => {},
+        format(handlers) {
+          handlers.json();
+        },
+      });
+      const max = Defaults.RateLimit.transakOtp.max;
+
+      beforeEach(() => {
+        sandbox.stub(logger, 'info');
+      });
+
+      it('should not delay requests under the limit', () => {
+        const limiter = createTransakOtpLimiter({});
+        const next = sinon.spy();
+        for (let i = 0; i < max; i++) {
+          limiter(otpReq({ ip: '198.51.100.7', email: 'user@example.com' }), otpRes(), next);
+        }
+        next.callCount.should.equal(max);
+        next.alwaysCalledWithExactly().should.equal(true);
+      });
+
+      it('should count by CF-Connecting-IP instead of X-Forwarded-For', () => {
+        const limiter = createTransakOtpLimiter({});
+        const next = sinon.spy();
+        let res;
+        for (let i = 0; i <= max; i++) {
+          res = otpRes();
+          limiter(otpReq({ ip: `203.0.113.${i}`, cfIp: '198.51.100.7', email: `user${i}@example.com` }), res, next);
+        }
+        next.callCount.should.equal(max);
+        res.statusCode.should.equal(429);
+      });
+
+      it('should count by email across IPs', () => {
+        const limiter = createTransakOtpLimiter({});
+        const next = sinon.spy();
+        let res;
+        for (let i = 0; i <= max; i++) {
+          res = otpRes();
+          limiter(otpReq({ ip: `203.0.113.${i}`, cfIp: `198.51.100.${i}`, email: i % 2 ? 'User@Example.com' : ' user@example.com' }), res, next);
+        }
+        next.callCount.should.equal(max);
+        res.statusCode.should.equal(429);
+      });
+    });
+
+    describe('#transakHeadlessVerifyOtp', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            email: 'user@example.com',
+            otp: '123456',
+            stateToken: 'stateToken1',
+          }
+        };
+      });
+
+      it('should post the code with the state token', async () => {
+        await server.externalServices.transak.transakHeadlessVerifyOtp(req);
+        captured.url.should.equal('widgetApi1/api/v2/auth/verify');
+        captured.opts.body.should.deep.equal({
+          apiKey: 'apiKeyHeadless1',
+          email: 'user@example.com',
+          otp: '123456',
+          stateToken: 'stateToken1',
+        });
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.stateToken;
+        try {
+          await server.externalServices.transak.transakHeadlessVerifyOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessRefreshToken', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should renew the access token of the user', async () => {
+        response = { statusCode: 200, body: { data: { accessToken: 'userAccessToken2' } } };
+        const data = await server.externalServices.transak.transakHeadlessRefreshToken(req);
+        captured.method.should.equal('get');
+        captured.url.should.equal('widgetApi1/api/v2/auth/refresh');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
+        should.not.exist(captured.opts.body);
+        data.should.deep.equal({ data: { accessToken: 'userAccessToken2' } });
+      });
+
+      it('should pass Transak errors through', async () => {
+        response = { statusCode: 400, body: { error: { statusCode: 400, message: 'Failed to refresh token', errorCode: 1011 } } };
+        const data = await server.externalServices.transak.transakHeadlessRefreshToken(req);
+        data.should.deep.equal({ error: { statusCode: 400, message: 'Failed to refresh token', errorCode: 1011 } });
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessRefreshToken(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessLogout', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should log out the user of the access token', async () => {
+        response = { statusCode: 200, body: { data: { message: 'Successfully logged out' } } };
+        const data = await server.externalServices.transak.transakHeadlessLogout(req);
+        captured.method.should.equal('post');
+        captured.url.should.equal('widgetApi1/api/v1/auth/logout');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
+        should.not.exist(captured.opts.body);
+        data.should.deep.equal({ data: { message: 'Successfully logged out' } });
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessLogout(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetUserDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should only return the name and email of the user', async () => {
+        response = {
+          statusCode: 200,
+          body: {
+            data: {
+              partnerUserId: 'partnerUserId1',
+              firstName: 'Satoshi',
+              lastName: 'Nakamoto',
+              email: 'user@example.com',
+              mobileNumber: '+15555550100',
+              status: 'ACTIVE',
+              dob: '1975-04-05',
+              kyc: { status: 'APPROVED', type: 'STANDARD' },
+              address: { addressLine1: 'Street 1', city: 'City', countryCode: 'US' },
+            }
+          }
+        };
+        const data = await server.externalServices.transak.transakHeadlessGetUserDetails(req);
+        captured.method.should.equal('get');
+        captured.url.should.equal('widgetApi1/api/v2/user?apiKey=apiKeyHeadless1');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        data.should.deep.equal({
+          data: { email: 'user@example.com', firstName: 'Satoshi', lastName: 'Nakamoto' }
+        });
+      });
+
+      it('should pass Transak errors through', async () => {
+        response = { statusCode: 401, body: { error: { statusCode: 401, message: 'Authorization Required', errorCode: 1012 } } };
+        const data = await server.externalServices.transak.transakHeadlessGetUserDetails(req);
+        data.should.deep.equal({ error: { statusCode: 401, message: 'Authorization Required', errorCode: 1012 } });
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessGetUserDetails(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            fiatCurrency: 'EUR',
+            cryptoCurrency: 'ETH',
+            network: 'ethereum',
+            paymentMethod: 'credit_debit_card',
+            fiatAmount: 100,
+            partnerOrderId: 'partnerOrderId1',
+          }
+        };
+      });
+
+      it('should request a Whitelabel quote as the user', async () => {
+        await server.externalServices.transak.transakHeadlessGetQuote(req);
+        const url = new URL(captured.url, 'https://example.com');
+        url.pathname.should.equal('/widgetApi1/api/v2/lookup/quotes');
+        url.searchParams.get('apiKey').should.equal('apiKeyHeadless1');
+        url.searchParams.get('isBuyOrSell').should.equal('BUY');
+        url.searchParams.get('fiatAmount').should.equal('100');
+        url.searchParams.get('partnerOrderId').should.equal('partnerOrderId1');
+        url.searchParams.has('partnerCustomerId').should.equal(false);
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        should.not.exist(captured.opts.body);
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessGetQuote(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.fiatAmount;
+        try {
+          await server.externalServices.transak.transakHeadlessGetQuote(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetKycRequirement', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+          }
+        };
+      });
+
+      it('should forward the user access token', async () => {
+        await server.externalServices.transak.transakHeadlessGetKycRequirement(req);
+        const url = new URL(captured.url, 'https://example.com');
+        url.pathname.should.equal('/widgetApi1/api/v2/kyc/requirement');
+        url.searchParams.get('metadata[quoteId]').should.equal('quoteId1');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessGetKycRequirement(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetUserLimits', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            kycType: 'STANDARD',
+            fiatCurrency: 'EUR',
+          }
+        };
+      });
+
+      it('should request the card limits of the KYC type', async () => {
+        await server.externalServices.transak.transakHeadlessGetUserLimits(req);
+        const url = new URL(captured.url, 'https://example.com');
+        url.pathname.should.equal('/widgetApi1/api/v2/orders/user-limit');
+        url.searchParams.get('isBuyOrSell').should.equal('BUY');
+        url.searchParams.get('paymentCategory').should.equal('credit_debit_card');
+        url.searchParams.get('kycType').should.equal('STANDARD');
+        url.searchParams.get('fiatCurrency').should.equal('EUR');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should request the limits of the payment category', async () => {
+        req.body.paymentCategory = 'apple_pay';
+        await server.externalServices.transak.transakHeadlessGetUserLimits(req);
+        const url = new URL(captured.url, 'https://example.com');
+        url.searchParams.get('paymentCategory').should.equal('apple_pay');
+      });
+
+      it('should reject an unknown payment category without calling Transak', async () => {
+        req.body.paymentCategory = 'sepa_bank_transfer';
+        try {
+          await server.externalServices.transak.transakHeadlessGetUserLimits(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak paymentCategory');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.kycType;
+        try {
+          await server.externalServices.transak.transakHeadlessGetUserLimits(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetActiveOrders', () => {
+      it('should request the active orders of the user', async () => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+        await server.externalServices.transak.transakHeadlessGetActiveOrders(req);
+        captured.method.should.equal('get');
+        captured.url.should.equal('widgetApi1/api/v2/active-orders');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+    });
+
+    describe('#transakHeadlessCancelOrder', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            orderId: 'e8686c4e-52ee-449d-a3db-c79ffb6242b3',
+            cancelReason: 'cancel',
+          }
+        };
+      });
+
+      it('should delete the order with the cancel reason', async () => {
+        await server.externalServices.transak.transakHeadlessCancelOrder(req);
+        captured.method.should.equal('delete');
+        captured.url.should.equal('widgetApi1/api/v2/orders/e8686c4e-52ee-449d-a3db-c79ffb6242b3?cancelReason=cancel');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should reject an orderId that could change the path without calling Transak', async () => {
+        req.body.orderId = '../active-orders';
+        try {
+          await server.externalServices.transak.transakHeadlessCancelOrder(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak orderId');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.cancelReason;
+        try {
+          await server.externalServices.transak.transakHeadlessCancelOrder(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetSavedCards', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should request the saved cards', async () => {
+        await server.externalServices.transak.transakHeadlessGetSavedCards(req);
+        captured.url.should.equal('widgetApi1/api/v2/payment-instrument/status?paymentInstrumentId=credit_debit_card');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessGetSavedCards(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessCreateTransactionSession', () => {
+      let ownedAddress: string;
+
+      beforeEach(async () => {
+        ownedAddress = (await util.promisify(server.createAddress).call(server, {})).address;
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: ownedAddress,
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+            config: { colorMode: 'DARK' },
+            unexpected: 'value',
+          }
+        };
+      });
+
+      it('should only send the documented fields', async () => {
+        await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
+        captured.url.should.equal('widgetApi1/api/v2/transaction-session');
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          walletAddress: ownedAddress,
+          successUrl: 'https://example.com/success',
+          failureUrl: 'https://example.com/failure',
+          config: { colorMode: 'DARK' },
+        });
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should create an Apple Pay session without redirect URLs', async () => {
+        delete req.body.successUrl;
+        delete req.body.failureUrl;
+        req.body.config = { colorMode: 'DARK', height: '50px', borderRadius: '25px' };
+        await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          walletAddress: ownedAddress,
+          config: { colorMode: 'DARK', height: '50px', borderRadius: '25px' },
+        });
+      });
+
+      it('should not create a session for an address of another wallet', async () => {
+        const { server: otherServer } = await helpers.createAndJoinWallet(1, 1, { offset: 1 });
+        req.body.walletAddress = (await util.promisify(otherServer.createAddress).call(otherServer, {})).address;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak walletAddress');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.quoteId;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateTransactionSession(req, server.walletId);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessCreateKycSession', () => {
+      let originalServices;
+
+      beforeEach(() => {
+        originalServices = config.services;
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: 'walletAddress1',
+            module: 'other',
+            config: { colorMode: 'DARK' },
+            unexpected: 'value',
+          }
+        };
+      });
+
+      afterEach(() => {
+        config.services = originalServices;
+      });
+
+      it('should create a KYC session with only the documented fields', async () => {
+        await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+        captured.method.should.equal('post');
+        captured.url.should.equal('widgetApi1/api/v2/transaction-session');
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          module: 'kyc',
+          config: { colorMode: 'DARK' },
+        });
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
+      });
+
+      it('should create a KYC session without a config', async () => {
+        delete req.body.config;
+        await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+        captured.opts.body.should.deep.equal({ quoteId: 'quoteId1', module: 'kyc' });
+      });
+
+      it('should create a KYC session when headless KYC is explicitly enabled', async () => {
+        config.services = { buyCrypto: { transak: { config: { headlessKycDisabled: false } } } };
+        await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+        should.exist(captured);
+      });
+
+      it('should not create a KYC session when headless KYC is disabled', async () => {
+        config.services = { buyCrypto: { transak: { config: { headlessKycDisabled: true } } } };
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak headless KYC is disabled');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.quoteId;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should reject the web context without calling Transak', async () => {
+        req.body.context = 'web';
+        try {
+          await server.externalServices.transak.transakHeadlessCreateKycSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak headless is only available in the app');
+        }
+        should.not.exist(captured);
+      });
+    });
+
+    describe('#transakHeadlessCreateOrder', () => {
+      let ownedAddress: string;
+
+      beforeEach(async () => {
+        ownedAddress = (await util.promisify(server.createAddress).call(server, {})).address;
+      });
+
+      it('should place a new card order with the requestId only', async () => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            requestId: 'requestId1',
+            quoteId: 'quoteId1',
+          }
+        };
+        await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
+        captured.url.should.equal('widgetApi1/api/v2/orders');
+        captured.opts.body.should.deep.equal({ requestId: 'requestId1' });
+      });
+
+      it('should place a saved card order', async () => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: ownedAddress,
+            paymentIdentifierId: 'card1',
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+          }
+        };
+        await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          walletAddress: ownedAddress,
+          paymentInstrumentId: 'credit_debit_card',
+          paymentIdentifierId: 'card1',
+          additionalData: {
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+          },
+        });
+      });
+
+      it('should return error if neither a requestId nor a saved card is sent', async () => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+          }
+        };
+        try {
+          await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+
+      it('should not place a saved card order for an address of another wallet', async () => {
+        const { server: otherServer } = await helpers.createAndJoinWallet(1, 1, { offset: 1 });
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: (await util.promisify(otherServer.createAddress).call(otherServer, {})).address,
+            paymentIdentifierId: 'card1',
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+          }
+        };
+        try {
+          await server.externalServices.transak.transakHeadlessCreateOrder(req, server.walletId);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak walletAddress');
+        }
+        should.not.exist(captured);
+      });
+    });
+
+    describe('#transakHeadlessGetOrderDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            orderId: 'e8686c4e-52ee-449d-a3db-c79ffb6242b3',
+          }
+        };
+      });
+
+      it('should request the order as the user', async () => {
+        await server.externalServices.transak.transakHeadlessGetOrderDetails(req);
+        captured.url.should.equal('widgetApi1/api/v2/orders/e8686c4e-52ee-449d-a3db-c79ffb6242b3');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should reject an orderId that could change the path without calling Transak', async () => {
+        req.body.orderId = '..';
+        try {
+          await server.externalServices.transak.transakHeadlessGetOrderDetails(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Invalid Transak orderId');
+        }
+        should.not.exist(captured);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.orderId;
+        try {
+          await server.externalServices.transak.transakHeadlessGetOrderDetails(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
     });
   });
 });

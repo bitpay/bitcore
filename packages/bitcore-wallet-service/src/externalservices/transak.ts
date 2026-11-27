@@ -8,11 +8,13 @@ import { Lock } from '../lib/lock';
 import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 import { Storage } from '../lib/storage';
+import type { ExternalServicesConfig } from '../types/externalservices';
 
 interface TransakKeys {
   ENV: string;
   API: string;
   API_KEY: string;
+  API_KEY_HEADLESS: string | undefined;
   SECRET_KEY: string;
   WIDGET_API: string;
 }
@@ -83,6 +85,8 @@ const WIDGET_PARAMS = [
 
 const ORDER_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
 
+const HEADLESS_PAYMENT_CATEGORIES = ['credit_debit_card', 'apple_pay', 'google_pay'];
+
 // Transak's error message, if any, for logs. Never the whole body.
 function transakErrorDetail(data): string {
   const message = data?.body?.error?.message ?? data?.body?.message;
@@ -120,6 +124,7 @@ export class TransakService {
       ENV: env,
       API: config.transak[env].api,
       API_KEY: config.transak[env].apiKey,
+      API_KEY_HEADLESS: config.transak[env].apiKeyHeadless,
       SECRET_KEY: config.transak[env].secretKey,
       WIDGET_API: config.transak[env].widgetApi
     };
@@ -136,7 +141,7 @@ export class TransakService {
   // Must be called before transakGetKeys, which strips context from the body.
   private transakGetUserIp(req): string {
     const isWebContext = req.body?.context === 'web';
-    let userIp = (isWebContext && req.body.deviceIp) || Utils.getIpFromReq(req);
+    let userIp = (isWebContext && req.body.deviceIp) || req.headers?.['cf-connecting-ip'] || Utils.getIpFromReq(req);
     if (userIp) {
       // Canonicalize IPv4-mapped IPv6 (dual-stack sockets report IPv4 clients as
       // ::ffff:1.2.3.4) so Transak sees a plain IPv4 address.
@@ -403,7 +408,7 @@ export class TransakService {
     });
   }
 
-  private sendRequest(method: 'get' | 'post', URL: string, opts: any, errorMessage: string): Promise<any> {
+  private sendRequest(method: 'get' | 'post' | 'delete', URL: string, opts: any, errorMessage: string): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request[method](URL, { ...opts, json: true }, (err, data) => {
         if (err) {
@@ -695,6 +700,305 @@ export class TransakService {
       } catch (err) {
         return reject(err);
       }
+    });
+  }
+
+  // Headless (Whitelabel) API. Transak only accepts these calls from
+  // whitelisted partner IPs, so the app reaches them through BWS. The user's
+  // accessToken comes from transakHeadlessVerifyOtp and is forwarded as the
+  // 'authorization' header; BWS does not store it.
+  private async transakHeadlessRequest(
+    req,
+    opts: {
+      method: 'get' | 'post' | 'delete';
+      path: string;
+      errorMessage: string;
+      requiredParams?: string[];
+      userAuth?: boolean;
+      query?: (apiKey: string) => { [key: string]: string | undefined };
+      body?: (apiKey: string) => any;
+    }
+  ): Promise<any> {
+    if (req.body?.context === 'web') {
+      throw new ClientError('Transak headless is only available in the app');
+    }
+    const userIp = this.transakGetUserIp(req);
+    const keys = this.transakGetKeys(req, false);
+    const API_KEY = keys.API_KEY_HEADLESS;
+    const WIDGET_API = keys.WIDGET_API;
+    if (!API_KEY || !WIDGET_API) throw new Error('Transak headless missing credentials');
+
+    const requiredParams = [...(opts.userAuth ? ['userAccessToken'] : []), ...(opts.requiredParams ?? [])];
+    if (!checkRequired(req.body, requiredParams)) {
+      throw new ClientError("Transak's request missing arguments");
+    }
+
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'x-user-ip': userIp,
+      ...(opts.userAuth && { authorization: req.body.userAccessToken }),
+    };
+
+    let URL: string = WIDGET_API + opts.path;
+    if (opts.query) {
+      const qs = new URLSearchParams();
+      for (const [key, value] of Object.entries(opts.query(API_KEY))) {
+        if (value !== undefined && value !== null && value !== '') qs.append(key, String(value));
+      }
+      URL += `?${qs.toString()}`;
+    }
+
+    const data = await this.sendRequest(
+      opts.method,
+      URL,
+      { headers, ...(opts.body && { body: opts.body(API_KEY) }) },
+      opts.errorMessage
+    );
+    const success = data.statusCode >= 200 && data.statusCode < 300;
+    if (!success) {
+      logger.warn(`Transak request failed with status code ${data.statusCode}: ${WIDGET_API + opts.path}${transakErrorDetail(data)}`);
+    }
+    if (!data.body || typeof data.body !== 'object') {
+      throw new ClientError(opts.errorMessage);
+    }
+    return data.body;
+  }
+
+  private checkHeadlessOrderId(req): void {
+    const orderId = req.body?.orderId;
+    if (orderId != null && !ORDER_ID_PATTERN.test(String(orderId))) {
+      throw new ClientError('Invalid Transak orderId');
+    }
+  }
+
+  private async checkHeadlessWalletAddress(req, walletId: string): Promise<void> {
+    const walletAddress = req.body?.walletAddress;
+    if (walletAddress != null && !(await this.isWalletAddress(walletId, walletAddress))) {
+      throw new ClientError('Invalid Transak walletAddress');
+    }
+  }
+
+  transakHeadlessSendOtp(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v2/auth/login',
+      errorMessage: 'Failed to send the Transak verification code',
+      requiredParams: ['email'],
+      body: apiKey => ({ apiKey, email: req.body.email })
+    });
+  }
+
+  transakHeadlessVerifyOtp(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v2/auth/verify',
+      errorMessage: 'Failed to verify the Transak verification code',
+      requiredParams: ['email', 'otp', 'stateToken'],
+      body: apiKey => ({
+        apiKey,
+        email: req.body.email,
+        otp: req.body.otp,
+        stateToken: req.body.stateToken
+      })
+    });
+  }
+
+  transakHeadlessRefreshToken(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/auth/refresh',
+      errorMessage: 'Failed to refresh the Transak access token',
+      userAuth: true
+    });
+  }
+
+  transakHeadlessLogout(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v1/auth/logout',
+      errorMessage: 'Failed to log out of Transak',
+      userAuth: true
+    });
+  }
+
+  async transakHeadlessGetUserDetails(req): Promise<any> {
+    const body = await this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/user',
+      errorMessage: 'Failed to get Transak user details',
+      userAuth: true,
+      query: apiKey => ({ apiKey })
+    });
+    if (!body.data || typeof body.data !== 'object') {
+      return body;
+    }
+    const { email, firstName, lastName } = body.data;
+    return { data: { email, firstName, lastName } };
+  }
+
+  transakHeadlessGetQuote(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/lookup/quotes',
+      errorMessage: 'Failed to get Transak quote',
+      userAuth: true,
+      requiredParams: ['fiatCurrency', 'cryptoCurrency', 'network', 'paymentMethod', 'fiatAmount'],
+      query: apiKey => ({
+        apiKey,
+        fiatCurrency: req.body.fiatCurrency,
+        cryptoCurrency: req.body.cryptoCurrency,
+        isBuyOrSell: 'BUY',
+        network: req.body.network,
+        paymentMethod: req.body.paymentMethod,
+        fiatAmount: req.body.fiatAmount,
+        partnerCustomerId: req.body.partnerCustomerId,
+        partnerOrderId: req.body.partnerOrderId
+      })
+    });
+  }
+
+  transakHeadlessGetKycRequirement(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/kyc/requirement',
+      errorMessage: 'Failed to get Transak KYC requirement',
+      userAuth: true,
+      requiredParams: ['quoteId'],
+      query: apiKey => ({ apiKey, 'metadata[quoteId]': req.body.quoteId })
+    });
+  }
+
+  async transakHeadlessGetUserLimits(req): Promise<any> {
+    const paymentCategory = req.body?.paymentCategory ?? 'credit_debit_card';
+    if (!HEADLESS_PAYMENT_CATEGORIES.includes(paymentCategory)) {
+      throw new ClientError('Invalid Transak paymentCategory');
+    }
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/orders/user-limit',
+      errorMessage: 'Failed to get Transak user limits',
+      userAuth: true,
+      requiredParams: ['kycType', 'fiatCurrency'],
+      query: () => ({
+        isBuyOrSell: 'BUY',
+        paymentCategory,
+        kycType: req.body.kycType,
+        fiatCurrency: req.body.fiatCurrency
+      })
+    });
+  }
+
+  transakHeadlessGetActiveOrders(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/active-orders',
+      errorMessage: 'Failed to get Transak active orders',
+      userAuth: true
+    });
+  }
+
+  async transakHeadlessCancelOrder(req): Promise<any> {
+    this.checkHeadlessOrderId(req);
+    return this.transakHeadlessRequest(req, {
+      method: 'delete',
+      path: `/api/v2/orders/${req.body?.orderId}`,
+      errorMessage: 'Failed to cancel Transak order',
+      userAuth: true,
+      requiredParams: ['orderId', 'cancelReason'],
+      query: () => ({ cancelReason: req.body.cancelReason })
+    });
+  }
+
+  transakHeadlessGetSavedCards(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/payment-instrument/status',
+      errorMessage: 'Failed to get Transak saved cards',
+      userAuth: true,
+      query: () => ({ paymentInstrumentId: 'credit_debit_card' })
+    });
+  }
+
+  async transakHeadlessCreateTransactionSession(req, walletId: string): Promise<any> {
+    await this.checkHeadlessWalletAddress(req, walletId);
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v2/transaction-session',
+      errorMessage: 'Failed to create Transak transaction session',
+      userAuth: true,
+      requiredParams: ['quoteId', 'walletAddress'],
+      body: () => ({
+        quoteId: req.body.quoteId,
+        walletAddress: req.body.walletAddress,
+        ...(req.body.successUrl && { successUrl: req.body.successUrl }),
+        ...(req.body.failureUrl && { failureUrl: req.body.failureUrl }),
+        ...(req.body.config && { config: req.body.config }),
+        ...(req.body.billingAddress && { billingAddress: req.body.billingAddress })
+      })
+    });
+  }
+
+  async transakHeadlessCreateKycSession(req): Promise<any> {
+    const servicesConfig: ExternalServicesConfig | undefined = config.services;
+    if (servicesConfig?.buyCrypto?.transak?.config?.headlessKycDisabled === true) {
+      throw new ClientError('Transak headless KYC is disabled');
+    }
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v2/transaction-session',
+      errorMessage: 'Failed to create Transak KYC session',
+      userAuth: true,
+      requiredParams: ['quoteId'],
+      body: () => ({
+        quoteId: req.body.quoteId,
+        module: 'kyc',
+        ...(req.body.config && { config: req.body.config })
+      })
+    });
+  }
+
+  // New card: only the requestId returned by the card component.
+  // Saved card: the quote, wallet and card are sent instead.
+  async transakHeadlessCreateOrder(req, walletId: string): Promise<any> {
+    if (req.body?.requestId) {
+      return this.transakHeadlessRequest(req, {
+        method: 'post',
+        path: '/api/v2/orders',
+        errorMessage: 'Failed to create Transak order',
+        userAuth: true,
+        body: () => ({ requestId: req.body.requestId })
+      });
+    }
+    await this.checkHeadlessWalletAddress(req, walletId);
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v2/orders',
+      errorMessage: 'Failed to create Transak order',
+      userAuth: true,
+      requiredParams: ['quoteId', 'walletAddress', 'paymentIdentifierId', 'successUrl', 'failureUrl'],
+      body: () => ({
+        quoteId: req.body.quoteId,
+        walletAddress: req.body.walletAddress,
+        paymentInstrumentId: 'credit_debit_card',
+        paymentIdentifierId: req.body.paymentIdentifierId,
+        additionalData: {
+          successUrl: req.body.successUrl,
+          failureUrl: req.body.failureUrl
+        }
+      })
+    });
+  }
+
+  async transakHeadlessGetOrderDetails(req): Promise<any> {
+    this.checkHeadlessOrderId(req);
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: `/api/v2/orders/${req.body?.orderId}`,
+      errorMessage: 'Failed to get Transak order details',
+      userAuth: true,
+      requiredParams: ['orderId']
     });
   }
 }
