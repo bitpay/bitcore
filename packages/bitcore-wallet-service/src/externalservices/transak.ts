@@ -805,6 +805,39 @@ export class TransakService {
     });
   }
 
+  transakHeadlessRefreshToken(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/auth/refresh',
+      errorMessage: 'Failed to refresh the Transak access token',
+      userAuth: true
+    });
+  }
+
+  transakHeadlessLogout(req): Promise<any> {
+    return this.transakHeadlessRequest(req, {
+      method: 'post',
+      path: '/api/v1/auth/logout',
+      errorMessage: 'Failed to log out of Transak',
+      userAuth: true
+    });
+  }
+
+  async transakHeadlessGetUserDetails(req): Promise<any> {
+    const body = await this.transakHeadlessRequest(req, {
+      method: 'get',
+      path: '/api/v2/user',
+      errorMessage: 'Failed to get Transak user details',
+      userAuth: true,
+      query: apiKey => ({ apiKey })
+    });
+    if (!body.data || typeof body.data !== 'object') {
+      return body;
+    }
+    const { email, firstName, lastName } = body.data;
+    return { data: { email, firstName, lastName } };
+  }
+
   transakHeadlessGetQuote(req): Promise<any> {
     return this.transakHeadlessRequest(req, {
       method: 'get',

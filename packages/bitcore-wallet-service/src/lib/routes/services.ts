@@ -478,6 +478,24 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
+  router.post('/v1/service/transak/headless/refreshToken', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessRefreshToken(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/logout', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessLogout(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/userDetails', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetUserDetails(req);
+    });
+  });
+
   router.post('/v1/service/transak/headless/quote', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakHeadlessGetQuote(req);

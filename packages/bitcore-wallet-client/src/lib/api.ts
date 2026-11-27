@@ -4121,6 +4121,18 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/transak/headless/verifyOtp', data);
   }
 
+  async transakHeadlessRefreshToken(data) {
+    return this.request.post('/v1/service/transak/headless/refreshToken', data);
+  }
+
+  async transakHeadlessLogout(data) {
+    return this.request.post('/v1/service/transak/headless/logout', data);
+  }
+
+  async transakHeadlessGetUserDetails(data) {
+    return this.request.post('/v1/service/transak/headless/userDetails', data);
+  }
+
   async transakHeadlessGetQuote(data) {
     return this.request.post('/v1/service/transak/headless/quote', data);
   }

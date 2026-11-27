@@ -1223,6 +1223,132 @@ describe('Transak integration', () => {
       });
     });
 
+    describe('#transakHeadlessRefreshToken', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should renew the access token of the user', async () => {
+        response = { statusCode: 200, body: { data: { accessToken: 'userAccessToken2' } } };
+        const data = await server.externalServices.transak.transakHeadlessRefreshToken(req);
+        captured.method.should.equal('get');
+        captured.url.should.equal('widgetApi1/api/v2/auth/refresh');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
+        should.not.exist(captured.opts.body);
+        data.should.deep.equal({ data: { accessToken: 'userAccessToken2' } });
+      });
+
+      it('should pass Transak errors through', async () => {
+        response = { statusCode: 400, body: { error: { statusCode: 400, message: 'Failed to refresh token', errorCode: 1011 } } };
+        const data = await server.externalServices.transak.transakHeadlessRefreshToken(req);
+        data.should.deep.equal({ error: { statusCode: 400, message: 'Failed to refresh token', errorCode: 1011 } });
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessRefreshToken(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessLogout', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should log out the user of the access token', async () => {
+        response = { statusCode: 200, body: { data: { message: 'Successfully logged out' } } };
+        const data = await server.externalServices.transak.transakHeadlessLogout(req);
+        captured.method.should.equal('post');
+        captured.url.should.equal('widgetApi1/api/v1/auth/logout');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        captured.opts.headers['x-api-key'].should.equal('apiKeyHeadless1');
+        should.not.exist(captured.opts.body);
+        data.should.deep.equal({ data: { message: 'Successfully logged out' } });
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessLogout(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetUserDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should only return the name and email of the user', async () => {
+        response = {
+          statusCode: 200,
+          body: {
+            data: {
+              partnerUserId: 'partnerUserId1',
+              firstName: 'Satoshi',
+              lastName: 'Nakamoto',
+              email: 'user@example.com',
+              mobileNumber: '+15555550100',
+              status: 'ACTIVE',
+              dob: '1975-04-05',
+              kyc: { status: 'APPROVED', type: 'STANDARD' },
+              address: { addressLine1: 'Street 1', city: 'City', countryCode: 'US' },
+            }
+          }
+        };
+        const data = await server.externalServices.transak.transakHeadlessGetUserDetails(req);
+        captured.method.should.equal('get');
+        captured.url.should.equal('widgetApi1/api/v2/user?apiKey=apiKeyHeadless1');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+        data.should.deep.equal({
+          data: { email: 'user@example.com', firstName: 'Satoshi', lastName: 'Nakamoto' }
+        });
+      });
+
+      it('should pass Transak errors through', async () => {
+        response = { statusCode: 401, body: { error: { statusCode: 401, message: 'Authorization Required', errorCode: 1012 } } };
+        const data = await server.externalServices.transak.transakHeadlessGetUserDetails(req);
+        data.should.deep.equal({ error: { statusCode: 401, message: 'Authorization Required', errorCode: 1012 } });
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessGetUserDetails(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
     describe('#transakHeadlessGetQuote', () => {
       beforeEach(() => {
         req = {
